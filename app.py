@@ -40,6 +40,7 @@ st.markdown(f"""
         box-shadow: 0 4px 12px rgba(0,0,0,0.03); /* Sombra muy sutil */
         border: 1px solid rgba(0,0,0,0.02);
         height: 100%;
+        margin-bottom: 15px; /* Espacio inferior para que no se peguen */
     }}
     
     /* KPI CARDS (En Sidebar) */
@@ -150,14 +151,14 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo Clín
 
 # --- TAB 1: DASHBOARD COMPLETO ---
 with tab1:
-    st.write("") # Espaciador
+    st.write("") # Espaciador mínimo
     
     # A) RECTÁNGULOS SUPERIORES (FICHA + SMART INSIGHT)
     insight_text, insight_color, insight_icon = generar_smart_insight(glucose, bmi, insulin)
     
     col_top1, col_top2 = st.columns([1, 1], gap="medium")
     
-    # 1. Ficha del Paciente
+    # 1. Ficha del Paciente (Tarjeta Superior Izquierda)
     with col_top1:
         st.markdown(f"""
             <div class="dashboard-card" style="display:flex; justify-content:space-between; align-items:center; padding: 15px 25px;">
@@ -170,7 +171,7 @@ with tab1:
             </div>
         """, unsafe_allow_html=True)
         
-    # 2. Smart Insight (Dinámico)
+    # 2. Smart Insight (Tarjeta Superior Derecha)
     with col_top2:
         st.markdown(f"""
             <div class="dashboard-card" style="display:flex; justify-content:space-between; align-items:center; padding: 15px 25px; border-left: 6px solid {insight_color};">
@@ -182,9 +183,9 @@ with tab1:
             </div>
         """, unsafe_allow_html=True)
 
-    st.write("") # Espacio vertical
+    # AQUÍ ESTABA EL PROBLEMA ANTES: Eliminamos cualquier espacio o columna extra entre las tarjetas de arriba y los gráficos.
     
-    # B) GRÁFICOS PRINCIPALES
+    # B) GRÁFICOS PRINCIPALES (Justo debajo)
     c_left, c_right = st.columns([1, 2], gap="medium")
     
     # Columna Izquierda: Probabilidad (Donut Chart)

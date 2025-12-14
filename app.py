@@ -16,6 +16,8 @@ st.set_page_config(
 CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
+# Color gris para la barra deslizante
+SLIDER_GRAY = "#BDC3C7"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -38,16 +40,17 @@ st.markdown(f"""
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* ==================================================================
-       ESTILO SLIDER UMBRAL (CAJA BLANCA + BORDE ROSA + TEXTO AJUSTADO)
+       ESTILO SLIDER UMBRAL (FONDO ROSA SUTIL 0.1 + BARRA GRIS)
        ================================================================== */
     .stMain .stSlider {{
-        background-color: white;
+        /* Fondo Rosa muy suave (rgba 233,127,135 con opacidad 0.1) */
+        background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-        border-left: 5px solid {CEMP_PINK} !important; /* Borde rosa a la izquierda */
         margin-bottom: 25px;
+        /* Quitamos bordes sólidos */
+        border: none !important;
+        box-shadow: none !important;
     }}
     
     /* 1. EL TÍTULO (Igual que los headers de abajo: Gris y Mayúsculas) */
@@ -64,6 +67,23 @@ st.markdown(f"""
          color: {CEMP_DARK} !important; /* Gris oscuro / Negro */
          font-weight: 800 !important;   /* Muy negrita */
          font-size: 1rem !important;
+    }}
+
+    /* 3. BARRA Y TIRADOR GRISES */
+    /* El tirador (Círculo) */
+    .stMain .stSlider [role="slider"] {{
+        background-color: {SLIDER_GRAY} !important;
+        border: 2px solid white !important; /* Un pequeño borde blanco ayuda a definirlo */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    /* La barra llena (Progreso) */
+    .stMain .stSlider > div > div > div > div {{
+        background: {SLIDER_GRAY} !important;
+        color: {SLIDER_GRAY} !important;
+    }}
+    /* La barra vacía (Fondo del track) - Gris muy clarito transparente */
+    .stMain .stSlider > div > div > div > div > div {{
+         background-color: rgba(0, 0, 0, 0.05) !important;
     }}
     /* ================================================================== */
     
@@ -155,7 +175,7 @@ with st.sidebar:
     
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
-        dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
+        dpf = slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
     st.markdown("---")
     
@@ -179,7 +199,6 @@ with tab1:
     st.write("")
     
     # === UMBRAL DE DECISIÓN ===
-    # CSS aplicado: Título Gris #999, Caja Blanca con Borde Rosa
     threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
 
     # --- LÓGICA ---

@@ -259,7 +259,6 @@ with st.sidebar:
     weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
-    # Resultado BMI (AHORA EN ROSA CEMP_PINK)
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
@@ -278,52 +277,50 @@ with st.sidebar:
     
     st.markdown("---") 
 
-    # --- 3. PACIENTE (EDAD Y EMBARAZOS AGRUPADOS) ---
+    # --- 3. PACIENTE ---
     c_age, c_preg = st.columns(2)
-    
-    # Como input_biomarker usa columnas internas, los ponemos secuenciales pero visualmente juntos
-    # Para ahorrar espacio visual, quitamos etiquetas duplicadas
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
     pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg") 
     
-    st.markdown("---") # Separador para aislar DPF
+    st.markdown("---") 
 
-    # --- 4. DPF CON BARRA DE COLOR DINÁMICA ---
+    # --- 4. DPF (DINÁMICO) ---
     st.markdown("**Antecedentes Familiares (DPF)**")
     
     if 'dpf' not in st.session_state: st.session_state.dpf = 0.5
     dpf = st.slider("DPF", 0.0, 2.5, st.session_state.dpf, label_visibility="collapsed")
     st.session_state.dpf = dpf
 
-    # Lógica de Color Dinámico
-    if dpf < 0.2:
+    # Lógica de Color y Texto Dinámico
+    if dpf <= 0.15:
+        dpf_label = "Carga familiar MUY BAJA"
         bar_color = GOOD_TEAL      # Verde
-    elif dpf < 0.5:
-        bar_color = "#D4E157"      # Lima/Amarillo
-    elif dpf < 0.8:
+    elif dpf <= 0.40:
+        dpf_label = "Carga familiar BAJA"
+        bar_color = "#D4E157"      # Lima
+    elif dpf <= 0.80:
+        dpf_label = "Carga familiar MODERADA"
         bar_color = "#FFB74D"      # Naranja
+    elif dpf <= 1.20:
+        dpf_label = "Carga familiar ELEVADA"
+        bar_color = CEMP_PINK      # Rosa/Rojo
     else:
-        bar_color = CEMP_PINK      # Rojo/Rosa
+        dpf_label = "Carga familiar MUY ELEVADA"
+        bar_color = "#880E4F"      # Morado oscuro / Rojo intenso
 
-    # Barra Visual
+    # Mostrar la etiqueta dinámica y la barra
     st.markdown(f"""
-    <div style="width:100%; background-color:#F0F2F5; border-radius:4px; height:8px; margin-top:-10px; margin-bottom:10px;">
-        <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease;"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-10px; margin-bottom:2px;">
+        <span style="font-size:0.8rem; font-weight:bold; color:{bar_color};">{dpf_label}</span>
+        <span style="font-size:0.8rem; color:#666;">{dpf:.2f}</span>
+    </div>
+    <div style="width:100%; background-color:#F0F2F5; border-radius:4px; height:8px; margin-bottom:10px;">
+        <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease, background-color 0.3s ease;"></div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Leyenda Estática (CON DESCRIPCIÓN FAMILIAR EXACTA)
-    st.markdown(f"""
-    <div class="legend-box">
-        <span class="legend-title">Guía de interpretación:</span>
-        <ul>
-            <li><b style="color:{GOOD_TEAL}">0.0 - 0.2:</b> Sin antecedentes conocidos.</li>
-            <li><b style="color:#D4E157">0.2 - 0.5:</b> Abuelos, tíos, primos (2º grado).</li>
-            <li><b style="color:#FFB74D">0.5 - 0.8:</b> Padres o hermanos (1er grado).</li>
-            <li><b style="color:{CEMP_PINK}">> 0.8:</b> Alta carga genética (Ambos padres/múltiples).</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    # Leyenda Estática Reducida (Opcional, ya que es dinámico, pero ayuda a ver el panorama)
+    st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
 # --- 8. MAIN ---

@@ -100,8 +100,8 @@ st.markdown(f"""
         font-weight: 800;
     }}
     
-    /* === NUEVO: CAJA LEYENDA DPF === */
-    .legend-box {
+    /* === NUEVO: CAJA LEYENDA DPF (CORREGIDA) === */
+    .legend-box {{
         background-color: #F0F2F5;
         border-radius: 8px;
         padding: 12px;
@@ -110,17 +110,17 @@ st.markdown(f"""
         font-size: 0.75rem;
         color: #666;
         line-height: 1.4;
-    }
-    .legend-title {
+    }}
+    .legend-title {{
         font-weight: 700;
         color: {CEMP_DARK};
         margin-bottom: 5px;
         display: block;
-    }
-    .legend-box ul {
+    }}
+    .legend-box ul {{
         margin: 5px 0 0 15px;
         padding: 0;
-    }
+    }}
 
     /* === TARJETAS === */
     .card {{

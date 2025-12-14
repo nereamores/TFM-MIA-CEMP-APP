@@ -99,7 +99,8 @@ st.markdown(f"""
         letter-spacing: 1px;
         text-transform: uppercase;
         margin-bottom: 15px;
-        display: block;
+        display: flex;
+        align-items: center;
     }}
 
     .kpi-box {{
@@ -129,13 +130,16 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPER ---
+# --- 4. HELPERS ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
+
+def get_help_icon(description):
+    return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # --- 5. MODELO MOCK ---
 if 'model' not in st.session_state:
@@ -147,8 +151,12 @@ if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
 # --- 6. INPUTS SINCRONIZADOS ---
-def input_biomarker(label, min_val, max_val, default_val, key):
-    st.markdown(f"**{label}**")
+def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
+    label_html = f"**{label_text}**"
+    if help_text:
+        label_html += get_help_icon(help_text)
+    st.markdown(label_html, unsafe_allow_html=True)
+    
     c1, c2 = st.columns([2.5, 1])
     
     input_type = type(default_val)
@@ -181,10 +189,10 @@ with st.sidebar:
     st.write("")
     
     st.markdown("### 🧬 Biomarcadores")
-    glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc")
-    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi") 
-    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins")
-    age = input_biomarker("Edad (años)", 18, 90, 45, "age")
+    glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Nivel de azúcar en sangre en ayunas.")
+    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi", "Índice de Masa Corporal.")
+    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Hormona que regula la glucosa.")
+    age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
     
     st.write("")
     with st.expander("Factores Secundarios"):
@@ -193,9 +201,12 @@ with st.sidebar:
 
     st.markdown("---")
     homa = glucose * insulin / 405
+    homa_help = get_help_icon("Estimación de resistencia a insulina.")
+    bmi_help = get_help_icon("Cálculo basado en peso/altura.")
+    
     c1, c2 = st.columns(2)
-    with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
-    with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
+    with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR{homa_help}</div></div>', unsafe_allow_html=True)
+    with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI{bmi_help}</div></div>', unsafe_allow_html=True)
 
 # --- 8. MAIN ---
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -206,29 +217,30 @@ with tab1:
     st.write("")
     
     # UMBRAL
-    threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
+    threshold_help_txt = "Punto de corte clínico. Un umbral más bajo aumenta la sensibilidad."
+    threshold = st.slider(f"Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01, help=threshold_help_txt)
 
     # LÓGICA
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
     
-    # --- CÁLCULO INTELIGENTE DE CONFIANZA ---
-    # Calculamos cuán lejos está la probabilidad del umbral que has elegido.
+    # CÁLCULO CONFIANZA
     distancia_al_corte = abs(prob - threshold)
-    
-    # Si está a menos de un 5% de distancia, es una "zona gris" peligrosa.
     if distancia_al_corte > 0.15:
         conf_text = "Alta"
         conf_color = GOOD_TEAL
+        conf_desc = "Clasificación robusta."
     elif distancia_al_corte > 0.05:
         conf_text = "Media"
-        conf_color = "#F39C12" # Naranja
+        conf_color = "#F39C12"
+        conf_desc = "Zona intermedia."
     else:
         conf_text = "Baja"
-        conf_color = CEMP_PINK # Rojo alerta
+        conf_color = CEMP_PINK
+        conf_desc = "Zona de incertidumbre (Borderline)."
 
-    # Estilos de riesgo
+    # ESTILOS
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
     risk_icon = "🔴" if is_high else "🟢"
@@ -247,18 +259,25 @@ with tab1:
     
     # IZQUIERDA
     with c_left:
+        # Ficha Paciente + Confianza Debajo
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
-<div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
-<div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
-<div>
-<span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
-<h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
-<div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
-</div>
-</div>
-<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
-{risk_icon} {risk_label}
-</div>
+    <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
+        <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
+        <div>
+            <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
+            <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
+            <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
+        </div>
+    </div>
+    
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+        <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+            {risk_icon} {risk_label}
+        </div>
+        <div style="font-size:0.75rem; color:#999; font-weight:600; margin-right:5px;">
+            Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
+        </div>
+    </div>
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
@@ -307,7 +326,7 @@ with tab1:
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        # AQUI MOSTRAMOS LA CONFIANZA DINÁMICA
+        # En esta tarjeta solo dejamos el gráfico y la probabilidad, la confianza ya está arriba
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
     <span class="card-header" style="margin-bottom:20px;">PROBABILIDAD IA</span>
     <div style="position:relative; display:inline-block; margin: auto;">
@@ -317,7 +336,7 @@ with tab1:
         </div>
     </div>
     <div style="font-size:0.8rem; color:#888; margin-top:20px;">
-        Confianza del Modelo: <strong style="color:{conf_color}">{conf_text}</strong>
+        Probabilidad calculada por el modelo
     </div>
 </div>""", unsafe_allow_html=True)
 

@@ -14,7 +14,7 @@ st.set_page_config(
 
 # --- 2. COLORES ---
 CEMP_PINK = "#E97F87"
-CEMP_DARK = "#2C3E50" # Azul muy oscuro (Casi negro)
+CEMP_DARK = "#2C3E50" # Azul muy oscuro
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -37,10 +37,9 @@ st.markdown(f"""
         font-family: 'Helvetica', sans-serif; 
         font-weight: 800; 
         font-size: 1.8rem; 
-        color: {CEMP_DARK}; /* Color base para letras normales */
+        color: {CEMP_DARK}; 
         margin: 0; 
     }}
-    /* Los spans dentro del logo serán rosas por defecto (IA, NME) */
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* === ESTILO SLIDER GENERAL === */
@@ -49,13 +48,22 @@ st.markdown(f"""
         padding-bottom: 10px !important;
     }}
 
-    /* === ESTILO EXPANDER (Para el umbral) === */
+    /* === ESTILO EXPANDER PERSONALIZADO (ROSA TRANSPARENTE) === */
+    /* Esto cambia el fondo de la cabecera del desplegable */
     .streamlit-expanderHeader {{
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #666;
-        background-color: #F8F9FA;
-        border-radius: 8px;
+        background-color: rgba(233, 127, 135, 0.1) !important; /* Fondo rosa sutil */
+        color: {CEMP_DARK} !important;
+        font-weight: 700 !important;
+        border: 1px solid rgba(233, 127, 135, 0.2) !important;
+        border-radius: 8px !important;
+    }}
+    /* Esto cambia el contenido interno del expander si quisieras, 
+       pero mejor dejarlo blanco para que el slider resalte */
+    [data-testid="stExpanderDetails"] {{
+        border: 1px solid rgba(233, 127, 135, 0.1);
+        border-top: none;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
     }}
 
     /* === INPUTS BARRA LATERAL === */
@@ -69,7 +77,6 @@ st.markdown(f"""
         background-color: white;
         border: 1px solid #ddd;
     }}
-    /* Alineación vertical */
     [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{
         vertical-align: middle;
     }}
@@ -163,13 +170,12 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Simulación: (Glucose*0.5 + BMI*0.4 + Age*0.1) -> Sigmoid
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. INPUTS SINCRONIZADOS (BIDIRECCIONALES) ---
+# --- 6. INPUTS SINCRONIZADOS ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
     label_html = f"**{label_text}**"
     if help_text:
@@ -186,14 +192,12 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
     if key not in st.session_state:
         st.session_state[key] = default_val
 
-    # Callbacks para mantener la sincronización
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
     
     def update_from_input():
         val = st.session_state[f"{key}_input"]
-        # Clamping (evitar errores de rango)
         if val < min_val: val = min_val
         if val > max_val: val = max_val
         st.session_state[key] = val
@@ -213,8 +217,6 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
 
 # --- 7. BARRA LATERAL ---
 with st.sidebar:
-    # --- LOGO DEFINITIVO (D-IA-BETES . NME) ---
-    # D (negro) | IA (rosa) | BETES (negro) | . (gris) | NME (rosa)
     st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
@@ -264,7 +266,7 @@ with st.sidebar:
     
     st.markdown("---") 
 
-    # 4. DPF (DINÁMICO CON ENTRADA MANUAL)
+    # 4. DPF
     dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf")
 
     if dpf <= 0.15:
@@ -299,9 +301,10 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL OCULTO (Limpieza visual) ---
-    with st.expander("⚙️ Calibración del Modelo (Umbral de Sensibilidad)"):
-        st.caption("Punto de corte clínico. Un umbral más bajo aumenta la sensibilidad (detecta más positivos pero con riesgo de falsas alarmas).")
+    # --- UMBRAL CON ESTILO ROSA ---
+    # Usamos el nombre clínico que hemos hablado
+    with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
+        st.caption("Permite calibrar el modelo priorizando la detección de casos (mayor sensibilidad) o la precisión (mayor especificidad).")
         threshold = st.slider("Umbral", 0.0, 1.0, 0.31, 0.01, label_visibility="collapsed")
 
     # LÓGICA IA
@@ -321,7 +324,7 @@ with tab1:
         conf_text, conf_color = "BAJA", CEMP_PINK
         conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
-    # ESTILOS RIESGO
+    # ESTILOS
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
     risk_icon = "🔴" if is_high else "🟢"

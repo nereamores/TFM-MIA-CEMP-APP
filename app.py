@@ -175,7 +175,8 @@ with st.sidebar:
     
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
-        dpf = slider("Función Pedigrí", 0.0, 2.5, 0.5)
+        # CORREGIDO AQUÍ: Añadido 'st.'
+        dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
     st.markdown("---")
     

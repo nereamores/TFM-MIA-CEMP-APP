@@ -40,8 +40,12 @@ st.markdown(f"""
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
         border-radius: 12px;
-        margin-bottom: 25px;
+        /* margin-bottom: 25px;  <-- Quitamos margen inferior para alinear con la caja de al lado */
         border: none !important;
+        height: 100%; /* Para intentar igualar alturas */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }}
     .stMain .stSlider label p {{
         font-weight: 700 !important;
@@ -68,6 +72,21 @@ st.markdown(f"""
          background-color: rgba(255, 255, 255, 0.5) !important;
     }}
 
+    /* === NUEVO: CAJA DE CONFIANZA (DERECHA DEL SLIDER) === */
+    .conf-box {{
+        background-color: white;
+        border-radius: 12px;
+        padding: 15px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        height: 110px; /* Altura fija para igualar al slider visualmente */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }}
+
     /* === INPUTS BARRA LATERAL === */
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px;
@@ -89,11 +108,9 @@ st.markdown(f"""
         display: flex;
         flex-direction: column;
         justify-content: center;
-        /* NUEVO: Altura mínima para igualar visualmente las tarjetas de abajo */
         min-height: 320px; 
     }}
     
-    /* Clase especial para tarjetas que no necesitan ser tan altas (como la de arriba) */
     .card-auto {{
         min-height: auto !important;
         height: 100%;
@@ -204,7 +221,6 @@ with st.sidebar:
     st.write("")
     
     st.markdown("### 🧬 Biomarcadores")
-    # TOOLTIPS ACTUALIZADOS A CONTEXTO 2H
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
     bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi", "Índice de Masa Corporal.")
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
@@ -217,15 +233,11 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # --- CÁLCULO DEL PROXY INDEX (TFM) ---
     proxy_index = glucose * insulin
-    
-    # Visualización en KPIs
     proxy_help = get_help_icon("Índice Proxy de Resistencia (Glucosa x Insulina). P75 = 19769.5")
     bmi_help = get_help_icon("Cálculo basado en peso/altura.")
     
     c1, c2 = st.columns(2)
-    # Formateamos el número grande con coma para miles (ej: 14,500)
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.2rem; font-weight:bold; color:{CEMP_DARK}">{proxy_index:,.0f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">ÍNDICE RI{proxy_help}</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.2rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI{bmi_help}</div></div>', unsafe_allow_html=True)
 
@@ -237,66 +249,80 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # UMBRAL
-    threshold_help_txt = "Punto de corte clínico. Un umbral más bajo aumenta la sensibilidad."
-    threshold = st.slider(f"Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01, help=threshold_help_txt)
-
-    # LÓGICA IA
+    # --- CÁLCULO PREVIO DE PROBABILIDAD (Necesario para la Confianza) ---
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
     prob = st.session_state.model.predict_proba(input_data)[0][1]
+
+    # --- ZONA SUPERIOR: UMBRAL + CONFIANZA ---
+    # Creamos dos columnas: 3 partes para el Slider, 1 parte para la Confianza
+    c_threshold, c_conf = st.columns([3, 1], gap="medium")
+    
+    with c_threshold:
+        threshold_help_txt = "Punto de corte clínico. Un umbral más bajo aumenta la sensibilidad."
+        threshold = st.slider(f"Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01, help=threshold_help_txt)
+
+    # Lógica de Riesgo
     is_high = prob > threshold 
     
-    # CONFIANZA
+    # Cálculo de Confianza
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
-        conf_text = "Alta"
+        conf_text = "ALTA" # Mayúsculas para que quede mejor en la caja
         conf_color = GOOD_TEAL
+        conf_desc = f"Probabilidad IA ({prob:.2f}) alejada del umbral ({threshold}). Decisión robusta."
     elif distancia_al_corte > 0.05:
-        conf_text = "Media"
+        conf_text = "MEDIA"
         conf_color = "#F39C12"
+        conf_desc = f"Probabilidad IA ({prob:.2f}) relativamente cerca del umbral ({threshold}). Precaución."
     else:
-        conf_text = "Baja"
+        conf_text = "BAJA"
         conf_color = CEMP_PINK
+        conf_desc = f"Probabilidad IA ({prob:.2f}) muy próxima al umbral ({threshold}). Zona de incertidumbre clínica."
 
-    # ESTILOS
+    # Renderizamos la Caja de Confianza en la columna derecha
+    with c_conf:
+        # Añadimos un pequeño margen top para alinear visualmente si hace falta, pero el flex box ayuda
+        conf_help_icon = get_help_icon(conf_desc)
+        st.markdown(f"""
+        <div class="conf-box">
+            <div style="font-size:0.7rem; color:#999; font-weight:700; text-transform:uppercase; margin-bottom:5px;">
+                CONFIANZA{conf_help_icon}
+            </div>
+            <div style="font-size:1.8rem; font-weight:800; color:{conf_color}; letter-spacing:1px;">
+                {conf_text}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # --- ESTILOS VISUALES ---
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
     risk_icon = "🔴" if is_high else "🟢"
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # --- LÓGICA DE ALERTAS (TFM) ---
     alerts = []
+    if glucose > 120: alerts.append("Hiperglucemia")
+    if bmi > 30: alerts.append("Obesidad")
+    if proxy_index > 19769.5: alerts.append("Posible Resistencia Insulina")
     
-    # 1. Hiperglucemia
-    if glucose > 120: 
-        alerts.append("Hiperglucemia")
-        
-    # 2. Obesidad
-    if bmi > 30: 
-        alerts.append("Obesidad")
-        
-    # 3. Resistencia a Insulina (Usando el Proxy P75 del TFM)
-    # Umbral P75 = 19769.5
-    if proxy_index > 19769.5:
-        alerts.append("Posible Resistencia Insulina")
-    
-    # Gestión de "Sin Hallazgos"
     if not alerts:
         insight_txt = "Sin hallazgos significativos"
-        insight_bd = GOOD_TEAL # Verde
+        insight_bd = GOOD_TEAL
         alert_icon = "✅"
     else:
         insight_txt = " • ".join(alerts)
-        insight_bd = CEMP_PINK # Rosa Alerta
+        insight_bd = CEMP_PINK
         alert_icon = "⚠️"
 
-    # LAYOUT
+    st.write("") # Espacio separador
+
+    # --- LAYOUT INFERIOR ---
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # IZQUIERDA
     with c_left:
-        # AÑADIMOS LA CLASE "card-auto" PARA QUE ESTA NO CREZCA INNECESARIAMENTE
+        # FICHA PACIENTE (Limpia, sin confianza, ya está arriba)
         st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -306,20 +332,14 @@ with tab1:
 <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
 </div>
 </div>
-<div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
 <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
 {risk_icon} {risk_label}
-</div>
-<div style="font-size:0.75rem; color:#999; font-weight:600;">
-Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
-</div>
 </div>
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
-        # Esta tarjeta SÍ tendrá la altura mínima de 320px
         st.markdown(f"""<div class="card">
 <span class="card-header">CONTEXTO POBLACIONAL</span>
 <div style="margin-top:15px;">
@@ -348,7 +368,6 @@ Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
 
     # DERECHA
     with c_right:
-        # Hallazgos
         st.markdown(f"""<div class="card card-auto" style="border-left:5px solid {insight_bd}; justify-content:center;">
     <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -364,10 +383,8 @@ Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        # Probabilidad IA (Sin texto abajo, solo tooltip arriba)
-        prob_help = get_help_icon("Probabilidad calculada por el modelo de IA basada en los biomarcadores introducidos.")
+        prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
         
-        # Esta tarjeta SÍ tendrá la altura mínima de 320px para igualar a la de la izquierda
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
     <span class="card-header" style="justify-content:center; margin-bottom:20px;">PROBABILIDAD IA{prob_help}</span>
     <div style="position:relative; display:inline-block; margin: auto;">

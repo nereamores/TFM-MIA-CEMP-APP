@@ -23,7 +23,6 @@ RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK
 # --- 3. CSS (ESTILOS AVANZADOS) ---
 st.markdown(f"""
     <style>
-    /* Ocultar elementos base */
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
@@ -43,49 +42,49 @@ st.markdown(f"""
        ESTILO SLIDER UMBRAL (FONDO ROSA SUTIL + LÍNEA BLANCA)
        ================================================================== */
     .stMain .stSlider {{
-        /* Fondo Rosa muy suave (rgba 233,127,135 con opacidad 0.1) */
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
         border-radius: 12px;
         margin-bottom: 25px;
         border: none !important;
-        box-shadow: none !important;
     }}
-    
-    /* 1. EL TÍTULO (Exactamente igual que los card-header: Pequeño y Gris) */
     .stMain .stSlider label p {{
         font-weight: 700 !important;
-        font-size: 0.75rem !important; /* Tamaño pequeño 0.75rem */
-        color: #999 !important;        /* Color Gris suave */
+        font-size: 0.75rem !important;
+        color: #999 !important;
         text-transform: uppercase;
         letter-spacing: 1px;
     }}
-    
-    /* 2. EL VALOR SELECCIONADO (Oscuro y Bold para que destaque) */
     .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
          color: {CEMP_DARK} !important; 
          font-weight: 800 !important;
          font-size: 1rem !important;
     }}
-
-    /* 3. BARRA BLANCA Y TIRADOR */
-    /* El tirador (Círculo) - Blanco con borde gris para definición */
     .stMain .stSlider [role="slider"] {{
         background-color: white !important;
         border: 2px solid {SLIDER_GRAY} !important; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }}
-    /* La barra llena (Progreso) - BLANCA */
     .stMain .stSlider > div > div > div > div {{
         background: white !important;
         color: white !important;
     }}
-    /* La barra vacía (Fondo del track) - BLANCA SEMITRANSPARENTE */
     .stMain .stSlider > div > div > div > div > div {{
          background-color: rgba(255, 255, 255, 0.5) !important;
     }}
-    /* ================================================================== */
-    
+
+    /* ==================================================================
+       ESTILO PARA LA BARRA LATERAL (INPUTS SINCRONIZADOS)
+       ================================================================== */
+    /* Ajustamos el number_input para que se vea limpio al lado del slider */
+    [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
+        padding: 0px 5px;
+        font-size: 0.9rem;
+        text-align: center;
+        color: {CEMP_DARK};
+        font-weight: bold;
+    }}
+
     /* TARJETAS ESTÁNDAR */
     .card {{
         background-color: white;
@@ -100,7 +99,6 @@ st.markdown(f"""
         justify-content: center;
     }}
     
-    /* HEADER UNIFICADO DE LAS TARJETAS */
     .card-header {{
         color: #999;
         font-size: 0.75rem;
@@ -118,7 +116,7 @@ st.markdown(f"""
         box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }}
     
-    /* BARRAS DE PROGRESO (Contexto) */
+    /* BARRAS DE PROGRESO */
     .bar-container {{
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
@@ -135,8 +133,6 @@ st.markdown(f"""
         background: white; padding: 2px 6px; border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }}
-    
-    /* LEYENDA */
     .legend-row {{ display: flex; justify-content: space-between; font-size: 0.7rem; color: #BBB; margin-top: -5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
     
     </style>
@@ -154,56 +150,92 @@ def fig_to_html(fig):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. BARRA LATERAL ---
+# --- 6. FUNCION HELPER PARA INPUTS SINCRONIZADOS ---
+def input_biomarker(label, min_val, max_val, default_val, key):
+    """Crea un slider y un number_input sincronizados."""
+    st.markdown(f"**{label}**")
+    c1, c2 = st.columns([3, 1]) # Columna ancha para slider, estrecha para cajita
+    
+    # Inicializar estado si no existe
+    if key not in st.session_state:
+        st.session_state[key] = default_val
+
+    # Callbacks para sincronizar
+    def update_from_slider():
+        st.session_state[key] = st.session_state[f"{key}_slider"]
+    def update_from_box():
+        st.session_state[key] = st.session_state[f"{key}_box"]
+
+    with c1:
+        st.slider(
+            label="", # Ocultamos label porque ya pusimos el título arriba
+            min_value=min_val, max_value=max_val, 
+            key=f"{key}_slider", 
+            value=st.session_state[key], 
+            on_change=update_from_slider,
+            label_visibility="collapsed"
+        )
+    with c2:
+        st.number_input(
+            label="", 
+            min_value=min_val, max_value=max_val, 
+            key=f"{key}_box", 
+            value=st.session_state[key], 
+            on_change=update_from_box,
+            label_visibility="collapsed"
+        )
+    return st.session_state[key]
+
+# --- 7. BARRA LATERAL (NUEVA VERSIÓN) ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
     st.markdown("### 🧬 Biomarcadores")
-    glucose = st.slider("Glucosa (mg/dL)", 50, 250, 120)
-    bmi = st.slider("BMI (kg/m²)", 15.0, 50.0, 28.5)
-    insulin = st.slider("Insulina (mu U/ml)", 0, 600, 100)
-    age = st.slider("Edad (años)", 18, 90, 45)
     
+    # Usamos la nueva función para inputs cómodos
+    glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc")
+    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi")
+    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins")
+    age = input_biomarker("Edad (años)", 18, 90, 45, "age")
+    
+    st.write("")
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
         dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
     st.markdown("---")
     
-    # KPIs Rápidos
+    # KPIs
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
     
 
-# --- 7. INTERFAZ PRINCIPAL ---
+# --- 8. INTERFAZ PRINCIPAL ---
 
-# Título
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
 
-# Pestañas
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
-# --- PESTAÑA 1: DASHBOARD ---
+# --- PESTAÑA 1 ---
 with tab1:
     st.write("")
     
-    # === UMBRAL DE DECISIÓN ===
+    # UMBRAL
     threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
 
-    # --- LÓGICA ---
+    # LÓGICA
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
     prob = st.session_state.model.predict_proba(input_data)[0][1]
-    is_high = prob > threshold 
+    is_high = prob > threshold # Aquí es donde el umbral decide si es ALTO o BAJO
     
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
@@ -218,13 +250,12 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # === LAYOUT PRINCIPAL ===
+    # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
-    # === COLUMNA IZQUIERDA ===
+    # === IZQUIERDA ===
     with c_left:
-        # FICHA PACIENTE (DISEÑO RESTAURADO: ICONO IZQUIERDA + FONDO ROSA)
-        # Se ha cambiado el background del div del icono a rgba(233, 127, 135, 0.1)
+        # Ficha Paciente
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -239,7 +270,7 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-        # CONTEXTO POBLACIONAL
+        # Contexto Poblacional
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
@@ -269,9 +300,9 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-    # === COLUMNA DERECHA ===
+    # === DERECHA ===
     with c_right:
-        # HALLAZGOS
+        # Hallazgos
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
     <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -280,7 +311,7 @@ with tab1:
     </div>
 </div>""", unsafe_allow_html=True)
         
-        # PROBABILIDAD IA
+        # Probabilidad IA
         fig, ax = plt.subplots(figsize=(4, 4))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')

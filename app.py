@@ -35,7 +35,7 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER UMBRAL (MAIN) === */
+    /* === ESTILO SLIDER UMBRAL === */
     .stMain .stSlider {{
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
@@ -43,29 +43,39 @@ st.markdown(f"""
         margin-bottom: 25px;
         border: none !important;
     }}
-    
-    /* === ESTILOS PARA INPUTS SINCRONIZADOS (SIDEBAR) === */
-    /* Slider en Sidebar */
-    [data-testid="stSidebar"] .stSlider {{
-        padding-top: 0px !important;
-        padding-bottom: 10px !important;
+    .stMain .stSlider label p {{
+        font-weight: 700 !important;
+        font-size: 0.75rem !important;
+        color: #999 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }}
-    
-    /* Input Manual Numérico en Sidebar */
+    .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
+         color: {CEMP_DARK} !important; 
+         font-weight: 800 !important;
+         font-size: 1rem !important;
+    }}
+    .stMain .stSlider [role="slider"] {{
+        background-color: white !important;
+        border: 2px solid {SLIDER_GRAY} !important; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    .stMain .stSlider > div > div > div > div {{
+        background: white !important;
+        color: white !important;
+    }}
+    .stMain .stSlider > div > div > div > div > div {{
+         background-color: rgba(255, 255, 255, 0.5) !important;
+    }}
+
+    /* === INPUTS BARRA LATERAL === */
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px;
-        font-size: 1rem;
+        font-size: 0.9rem;
         text-align: center;
         color: {CEMP_DARK};
-        font-weight: 800;
+        font-weight: bold;
         border-radius: 8px;
-        background-color: white;
-        border: 1px solid #ddd;
-    }}
-    
-    /* Ajuste para alinear slider e input verticalmente */
-    [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{
-        vertical-align: middle;
     }}
 
     /* === CAJA DE CÁLCULOS (SIDEBAR) === */
@@ -90,6 +100,28 @@ st.markdown(f"""
         font-weight: 800;
     }}
     
+    /* === CAJA LEYENDA DPF === */
+    .legend-box {{
+        background-color: #F0F2F5;
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid #D0D7DE;
+        margin-top: 5px;
+        font-size: 0.75rem;
+        color: #666;
+        line-height: 1.4;
+    }}
+    .legend-title {{
+        font-weight: 700;
+        color: {CEMP_DARK};
+        margin-bottom: 5px;
+        display: block;
+    }}
+    .legend-box ul {{
+        margin: 5px 0 0 15px;
+        padding: 0;
+    }}
+
     /* === TARJETAS === */
     .card {{
         background-color: white;
@@ -120,7 +152,6 @@ st.markdown(f"""
         align-items: center;
     }}
 
-    /* GRÁFICOS DE BARRAS CONTEXTUALES */
     .bar-container {{
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
@@ -157,63 +188,48 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple: Glucose + BMI + Age effect
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. INPUTS SINCRONIZADOS (BIDIRECCIONALES) ---
+# --- 6. INPUTS SINCRONIZADOS ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
-    # Renderizado de etiqueta
     label_html = f"**{label_text}**"
     if help_text:
         label_html += get_help_icon(help_text)
     st.markdown(label_html, unsafe_allow_html=True)
     
-    # Inicialización del estado
-    if key not in st.session_state:
-        st.session_state[key] = default_val
-
-    # Tipos
+    c1, c2 = st.columns([2.5, 1])
+    
     input_type = type(default_val)
     min_val = input_type(min_val)
     max_val = input_type(max_val)
     step = 0.1 if input_type == float else 1
 
-    # --- CALLBACKS ---
+    if key not in st.session_state:
+        st.session_state[key] = default_val
+
     def update_from_slider():
-        st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
         st.session_state[key] = st.session_state[f"{key}_slider"]
-
-    def update_from_input():
-        curr_val = st.session_state[f"{key}_input"]
-        # Clamping para evitar errores del slider
-        if curr_val < min_val: curr_val = min_val
-        if curr_val > max_val: curr_val = max_val
-        st.session_state[f"{key}_slider"] = curr_val
-        st.session_state[key] = curr_val
-
-    # Layout: Slider (Ancho) | Input (Estrecho)
-    c1, c2 = st.columns([2.5, 1], gap="small")
+        st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
     
+    def update_from_input():
+        val = st.session_state[f"{key}_input"]
+        if val < min_val: val = min_val
+        if val > max_val: val = max_val
+        st.session_state[key] = val
+        st.session_state[f"{key}_slider"] = val 
+
     with c1:
         st.slider(
-            label="", 
-            min_value=min_val, max_value=max_val, step=step,
-            key=f"{key}_slider", 
-            value=st.session_state[key], 
-            on_change=update_from_slider, 
-            label_visibility="collapsed"
+            label="", min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed"
         )
     with c2:
         st.number_input(
-            label="", 
-            min_value=min_val, max_value=max_val, step=step,
-            key=f"{key}_input", 
-            value=st.session_state[key], 
-            on_change=update_from_input, 
-            label_visibility="collapsed"
+            label="", min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed"
         )
     return st.session_state[key]
 
@@ -262,31 +278,37 @@ with st.sidebar:
     st.markdown("---") 
 
     # --- 3. PACIENTE ---
-    # Para Edad y Embarazos usamos la misma lógica sincronizada
+    c_age, c_preg = st.columns(2)
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
     pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg") 
     
     st.markdown("---") 
 
-    # --- 4. DPF (DINÁMICO - Se mantiene como slider único por su diseño especial) ---
+    # --- 4. DPF (DINÁMICO) ---
     st.markdown("**Antecedentes Familiares (DPF)**")
     
     if 'dpf' not in st.session_state: st.session_state.dpf = 0.5
     dpf = st.slider("DPF", 0.0, 2.5, st.session_state.dpf, label_visibility="collapsed")
     st.session_state.dpf = dpf
 
-    # Lógica de Color Dinámico DPF
+    # Lógica de Color y Texto Dinámico
     if dpf <= 0.15:
-        dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
+        dpf_label = "Carga familiar MUY BAJA"
+        bar_color = GOOD_TEAL      # Verde
     elif dpf <= 0.40:
-        dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
+        dpf_label = "Carga familiar BAJA"
+        bar_color = "#D4E157"      # Lima
     elif dpf <= 0.80:
-        dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
+        dpf_label = "Carga familiar MODERADA"
+        bar_color = "#FFB74D"      # Naranja
     elif dpf <= 1.20:
-        dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
+        dpf_label = "Carga familiar ELEVADA"
+        bar_color = CEMP_PINK      # Rosa/Rojo
     else:
-        dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
+        dpf_label = "Carga familiar MUY ELEVADA"
+        bar_color = "#880E4F"      # Morado oscuro / Rojo intenso
 
+    # Mostrar la etiqueta dinámica y la barra
     st.markdown(f"""
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-10px; margin-bottom:2px;">
         <span style="font-size:0.8rem; font-weight:bold; color:{bar_color};">{dpf_label}</span>
@@ -296,6 +318,9 @@ with st.sidebar:
         <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease, background-color 0.3s ease;"></div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Leyenda Estática Reducida (Opcional, ya que es dinámico, pero ayuda a ver el panorama)
+    st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
 # --- 8. MAIN ---
@@ -318,11 +343,17 @@ with tab1:
     # CÁLCULO FIABILIDAD
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
-        conf_text, conf_color, conf_desc = "ALTA", GOOD_TEAL, "Probabilidad claramente alejada del umbral. Clasificación robusta."
+        conf_text = "ALTA"
+        conf_color = GOOD_TEAL
+        conf_desc = "Probabilidad claramente alejada del umbral. Clasificación robusta."
     elif distancia_al_corte > 0.05:
-        conf_text, conf_color, conf_desc = "MEDIA", "#F39C12", "Probabilidad relativamente cerca del umbral. Precaución."
+        conf_text = "MEDIA"
+        conf_color = "#F39C12"
+        conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
     else:
-        conf_text, conf_color, conf_desc = "BAJA", CEMP_PINK, "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
+        conf_text = "BAJA" 
+        conf_color = CEMP_PINK
+        conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
     # ESTILOS
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
@@ -338,9 +369,13 @@ with tab1:
     if proxy_index > 19769.5: alerts.append("Posible Resistencia Insulina")
     
     if not alerts:
-        insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
+        insight_txt = "Sin hallazgos significativos"
+        insight_bd = GOOD_TEAL
+        alert_icon = "✅"
     else:
-        insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
+        insight_txt = " • ".join(alerts)
+        insight_bd = CEMP_PINK
+        alert_icon = "⚠️"
 
     # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
@@ -349,63 +384,64 @@ with tab1:
     with c_left:
         # FICHA PACIENTE 
         st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
-                <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
-                <div>
-                    <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
-                    <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
-                    <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
-                </div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-                <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
-                    {risk_icon} {risk_label}
-                </div>
-                <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
-                    <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
-                    <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+<div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
+<div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
+<div>
+<span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
+<h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
+<div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
+</div>
+</div>
+<div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+{risk_icon} {risk_label}
+</div>
+<div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
+<span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
+<span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
+</div>
+</div>
+</div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
+        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">
-            <span class="card-header">CONTEXTO POBLACIONAL</span>
-            <div style="margin-top:15px;">
-                <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
-                <div class="bar-container">
-                    <div class="bar-bg"><div class="bar-fill"></div></div>
-                    <div class="bar-marker" style="left: {g_pos}%;"></div>
-                    <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
-                </div>
-                <div class="legend-row">
-                    <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
-                </div>
-            </div>
-            <div style="margin-top:35px;">
-                <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
-                <div class="bar-container">
-                    <div class="bar-bg"><div class="bar-fill"></div></div>
-                    <div class="bar-marker" style="left: {b_pos}%;"></div>
-                    <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
-                </div>
-                <div class="legend-row">
-                    <span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+<span class="card-header">CONTEXTO POBLACIONAL</span>
+<div style="margin-top:15px;">
+<div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
+<div class="bar-container">
+<div class="bar-bg"><div class="bar-fill"></div></div>
+<div class="bar-marker" style="left: {g_pos}%;"></div>
+<div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
+</div>
+<div class="legend-row">
+<span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
+</div>
+</div>
+<div style="margin-top:35px;">
+<div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
+<div class="bar-container">
+<div class="bar-bg"><div class="bar-fill"></div></div>
+<div class="bar-marker" style="left: {b_pos}%;"></div>
+<div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
+</div>
+<div class="legend-row">
+<span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
+</div>
+</div>
+</div>""", unsafe_allow_html=True)
 
     # DERECHA
     with c_right:
         st.markdown(f"""<div class="card card-auto" style="border-left:5px solid {insight_bd}; justify-content:center;">
-            <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
-                <div style="font-size:1.8rem;">{alert_icon}</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+    <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
+        <div style="font-size:1.8rem;">{alert_icon}</div>
+    </div>
+</div>""", unsafe_allow_html=True)
         
         fig, ax = plt.subplots(figsize=(4, 4))
         fig.patch.set_facecolor('none')
@@ -417,14 +453,14 @@ with tab1:
         prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
         
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
-            <span class="card-header" style="justify-content:center; margin-bottom:20px;">PROBABILIDAD IA{prob_help}</span>
-            <div style="position:relative; display:inline-block; margin: auto;">
-                {chart_html}
-                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
-                    {prob*100:.1f}%
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+    <span class="card-header" style="justify-content:center; margin-bottom:20px;">PROBABILIDAD IA{prob_help}</span>
+    <div style="position:relative; display:inline-block; margin: auto;">
+        {chart_html}
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
+            {prob*100:.1f}%
+        </div>
+    </div>
+</div>""", unsafe_allow_html=True)
 
 with tab2:
     st.write("")
@@ -445,10 +481,10 @@ with tab2:
     chart_html = fig_to_html(fig)
     plt.close(fig)
     st.markdown(f"""<div class="card">
-    <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
-    <span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
-    {chart_html}
-    </div>""", unsafe_allow_html=True)
+<h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
+<span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
+{chart_html}
+</div>""", unsafe_allow_html=True)
 
 with tab3:
     st.write("")

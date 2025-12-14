@@ -166,7 +166,6 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # El modelo ahora recibe el BMI calculado (X[1])
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -212,17 +211,16 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL (Limpia y Vertical) ---
+# --- 7. BARRA LATERAL ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
-    # --- GRUPO 1: GLUCOSA / INSULINA ---
+    # 1. GLUCOSA / INSULINA
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
     
-    # Resultado Índice RI
     proxy_index = glucose * insulin
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
@@ -233,13 +231,12 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---") # Separador sutil
+    st.markdown("---") 
 
-    # --- GRUPO 2: PESO / ALTURA ---
+    # 2. PESO / ALTURA
     weight = input_biomarker("Peso (kg)", 30.0, 150.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
-    # Resultado BMI
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
@@ -256,15 +253,25 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("---") # Separador sutil
+    st.markdown("---") 
 
-    # --- GRUPO 3: EDAD Y OTROS ---
+    # 3. EDAD Y FACTORES
     age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
     
     st.write("")
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
-        dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
+        
+        # --- AQUI ESTA EL CAMBIO SOLICITADO ---
+        dpf_help = """
+        Guía de valores aproximada:
+        • 0.0 - 0.2: Sin antecedentes.
+        • 0.2 - 0.5: Antecedentes lejanos.
+        • 0.5 - 0.8: 1 Pariente de primer grado.
+        • > 0.8: Antecedentes severos o múltiples.
+        """
+        dpf = st.slider("Antecedentes familiares (DPF – escala orientativa)", 0.0, 2.5, 0.5, help=dpf_help)
+        st.caption("Interpretación aproximada basada en el conjunto de datos.")
 
 # --- 8. MAIN ---
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -283,7 +290,7 @@ with tab1:
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
     
-    # CÁLCULO FIABILIDAD
+    # CONFIANZA
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
         conf_text = "ALTA"
@@ -305,7 +312,7 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # LÓGICA ALERTAS
+    # ALERTAS
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -347,7 +354,6 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
-        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">

@@ -16,18 +16,15 @@ st.set_page_config(
 CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
-# Color gris para el borde del tirador del slider
 SLIDER_GRAY = "#BDC3C7"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
 st.markdown(f"""
     <style>
-    /* Ocultar elementos base */
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
-    /* CONTENEDOR PRINCIPAL */
     .block-container {{
         max-width: 1250px; 
         padding-top: 2rem;
@@ -35,64 +32,53 @@ st.markdown(f"""
         margin: 0 auto;
     }}
     
-    /* LOGO */
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* ==================================================================
-       ESTILO SLIDER UMBRAL (FONDO ROSA SUTIL + LÍNEA GRIS)
-       ================================================================== */
+    /* === ESTILO SLIDER UMBRAL === */
     .stMain .stSlider {{
-        /* Fondo Rosa muy suave (rgba 233,127,135 con opacidad 0.1) */
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
         border-radius: 12px;
         margin-bottom: 25px;
         border: none !important;
-        box-shadow: none !important;
     }}
-    
-    /* TÍTULO DEL SLIDER */
     .stMain .stSlider label p {{
         font-weight: 700 !important;
-        font-size: 0.75rem !important; /* Tamaño pequeño */
-        color: #999 !important;        /* Color Gris suave */
+        font-size: 0.75rem !important;
+        color: #999 !important;
         text-transform: uppercase;
         letter-spacing: 1px;
     }}
-    
-    /* VALOR DEL SLIDER */
     .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
          color: {CEMP_DARK} !important; 
          font-weight: 800 !important;
          font-size: 1rem !important;
     }}
-
-    /* BARRA Y TIRADOR */
     .stMain .stSlider [role="slider"] {{
-        background-color: {SLIDER_GRAY} !important;
-        border: 2px solid white !important; 
+        background-color: white !important;
+        border: 2px solid {SLIDER_GRAY} !important; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }}
     .stMain .stSlider > div > div > div > div {{
-        background: {SLIDER_GRAY} !important;
-        color: {SLIDER_GRAY} !important;
+        background: white !important;
+        color: white !important;
     }}
     .stMain .stSlider > div > div > div > div > div {{
-         background-color: rgba(0, 0, 0, 0.05) !important;
+         background-color: rgba(255, 255, 255, 0.5) !important;
     }}
-    /* ================================================================== */
 
-    /* ESTILO PARA LA BARRA LATERAL (INPUTS) */
+    /* === ESTILO INPUTS BARRA LATERAL === */
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px;
         font-size: 0.9rem;
         text-align: center;
         color: {CEMP_DARK};
         font-weight: bold;
+        border-radius: 8px;
     }}
 
-    /* TARJETAS ESTÁNDAR */
+    /* === TARJETAS === */
     .card {{
         background-color: white;
         border-radius: 12px;
@@ -116,14 +102,12 @@ st.markdown(f"""
         display: block;
     }}
 
-    /* KPI SIDEBAR */
     .kpi-box {{
         background: white; border-left: 4px solid {CEMP_PINK};
         padding: 12px; border-radius: 6px; margin-bottom: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }}
     
-    /* BARRAS DE PROGRESO */
     .bar-container {{
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
@@ -145,7 +129,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPER (IMÁGENES) ---
+# --- 4. HELPER ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -162,60 +146,32 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. FUNCION HELPER PARA INPUTS SINCRONIZADOS (CORREGIDA) ---
+# --- 6. INPUTS SINCRONIZADOS ---
 def input_biomarker(label, min_val, max_val, default_val, key):
     st.markdown(f"**{label}**")
-    c1, c2 = st.columns([3, 1])
+    c1, c2 = st.columns([2.5, 1])
     
-    # 1. Determinar el tipo de dato (Entero o Decimal)
-    # Si default_val es float (ej: 28.5), el paso será 0.1, si es int (ej: 120), será 1
     input_type = type(default_val)
-    step = 0.1 if input_type == float else 1
-    
-    # Asegurar que min y max sean del mismo tipo
     min_val = input_type(min_val)
     max_val = input_type(max_val)
+    step = 0.1 if input_type == float else 1
 
-    # 2. Inicializar estado maestro si no existe
     if key not in st.session_state:
         st.session_state[key] = default_val
 
-    # 3. Callbacks de Sincronización Bidireccional
-    # El truco: Cuando uno cambia, forzamos la actualización de la variable del OTRO
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
-        st.session_state[f"{key}_box"] = st.session_state[f"{key}_slider"]
-
-    def update_from_box():
-        # Clamp para evitar errores si el usuario escribe un número fuera de rango
-        val = st.session_state[f"{key}_box"]
+    
+    def update_from_input():
+        val = st.session_state[f"{key}_input"]
         if val < min_val: val = min_val
         if val > max_val: val = max_val
-        
         st.session_state[key] = val
-        st.session_state[f"{key}_slider"] = val
 
-    # 4. Renderizar Widgets
     with c1:
-        st.slider(
-            label="",
-            min_value=min_val, max_value=max_val,
-            value=st.session_state[key], # Lee del estado maestro
-            step=step,
-            key=f"{key}_slider",
-            on_change=update_from_slider, # Llama a la función al mover
-            label_visibility="collapsed"
-        )
+        st.slider(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed")
     with c2:
-        st.number_input(
-            label="",
-            min_value=min_val, max_value=max_val,
-            value=st.session_state[key], # Lee del estado maestro
-            step=step,
-            key=f"{key}_box",
-            on_change=update_from_box, # Llama a la función al escribir
-            label_visibility="collapsed"
-        )
+        st.number_input(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed")
     return st.session_state[key]
 
 # --- 7. BARRA LATERAL ---
@@ -225,10 +181,8 @@ with st.sidebar:
     st.write("")
     
     st.markdown("### 🧬 Biomarcadores")
-    
-    # Inputs sincronizados (Enteros y Decimales manejados automáticamente)
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc")
-    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi") # Float
+    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi") 
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins")
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
     
@@ -238,21 +192,16 @@ with st.sidebar:
         dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
     st.markdown("---")
-    
-    # KPIs
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
-    
 
-# --- 8. INTERFAZ PRINCIPAL ---
-
+# --- 8. MAIN ---
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
-# --- PESTAÑA 1 ---
 with tab1:
     st.write("")
     
@@ -264,6 +213,22 @@ with tab1:
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
     
+    # --- CÁLCULO INTELIGENTE DE CONFIANZA ---
+    # Calculamos cuán lejos está la probabilidad del umbral que has elegido.
+    distancia_al_corte = abs(prob - threshold)
+    
+    # Si está a menos de un 5% de distancia, es una "zona gris" peligrosa.
+    if distancia_al_corte > 0.15:
+        conf_text = "Alta"
+        conf_color = GOOD_TEAL
+    elif distancia_al_corte > 0.05:
+        conf_text = "Media"
+        conf_color = "#F39C12" # Naranja
+    else:
+        conf_text = "Baja"
+        conf_color = CEMP_PINK # Rojo alerta
+
+    # Estilos de riesgo
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
     risk_icon = "🔴" if is_high else "🟢"
@@ -280,9 +245,8 @@ with tab1:
     # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
-    # === IZQUIERDA ===
+    # IZQUIERDA
     with c_left:
-        # Ficha Paciente
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -297,7 +261,6 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-        # Contexto Poblacional
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
@@ -327,9 +290,8 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-    # === DERECHA ===
+    # DERECHA
     with c_right:
-        # Hallazgos
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
     <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -338,7 +300,6 @@ with tab1:
     </div>
 </div>""", unsafe_allow_html=True)
         
-        # Probabilidad IA
         fig, ax = plt.subplots(figsize=(4, 4))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -346,6 +307,7 @@ with tab1:
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
+        # AQUI MOSTRAMOS LA CONFIANZA DINÁMICA
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
     <span class="card-header" style="margin-bottom:20px;">PROBABILIDAD IA</span>
     <div style="position:relative; display:inline-block; margin: auto;">
@@ -354,16 +316,16 @@ with tab1:
             {prob*100:.1f}%
         </div>
     </div>
-    <div style="font-size:0.8rem; color:#888; margin-top:20px;">Confianza: <strong>Alta</strong> <br> Umbral: {threshold}</div>
+    <div style="font-size:0.8rem; color:#888; margin-top:20px;">
+        Confianza del Modelo: <strong style="color:{conf_color}">{conf_text}</strong>
+    </div>
 </div>""", unsafe_allow_html=True)
 
-# --- TAB 2: SHAP ---
 with tab2:
     st.write("")
     features = ["Glucosa", "BMI", "Edad", "Insulina"]
     vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
     colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
-    
     fig, ax = plt.subplots(figsize=(8, 4))
     fig.patch.set_facecolor('none')
     ax.set_facecolor('none')
@@ -377,14 +339,12 @@ with tab2:
     ax.tick_params(axis='y', labelsize=10, labelcolor=CEMP_DARK)
     chart_html = fig_to_html(fig)
     plt.close(fig)
-
     st.markdown(f"""<div class="card">
 <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
 <span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
 {chart_html}
 </div>""", unsafe_allow_html=True)
 
-# --- TAB 3: PROTOCOLO ---
 with tab3:
     st.write("")
     st.info("💡 Módulo de recomendaciones clínicas y generación de informes.")

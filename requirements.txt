@@ -4,5 +4,5 @@ numpy
 joblib
 shap
 matplotlib
-scikit-learn
-imbalanced-learn # Si estás usando imblearn.pipeline
+scikit-learn==1.6.1
+imbalanced-learn==0.14.0

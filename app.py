@@ -37,6 +37,32 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
     
+    /* === ESTILO ESPECIAL PARA EL SLIDER DEL UMBRAL (CAJA ROSA) === */
+    /* Apuntamos solo a los sliders que están en el panel principal (no sidebar) */
+    section.main div[data-testid="stSlider"] {{
+        background-color: {CEMP_PINK};
+        padding: 20px 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(233, 127, 135, 0.3);
+        margin-bottom: 25px;
+    }}
+    /* Color del texto del label a BLANCO */
+    section.main div[data-testid="stSlider"] label p {{
+        color: white !important;
+        font-weight: bold;
+        font-size: 1.1rem !important;
+        letter-spacing: 0.5px;
+    }}
+    /* Color de los numeritos min/max a BLANCO */
+    section.main div[data-testid="stSlider"] div[data-testid="stMarkdownContainer"] p {{
+        color: white !important;
+        opacity: 0.9;
+    }}
+    /* Intentar forzar color blanco en elementos del slider (depende del navegador) */
+    section.main div[data-testid="stSlider"] div[role="slider"] {{
+        background-color: white !important;
+    }}
+    
     /* TARJETAS (CARD) */
     .card {{
         background-color: white;
@@ -105,7 +131,6 @@ def fig_to_html(fig):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -123,12 +148,6 @@ with st.sidebar:
     insulin = st.slider("Insulina (mu U/ml)", 0, 600, 100)
     age = st.slider("Edad (años)", 18, 90, 45)
     
-    # --- UMBRAL (MOVIDO AQUÍ PARA VISIBILIDAD) ---
-    st.write("")
-    with st.expander("⚙️ Calibración del Modelo (IA)", expanded=True):
-        threshold = st.slider("Umbral de Decisión", 0.0, 1.0, 0.27, 0.01, help="Modifica la sensibilidad de detección de riesgo.")
-        st.caption("Un umbral más bajo aumenta la sensibilidad (detecta más casos).")
-
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
         dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
@@ -143,21 +162,7 @@ with st.sidebar:
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
     
 
-# --- 7. LÓGICA PRINCIPAL ---
-input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
-prob = st.session_state.model.predict_proba(input_data)[0][1]
-
-# USAMOS EL UMBRAL DEL SLIDER
-is_high = prob > threshold 
-
-# Colores y Textos dinámicos
-risk_color = CEMP_PINK if is_high else GOOD_TEAL
-risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
-risk_icon = "🔴" if is_high else "🟢"
-risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
-risk_border = CEMP_PINK if is_high else GOOD_TEAL
-
-# --- 8. INTERFAZ PRINCIPAL ---
+# --- 7. INTERFAZ PRINCIPAL ---
 
 # Título
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -169,7 +174,22 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # Generar alertas texto
+    # === 1. UMBRAL DE DECISIÓN (CAJA ROSA) ===
+    # Este slider heredará automáticamente el estilo CSS definido arriba (Fondo rosa, letras blancas)
+    threshold = st.slider("UMBRAL DE DECISIÓN CLÍNICA (SENSITIVITY ADJUSTMENT)", 0.0, 1.0, 0.27, 0.01)
+
+    # --- LÓGICA DE CÁLCULO (Se ejecuta después del slider) ---
+    input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
+    prob = st.session_state.model.predict_proba(input_data)[0][1]
+    is_high = prob > threshold # Usamos el umbral dinámico
+    
+    # Colores dinámicos
+    risk_color = CEMP_PINK if is_high else GOOD_TEAL
+    risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
+    risk_icon = "🔴" if is_high else "🟢"
+    risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
+    risk_border = CEMP_PINK if is_high else GOOD_TEAL
+    
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -177,14 +197,13 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # Layout: Izquierda (Ancha) - Derecha (Estrecha)
+    # === LAYOUT: 2 COLUMNAS (IZQUIERDA ANCHA / DERECHA ESTRECHA) ===
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
-    # === COLUMNA IZQUIERDA ===
+    # === COLUMNA IZQUIERDA (EXPEDIENTE + CONTEXTO) ===
     with c_left:
         
-        # 1. FICHA PACIENTE (DISEÑO HORIZONTAL CLÁSICO)
-        # Todo el HTML pegado a la izquierda para evitar el bug de las "cajitas"
+        # FICHA PACIENTE (DISEÑO SOLICITADO: ICONO IZQ, BADGE DER)
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:#F0F2F5; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -199,8 +218,7 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-        # 2. CONTEXTO POBLACIONAL (HTML LIMPIO SIN SANGRÍA)
-        # Calculo posiciones marcadores
+        # CONTEXTO POBLACIONAL (HTML COMPACTO SIN ESPACIOS)
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
@@ -230,10 +248,10 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-    # === COLUMNA DERECHA ===
+    # === COLUMNA DERECHA (HALLAZGOS + PROBABILIDAD) ===
     with c_right:
         
-        # 1. HALLAZGOS Y ESTADO
+        # HALLAZGOS
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
     <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -242,7 +260,7 @@ with tab1:
     </div>
 </div>""", unsafe_allow_html=True)
         
-        # 2. PROBABILIDAD IA (Donut)
+        # PROBABILIDAD IA
         fig, ax = plt.subplots(figsize=(3, 3)) 
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -251,8 +269,8 @@ with tab1:
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        # HTML pegado a la izquierda para evitar error de cajitas
-        st.markdown(f"""<div class="card" style="text-align:center; align-items:center; justify-content:center;">
+        # Usamos CSS para forzar que esta tarjeta crezca y ocupe el espacio restante visualmente si es necesario
+        st.markdown(f"""<div class="card" style="text-align:center; align-items:center; justify-content:center; flex-grow:1;">
 <span class="card-header" style="margin-bottom:15px;">PROBABILIDAD IA</span>
 <div style="position:relative; display:inline-block; margin: auto;">
 {chart_html}

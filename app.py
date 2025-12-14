@@ -100,7 +100,7 @@ st.markdown(f"""
         font-weight: 800;
     }}
     
-    /* === NUEVO: CAJA LEYENDA DPF (CORREGIDA) === */
+    /* === CAJA LEYENDA DPF === */
     .legend-box {{
         background-color: #F0F2F5;
         border-radius: 8px;
@@ -188,7 +188,6 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # El modelo ahora recibe el BMI calculado (X[1])
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -234,17 +233,16 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL (Limpia y Vertical) ---
+# --- 7. BARRA LATERAL ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
-    # --- GLUCOSA / INSULINA ---
+    # --- 1. METABÓLICOS ---
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
     
-    # Resultado Índice RI
     proxy_index = glucose * insulin
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
@@ -255,16 +253,16 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---") # Separador sutil
+    st.markdown("---") 
 
-    # --- PESO / ALTURA ---
+    # --- 2. ANTROPOMÉTRICOS ---
     weight = input_biomarker("Peso (kg)", 30.0, 150.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
-    # Resultado BMI (AHORA EN ROSA CEMP_PINK)
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
+    # BMI Box en ROSA
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
@@ -278,30 +276,57 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("---") # Separador sutil
+    st.markdown("---") 
 
-    # --- OTROS FACTORES (SIN EXPANDER) ---
-    age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
+    # --- 3. PACIENTE (EDAD Y EMBARAZOS AGRUPADOS) ---
+    c_age, c_preg = st.columns(2)
     
-    st.markdown("---") # Separador sutil
+    # Edad (sin slider para ahorrar espacio horizontal si prefieres, o con slider pequeño)
+    # Aquí uso number_input directo para que quepan bien dos columnas, o la función custom si cabe.
+    # Dado que input_biomarker usa columnas internas, mejor no anidar columnas.
+    # Vamos a ponerlos secuenciales pero visualmente pegados.
+    
+    age = input_biomarker("Edad (años)", 18, 90, 45, "age")
+    pregnancies = input_biomarker("Embarazos", 0, 15, 1, "preg")
+    
+    st.markdown("---") # Separador para aislar DPF
 
-    pregnancies = st.slider("Embarazos", 0, 15, 1)
+    # --- 4. DPF CON BARRA DE COLOR DINÁMICA ---
+    # Título
+    st.markdown("**Antecedentes Familiares (DPF)**")
     
-    st.write("") # Espacio
+    # Slider
+    if 'dpf' not in st.session_state: st.session_state.dpf = 0.5
+    dpf = st.slider("DPF", 0.0, 2.5, st.session_state.dpf, label_visibility="collapsed")
+    st.session_state.dpf = dpf
+
+    # Lógica de Color Dinámico
+    if dpf < 0.2:
+        bar_color = GOOD_TEAL      # Verde
+    elif dpf < 0.5:
+        bar_color = "#D4E157"      # Lima/Amarillo
+    elif dpf < 0.8:
+        bar_color = "#FFB74D"      # Naranja
+    else:
+        bar_color = CEMP_PINK      # Rojo/Rosa
+
+    # Barra Visual de Progreso
+    st.markdown(f"""
+    <div style="width:100%; background-color:#F0F2F5; border-radius:4px; height:8px; margin-top:-10px; margin-bottom:10px;">
+        <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease;"></div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # DPF CON LEYENDA VISIBLE DEBAJO
-    dpf = st.slider("Antecedentes familiares (DPF – escala orientativa)", 0.0, 2.5, 0.5)
-    
+    # Leyenda Estática
     st.markdown(f"""
     <div class="legend-box">
-        <span class="legend-title">Guía de valores aproximada:</span>
+        <span class="legend-title">Guía de interpretación:</span>
         <ul>
-            <li><b>0.0 - 0.2:</b> Sin antecedentes conocidos.</li>
-            <li><b>0.2 - 0.5:</b> Antecedentes lejanos (abuelos/tíos).</li>
-            <li><b>0.5 - 0.8:</b> 1 Pariente de primer grado (padre/hermano).</li>
-            <li><b>> 0.8:</b> Antecedentes familiares severos o múltiples.</li>
+            <li><b style="color:{GOOD_TEAL}">0.0 - 0.2:</b> Sin antecedentes.</li>
+            <li><b style="color:#D4E157">0.2 - 0.5:</b> Antecedentes lejanos.</li>
+            <li><b style="color:#FFB74D">0.5 - 0.8:</b> 1 Pariente primer grado.</li>
+            <li><b style="color:{CEMP_PINK}">> 0.8:</b> Antecedentes múltiples.</li>
         </ul>
-        <div style="margin-top:8px; font-style:italic; font-size:0.7rem;">* Interpretación orientativa basada en el conjunto de datos.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -387,7 +412,6 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
-        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">

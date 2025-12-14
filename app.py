@@ -14,7 +14,7 @@ st.set_page_config(
 
 # --- 2. COLORES ---
 CEMP_PINK = "#E97F87"
-CEMP_DARK = "#2C3E50" # Azul muy oscuro
+CEMP_DARK = "#2C3E50" # Azul muy oscuro (Casi negro profesional)
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -49,9 +49,8 @@ st.markdown(f"""
     }}
 
     /* === ESTILO DEL DESPLEGABLE (EXPANDER) - FORZAR ROSA === */
-    /* Apuntamos directamente a la etiqueta <summary> que es la cabecera del desplegable */
     div[data-testid="stExpander"] details > summary {{
-        background-color: rgba(233, 127, 135, 0.1) !important; /* EL ROSITA TRANSPARENTE */
+        background-color: rgba(233, 127, 135, 0.1) !important; /* El rosita transparente */
         border: 1px solid rgba(233, 127, 135, 0.2) !important;
         border-radius: 8px !important;
         color: {CEMP_DARK} !important;
@@ -59,19 +58,16 @@ st.markdown(f"""
         transition: background-color 0.3s;
     }}
     
-    /* Efecto al pasar el ratón por encima (un poco más oscuro) */
     div[data-testid="stExpander"] details > summary:hover {{
         background-color: rgba(233, 127, 135, 0.2) !important;
         color: {CEMP_DARK} !important;
     }}
 
-    /* Asegurar que el icono de la flecha también sea del color correcto */
     div[data-testid="stExpander"] details > summary svg {{
         fill: {CEMP_DARK} !important;
         color: {CEMP_DARK} !important;
     }}
     
-    /* El contenido interior del desplegable */
     div[data-testid="stExpander"] details[open] > div {{
         border-left: 1px solid rgba(233, 127, 135, 0.2);
         border-right: 1px solid rgba(233, 127, 135, 0.2);
@@ -231,6 +227,7 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
 
 # --- 7. BARRA LATERAL ---
 with st.sidebar:
+    # LOGO: D(negro) IA(rosa) BETES(negro) .(gris) NME(rosa)
     st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
@@ -280,7 +277,7 @@ with st.sidebar:
     
     st.markdown("---") 
 
-    # 4. DPF
+    # 4. DPF (CON SINCRONIZACIÓN)
     dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf")
 
     if dpf <= 0.15:
@@ -315,10 +312,50 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON ESTILO ROSA FORZADO ---
+    # --- UMBRAL CON GRÁFICA DINÁMICA ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
-        st.caption("Permite calibrar el modelo priorizando la detección de casos (mayor sensibilidad) o la precisión (mayor especificidad).")
-        threshold = st.slider("Umbral", 0.0, 1.0, 0.31, 0.01, label_visibility="collapsed")
+        c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
+        
+        with c_calib_1:
+            st.caption("Permite calibrar el modelo priorizando la detección de casos (mayor sensibilidad) o la precisión (mayor especificidad).")
+            threshold = st.slider("Umbral", 0.0, 1.0, 0.31, 0.01, label_visibility="collapsed")
+            
+            if threshold < 0.2:
+                st.warning("⚠️ Alta Sensibilidad: Detectarás casi todos los casos, pero aumentan los falsos positivos.")
+            elif threshold > 0.6:
+                st.warning("⚠️ Alta Especificidad: Solo avisará en casos muy claros, riesgo de no detectar positivos.")
+            else:
+                st.info("✅ Zona Equilibrada: Balance óptimo entre detección y precisión.")
+
+        with c_calib_2:
+            # Gráfica de densidades
+            x = np.linspace(0, 1, 200)
+            y_sanos = np.exp(-((x - 0.25)**2) / (2 * 0.15**2)) 
+            y_enfermos = np.exp(-((x - 0.75)**2) / (2 * 0.18**2)) * 0.9
+            
+            fig_calib, ax_calib = plt.subplots(figsize=(6, 1.8))
+            fig_calib.patch.set_facecolor('none')
+            ax_calib.set_facecolor('none')
+            
+            ax_calib.fill_between(x, y_sanos, color=GOOD_TEAL, alpha=0.2, label="Sanos")
+            ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.2, label="Riesgo")
+            ax_calib.plot(x, y_sanos, color=GOOD_TEAL, lw=1)
+            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=1)
+            
+            # Línea del umbral dinámica
+            ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2)
+            ax_calib.text(threshold + 0.02, 0.9, "Umbral", color=CEMP_DARK, fontsize=8, transform=ax_calib.get_xaxis_transform())
+
+            ax_calib.set_yticks([])
+            ax_calib.set_xticks([0, 0.5, 1])
+            ax_calib.spines['top'].set_visible(False)
+            ax_calib.spines['right'].set_visible(False)
+            ax_calib.spines['left'].set_visible(False)
+            ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
+            ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
+            
+            st.pyplot(fig_calib, use_container_width=True)
+            plt.close(fig_calib)
 
     # LÓGICA IA
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]

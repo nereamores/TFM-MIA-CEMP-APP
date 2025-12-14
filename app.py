@@ -38,48 +38,31 @@ st.markdown(f"""
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* ==================================================================
-       ESTILO ESPECIAL PARA EL SLIDER DEL UMBRAL (PANEL PRINCIPAL)
+       ESTILO NUEVO PARA EL SLIDER DEL UMBRAL (CAJA BLANCA CON BORDE ROSA)
        ================================================================== */
-    /* 1. El contenedor del slider: Tarjeta Rosa "Difuminada" */
-    section.main [data-testid="stSlider"] {{
-        background-color: {CEMP_PINK}; /* Color rosita corporativo */
-        padding: 25px 30px; /* Relleno para que parezca una tarjeta */
-        border-radius: 15px;
-        /* Sombra suave rosada para el efecto "difuminado" */
-        box-shadow: 0 8px 20px rgba(233, 127, 135, 0.25); 
-        margin-bottom: 30px;
-        border: none;
+    /* Apuntamos al contenedor del slider en el área principal */
+    .stMain .stSlider {{
+        background-color: white;
+        padding: 20px 25px;
+        border-radius: 12px;
+        /* Sombra suave y borde sutil como las otras tarjetas */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.04);
+        /* EL DETALLE CLAVE: Borde grueso rosa a la izquierda */
+        border-left: 5px solid {CEMP_PINK} !important;
+        margin-bottom: 25px;
     }}
-    
-    /* 2. Textos (Etiqueta y Valores) en BLANCO */
-    section.main [data-testid="stSlider"] label p {{
-        color: white !important;
+    /* Aseguramos que el texto de la etiqueta se vea bien y destacado */
+    .stMain .stSlider label p {{
         font-weight: 700 !important;
-        font-size: 1.1rem !important;
+        font-size: 1rem !important;
+        color: {CEMP_DARK} !important;
+        text-transform: uppercase;
         letter-spacing: 0.5px;
-    }}
-    section.main [data-testid="stSlider"] [data-testid="stMarkdownContainer"] p {{
-         color: white !important;
-         opacity: 0.9;
-    }}
-
-    /* 3. La Barra y el Tirador en BLANCO */
-    /* El tirador (círculo) */
-    section.main [data-testid="stSlider"] [role="slider"] {{
-        background-color: white !important;
-        border: 2px solid white !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }}
-    /* La línea de la barra */
-    section.main [data-testid="stSlider"] .stSlider > div > div > div > div {{
-         background: rgba(255, 255, 255, 0.5) !important; /* Parte vacía semitransparente */
-    }}
-     section.main [data-testid="stSlider"] .stSlider > div > div > div > div > div {{
-         background: white !important; /* Parte llena blanca sólida */
     }}
     /* ================================================================== */
     
-    /* TARJETAS ESTÁNDAR (BLANCAS) */
+    /* TARJETAS ESTÁNDAR */
     .card {{
         background-color: white;
         border-radius: 12px;
@@ -152,7 +135,7 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. BARRA LATERAL (SIN CAMBIOS DE ESTILO) ---
+# --- 6. BARRA LATERAL ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
@@ -189,9 +172,8 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # === UMBRAL DE DECISIÓN (ESTE ES EL QUE SE VERÁ ROSA) ===
-    # El CSS lo detectará automáticamente y le aplicará el estilo de tarjeta rosa.
-    threshold = st.slider("UMBRAL DE DECISIÓN CLÍNICA (SENSITIVITY ADJUSTMENT)", 0.0, 1.0, 0.31, 0.01)
+    # === UMBRAL DE DECISIÓN (AHORA EN CAJA BLANCA CON BORDE ROSA) ===
+    threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
 
     # --- LÓGICA ---
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
@@ -217,7 +199,7 @@ with tab1:
     # === COLUMNA IZQUIERDA ===
     with c_left:
         # FICHA PACIENTE
-        st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center;">
+        st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:#F0F2F5; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
 <div>

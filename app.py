@@ -25,7 +25,7 @@ st.markdown(f"""
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
-    /* CONTENEDOR PRINCIPAL: Ancho controlado para que no se vea gigante en pantallas grandes */
+    /* CONTENEDOR PRINCIPAL */
     .block-container {{
         max-width: 1250px; 
         padding-top: 2rem;
@@ -45,20 +45,24 @@ st.markdown(f"""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
-        height: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: space-between; /* Esto ayuda a distribuir el espacio */
     }}
     
-    /* HEADER DE LAS TARJETAS (TIPOGRAFÍA UNIFICADA) */
+    /* CLASE PARA IGUALAR ALTURAS (Opcional, visualmente) */
+    .card-tall {{
+        min-height: 320px; /* Forzamos una altura mínima para igualar Probabilidad y Contexto */
+    }}
+
+    /* HEADER UNIFICADO DE LAS TARJETAS */
     .card-header {{
         color: #999;
         font-size: 0.75rem;
         font-weight: bold;
         letter-spacing: 1px;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         display: block;
     }}
 
@@ -137,9 +141,9 @@ with st.sidebar:
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
     
     st.markdown("---")
-    # AQUÍ ESTÁ LA NUEVA FUNCIONALIDAD: EL UMBRAL
-    st.markdown("### ⚙️ Configuración Modelo")
-    threshold = st.slider("Umbral de Decisión Clínica", 0.0, 1.0, 0.27, 0.01, help="Ajuste la sensibilidad del modelo. Un valor más bajo detecta más casos (mayor sensibilidad).")
+    # CONFIGURACIÓN UMBRAL
+    st.markdown("### ⚙️ Configuración")
+    threshold = st.slider("Umbral de Decisión", 0.0, 1.0, 0.27, 0.01, help="Ajusta la sensibilidad del modelo.")
 
 # --- 7. LÓGICA PRINCIPAL ---
 input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
@@ -175,32 +179,30 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # Layout: Izquierda (Contexto) - Derecha (Resultados)
+    # Layout: Izquierda (Ancha) - Derecha (Estrecha)
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # === COLUMNA IZQUIERDA ===
     with c_left:
         
-        # 1. FICHA PACIENTE
-        # Icono movido abajo a la derecha con flexbox
+        # 1. FICHA PACIENTE (Icono abajo a la derecha)
         st.markdown(f"""<div class="card">
     <div>
         <span class="card-header">EXPEDIENTE MÉDICO</span>
         <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.8rem;">Paciente #8842-X</h2>
         <div style="font-size:0.9rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
     </div>
-    <div style="align-self: flex-end; margin-top:10px;">
+    <div style="display:flex; justify-content:flex-end; margin-top:10px;">
         <div style="background:#F0F2F5; width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:{CEMP_DARK};">👤</div>
     </div>
 </div>""", unsafe_allow_html=True)
 
-        # 2. CONTEXTO POBLACIONAL
-        # Calculo posiciones marcadores
+        # 2. CONTEXTO POBLACIONAL (Arreglado: Sin sangría)
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
-        # HTML pegado a la izquierda (SIN IDENTACIÓN) para evitar errores de renderizado
-        st.markdown(f"""<div class="card">
+        # Clase 'card-tall' para intentar igualar altura
+        st.markdown(f"""<div class="card card-tall">
 <span class="card-header">CONTEXTO POBLACIONAL</span>
 
 <div style="margin-top:15px;">
@@ -256,10 +258,11 @@ with tab1:
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        st.markdown(f"""<div class="card" style="text-align:center; align-items:center; justify-content:center;">
+        # Clase 'card-tall' y flexbox para centrar verticalmente
+        st.markdown(f"""<div class="card card-tall" style="text-align:center; align-items:center; justify-content:center;">
     <span class="card-header" style="margin-bottom:15px;">PROBABILIDAD IA</span>
     
-    <div style="position:relative; display:inline-block; margin: 0 auto;">
+    <div style="position:relative; display:inline-block; margin: auto;">
         {chart_html}
         <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
             {prob*100:.1f}%

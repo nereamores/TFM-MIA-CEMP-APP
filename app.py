@@ -12,10 +12,9 @@ st.set_page_config(page_title="CEMP AI", page_icon="🩺", layout="wide")
 CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
-# Gradiente exacto de la imagen que te gustaba
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-# --- CSS ENTERPRISE (ESTILOS) ---
+# --- CSS ENTERPRISE ---
 st.markdown(f"""
     <style>
     #MainMenu {{visibility: hidden;}}
@@ -26,12 +25,12 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 2.2rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
     
-    /* TARJETAS (ESTILO UNIFICADO) */
+    /* TARJETAS */
     .card {{
         background-color: white;
         border-radius: 12px;
         padding: 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04); /* Sombra suave */
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
         height: 100%;
@@ -44,23 +43,24 @@ st.markdown(f"""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }}
     
-    /* BARRAS DE PROGRESO CEMP (CSS PURO) */
+    /* BARRAS DE PROGRESO (AJUSTADAS PARA ETIQUETAS) */
     .bar-container {{
         position: relative;
         width: 100%;
         margin-top: 10px;
-        margin-bottom: 30px;
+        margin-bottom: 15px; /* Reducido para que las etiquetas queden cerca */
     }}
     .bar-bg {{ 
         background: #F0F2F5; 
         height: 10px; 
         border-radius: 5px; 
         width: 100%;
-        overflow: hidden; /* Mantiene el gradiente dentro */
+        overflow: hidden; 
     }}
     .bar-fill {{ 
         height: 100%; 
         width: 100%; 
+        background: {RISK_GRADIENT};
         border-radius: 5px; 
         opacity: 0.9; 
     }}
@@ -74,7 +74,7 @@ st.markdown(f"""
         border-radius: 2px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         z-index: 10;
-        transition: left 0.3s ease; /* Movimiento suave */
+        transition: left 0.3s ease;
     }}
     .bar-txt {{ 
         position: absolute; 
@@ -89,10 +89,19 @@ st.markdown(f"""
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }}
     
+    /* ETIQUETAS DEBAJO DE LAS BARRAS */
+    .legend-row {{
+        display: flex; 
+        justify-content: space-between; 
+        font-size: 0.65rem; 
+        color: #999;
+        margin-top: -5px;
+    }}
+    
     </style>
 """, unsafe_allow_html=True)
 
-# --- HELPER: CONVERTIR GRÁFICOS MATPLOTLIB A HTML ---
+# --- HELPER: GRÁFICOS A HTML ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -100,7 +109,7 @@ def fig_to_html(fig):
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
-# --- MODELO MOCK ---
+# --- MODELO ---
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
@@ -128,7 +137,6 @@ with st.sidebar:
     st.markdown("---")
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
-    # HTML en una sola línea para evitar errores de identación
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888">BMI</div></div>', unsafe_allow_html=True)
 
@@ -147,11 +155,11 @@ with c_bad: st.markdown(f"<div style='text-align:right; margin-top:10px; color:{
 
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
-# --- TAB 1: DASHBOARD ---
+# --- TAB 1 ---
 with tab1:
     st.write("")
     
-    # 1. HALLAZGOS Y FICHA
+    # 1. FICHA Y HALLAZGOS
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -160,9 +168,7 @@ with tab1:
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
     col_top1, col_top2 = st.columns(2, gap="medium")
-    
     with col_top1:
-        # String HTML sin espacios al inicio de cada línea
         st.markdown(f"""<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
     <div>
         <span style="color:#999; font-size:0.7rem; font-weight:bold;">EXPEDIENTE</span>
@@ -181,10 +187,10 @@ with tab1:
     <div style="font-size:1.5rem;">{'⚠️' if alerts else '✅'}</div>
 </div>""", unsafe_allow_html=True)
 
-    # 2. GRÁFICOS INCRUSTADOS
+    # 2. GRÁFICOS
     c_left, c_right = st.columns([1, 2], gap="medium")
     
-    # IZQUIERDA: DONUT
+    # DONUT (IZQ)
     with c_left:
         fig, ax = plt.subplots(figsize=(3, 3))
         fig.patch.set_facecolor('none')
@@ -200,41 +206,38 @@ with tab1:
     <div style="font-size:0.8rem; color:#888; margin-top:-10px;">Certeza del modelo</div>
 </div>""", unsafe_allow_html=True)
 
-    # DERECHA: CONTEXTO (BARRAS CSS CORREGIDAS)
+    # CONTEXTO POBLACIONAL (DER) - BARRAS Y ETIQUETAS DETALLADAS
     with c_right:
-        # Cálculos de posición (0 a 100%)
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
-        # AQUÍ ESTÁ EL ARREGLO: 
-        # El string HTML está pegado a la izquierda, sin sangría.
-        # Streamlit lo renderizará como gráficos visuales dentro de la caja blanca.
         st.markdown(f"""<div class="card">
 <h4 style="color:#555; margin-bottom:25px;">Contexto Poblacional</h4>
 
 <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA <span style="font-weight:normal">({glucose} mg/dL)</span></div>
 <div class="bar-container">
     <div class="bar-bg">
-        <div class="bar-fill" style="background:{RISK_GRADIENT};"></div>
+        <div class="bar-fill"></div>
     </div>
     <div class="bar-marker" style="left: {g_pos}%;"></div>
     <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
 </div>
+<div class="legend-row" style="margin-bottom:30px;">
+    <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
+</div>
 
-<div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px; margin-top:20px;">BMI <span style="font-weight:normal">({bmi})</span></div>
+<div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">BMI <span style="font-weight:normal">({bmi})</span></div>
 <div class="bar-container">
     <div class="bar-bg">
-        <div class="bar-fill" style="background:{RISK_GRADIENT};"></div>
+        <div class="bar-fill"></div>
     </div>
     <div class="bar-marker" style="left: {b_pos}%;"></div>
     <div class="bar-txt" style="left: {b_pos}%;">{bmi}</div>
 </div>
-
-<div style="display:flex; justify-content:space-between; font-size:0.6rem; color:#AAA; margin-top:10px; border-top:1px solid #EEE; padding-top:10px;">
-    <span>Sano</span>
-    <span>Riesgo</span>
-    <span>Peligro</span>
+<div class="legend-row">
+    <span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
 </div>
+
 </div>""", unsafe_allow_html=True)
 
 # --- TAB 2: SHAP ---
@@ -261,7 +264,7 @@ with tab2:
 {chart_html}
 </div>""", unsafe_allow_html=True)
 
-# --- TAB 3: PROTOCOLO ---
+# --- TAB 3: RECOMENDACIONES ---
 with tab3:
     st.write("")
     st.info("💡 Módulo de recomendaciones clínicas.")

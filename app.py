@@ -312,7 +312,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA ---
+    # --- UMBRAL CON GRÁFICA REALISTA (AJUSTE FINO: PIQUITO GRIS VISIBLE) ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
@@ -328,14 +328,15 @@ with tab1:
             # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
             x = np.linspace(-0.15, 1.25, 500)
             
-            # CLASE 0 (Gris): Pico muy alto y estrecho en 0.1
-            y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.1**2)) + \
+            # CLASE 0 (Gris): Pico muy alto en 0.1. Lo hacemos un pelín más ancho (sigma 0.11)
+            # para que se mantenga alto y se vea el piquito sobre la rosa.
+            y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
             
-            # CLASE 1 (Rosa): AQUI ESTÁ EL AJUSTE
-            # Movemos la "joroba" izquierda al 0.28/0.30 para que coincida con tu imagen
-            # y mantenemos el pico grande en el 0.68
-            y_enfermos = 0.5 * np.exp(-((x - 0.28)**2) / (2 * 0.11**2)) + \
+            # CLASE 1 (Rosa): AJUSTE CLAVE
+            # Bajamos la altura del primer hombro (en 0.28) de 0.5 a 0.35.
+            # Esto hace que la curva rosa pase "por debajo" de la gris en el umbral 0.27.
+            y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
                          1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2))

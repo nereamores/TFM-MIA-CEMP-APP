@@ -35,7 +35,7 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER UMBRAL === */
+    /* === ESTILO SLIDER UMBRAL (Panel Principal) === */
     .stMain .stSlider {{
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
@@ -130,7 +130,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPERS ---
+# --- 4. HELPERS (IMÁGENES Y TOOLTIPS) ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -139,6 +139,7 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def get_help_icon(description):
+    """Genera un pequeño icono '?' gris."""
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # --- 5. MODELO MOCK ---
@@ -150,8 +151,9 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. INPUTS SINCRONIZADOS ---
+# --- 6. INPUTS SINCRONIZADOS (VERSIÓN ROBUSTA CON HELP) ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
+    # 1. Renderizar etiqueta con icono de ayuda
     label_html = f"**{label_text}**"
     if help_text:
         label_html += get_help_icon(help_text)
@@ -159,27 +161,47 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
     
     c1, c2 = st.columns([2.5, 1])
     
+    # 2. Gestionar tipos (int vs float)
     input_type = type(default_val)
     min_val = input_type(min_val)
     max_val = input_type(max_val)
     step = 0.1 if input_type == float else 1
 
+    # 3. Inicializar estado maestro
     if key not in st.session_state:
         st.session_state[key] = default_val
 
+    # 4. CALLBACKS DE SINCRONIZACIÓN FUERTE
+    # Estos callbacks fuerzan que al cambiar uno, se actualice la variable interna del OTRO
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
+        st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] # Forzar caja
     
     def update_from_input():
         val = st.session_state[f"{key}_input"]
+        # Clamp para seguridad
         if val < min_val: val = min_val
         if val > max_val: val = max_val
         st.session_state[key] = val
+        st.session_state[f"{key}_slider"] = val # Forzar slider
 
+    # 5. Renderizar Widgets
     with c1:
-        st.slider(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed")
+        st.slider(
+            label="", min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_slider", 
+            value=st.session_state[key], # Lee del maestro
+            on_change=update_from_slider, 
+            label_visibility="collapsed"
+        )
     with c2:
-        st.number_input(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed")
+        st.number_input(
+            label="", min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_input", 
+            value=st.session_state[key], # Lee del maestro
+            on_change=update_from_input, 
+            label_visibility="collapsed"
+        )
     return st.session_state[key]
 
 # --- 7. BARRA LATERAL ---
@@ -189,6 +211,7 @@ with st.sidebar:
     st.write("")
     
     st.markdown("### 🧬 Biomarcadores")
+    # Llamamos a la función robusta con ayuda
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Nivel de azúcar en sangre en ayunas.")
     bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi", "Índice de Masa Corporal.")
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Hormona que regula la glucosa.")
@@ -259,7 +282,7 @@ with tab1:
     
     # IZQUIERDA
     with c_left:
-        # Ficha Paciente + Confianza Debajo
+        # Ficha Paciente + Confianza Debajo (Diseño solicitado)
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
     <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
         <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -312,7 +335,7 @@ with tab1:
     # DERECHA
     with c_right:
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
-    <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
+    <span class="card-header" style="color:{insight_bd};">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
         <div style="font-size:1.8rem;">{'⚠️' if alerts else '✅'}</div>
@@ -326,7 +349,7 @@ with tab1:
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        # En esta tarjeta solo dejamos el gráfico y la probabilidad, la confianza ya está arriba
+        # En esta tarjeta solo dejamos el gráfico y la probabilidad
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
     <span class="card-header" style="margin-bottom:20px;">PROBABILIDAD IA</span>
     <div style="position:relative; display:inline-block; margin: auto;">
@@ -360,7 +383,7 @@ with tab2:
     plt.close(fig)
     st.markdown(f"""<div class="card">
 <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
-<span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
+<span class="card-header">EXPLICABILIDAD DEL MODELO</span>
 {chart_html}
 </div>""", unsafe_allow_html=True)
 

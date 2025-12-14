@@ -312,7 +312,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA (Ajuste Fino "Shoulder") ---
+    # --- UMBRAL CON GRÁFICA "ESPEJO" DE LA REALIDAD ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
@@ -323,18 +323,21 @@ with tab1:
             st.info("ℹ️ **Criterio Técnico:** Se fija el umbral óptimo en **0.27** (basado en F2-Score) para maximizar la sensibilidad y minimizar falsos negativos.")
 
         with c_calib_2:
-            # --- SIMULACIÓN MATEMÁTICA CALCADA A LA REALIDAD ---
-            x = np.linspace(-0.15, 1.25, 500)
+            # --- SIMULACIÓN MATEMÁTICA DE PRECISIÓN ---
+            # Eje X extendido como en la imagen original
+            x = np.linspace(-0.2, 1.3, 500)
             
-            # 1. CLASE 0 (Gris): Pico principal en 0.1 + pequeña joroba en 0.55
-            y_sanos = 2.0 * np.exp(-((x - 0.1)**2) / (2 * 0.1**2)) + \
-                      0.6 * np.exp(-((x - 0.55)**2) / (2 * 0.18**2))
+            # 1. CLASE 0 (Gris): 
+            # Pico muy agudo y alto en 0.1, cae rápido, hombro suave en 0.45
+            y_sanos = 2.0 * np.exp(-((x - 0.1)**2) / (2 * 0.08**2)) + \
+                      0.6 * np.exp(-((x - 0.45)**2) / (2 * 0.15**2))
             
-            # 2. CLASE 1 (Rosa - REAJUSTADA PARA SER SUAVE): 
-            # - Hombro ancho y bajo en 0.3 (Amplitud baja 0.5, Sigma ancha 0.18)
-            # - Pico principal en 0.7
-            y_enfermos = 0.5 * np.exp(-((x - 0.3)**2) / (2 * 0.18**2)) + \
-                         1.5 * np.exp(-((x - 0.7)**2) / (2 * 0.15**2))
+            # 2. CLASE 1 (Rosa - REPLICADA): 
+            # - Joroba bien definida en 0.28
+            # - Valle claro alrededor de 0.4
+            # - Pico principal ancho y alto en 0.68
+            y_enfermos = 0.5 * np.exp(-((x - 0.28)**2) / (2 * 0.09**2)) + \
+                         1.45 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
             fig_calib.patch.set_facecolor('none')
@@ -342,11 +345,11 @@ with tab1:
             
             # Dibujo Clase 0 (Gris)
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
-            ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
+            ax_calib.plot(x, y_sanos, color="gray", lw=1, alpha=0.6)
             
             # Dibujo Clase 1 (Rosa)
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
-            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
+            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=1, alpha=0.6)
             
             # LÍNEA 1: ÓPTIMO (Fija 0.27 - Verde Lima)
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
@@ -354,9 +357,9 @@ with tab1:
             # LÍNEA 2: USUARIO (Móvil - Azul Oscuro)
             ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
             
-            # Limpieza
+            # Limpieza y Estilos (Ejes coinciden con la imagen)
             ax_calib.set_yticks([])
-            ax_calib.set_xlim(-0.2, 1.25)
+            ax_calib.set_xlim(-0.2, 1.3) 
             ax_calib.spines['top'].set_visible(False)
             ax_calib.spines['right'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)

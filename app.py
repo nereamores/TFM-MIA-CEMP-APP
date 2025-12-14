@@ -312,7 +312,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA (Ajustada Fina) ---
+    # --- UMBRAL CON GRÁFICA REALISTA ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
@@ -328,14 +328,15 @@ with tab1:
             # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
             x = np.linspace(-0.15, 1.25, 500)
             
-            # CLASE 0 (Gris): Pico muy alto y estrecho en 0.1, con rebote pequeño
+            # CLASE 0 (Gris): Pico muy alto y estrecho en 0.1
             y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.1**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
             
-            # CLASE 1 (Rosa): Más estrecha que antes (sigma 0.13/0.14) para no verse "gorda"
-            # Centrada en 0.7 con hombro en 0.45
-            y_enfermos = 0.6 * np.exp(-((x - 0.45)**2) / (2 * 0.13**2)) + \
-                         1.35 * np.exp(-((x - 0.7)**2) / (2 * 0.14**2))
+            # CLASE 1 (Rosa): AQUI ESTÁ EL AJUSTE
+            # Movemos la "joroba" izquierda al 0.28/0.30 para que coincida con tu imagen
+            # y mantenemos el pico grande en el 0.68
+            y_enfermos = 0.5 * np.exp(-((x - 0.28)**2) / (2 * 0.11**2)) + \
+                         1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
             fig_calib.patch.set_facecolor('none')

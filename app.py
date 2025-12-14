@@ -36,11 +36,11 @@ st.markdown(f"""
     .dashboard-card {{
         background-color: white;
         border-radius: 12px;
-        padding: 20px;
+        padding: 25px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.03); /* Sombra muy sutil */
         border: 1px solid rgba(0,0,0,0.02);
         height: 100%;
-        margin-bottom: 15px; /* Espacio inferior para que no se peguen */
+        margin-bottom: 15px;
     }}
     
     /* KPI CARDS (En Sidebar) */
@@ -87,38 +87,12 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# Función para generar el texto inteligente del rectángulo derecho
-def generar_smart_insight(glucose, bmi, insulin):
-    alerts = []
-    color = GOOD_TEAL
-    icon = "✅"
-    
-    if glucose > 120:
-        alerts.append("Hiperglucemia")
-        color = "#F39C12" # Naranja alerta
-        icon = "⚠️"
-    if glucose > 140:
-        color = CEMP_PINK # Rojo CEMP peligro
-        
-    if bmi > 30:
-        alerts.append("Obesidad G1")
-        
-    homa = (glucose * insulin) / 405
-    if homa > 2.5:
-        alerts.append("Resistencia Insulínica")
-        
-    if not alerts:
-        return "Paciente metabólicamente estable.", color, icon
-    else:
-        return " • ".join(alerts), color, icon
-
 # --- 5. BARRA LATERAL (INPUTS) ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.markdown("<p style='color:#999; font-size:0.75rem; margin-bottom:30px;'>CLINICAL DECISION SUPPORT SYSTEM</p>", unsafe_allow_html=True)
     
     st.markdown("### 🧬 Biomarcadores")
-    # Los sliders serán rosas automáticamente por el config.toml
     glucose = st.slider("Glucosa (mg/dL)", 50, 250, 120)
     bmi = st.slider("BMI (kg/m²)", 15.0, 50.0, 28.5)
     insulin = st.slider("Insulina (mu U/ml)", 0, 600, 100)
@@ -143,96 +117,71 @@ input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
 prob = st.session_state.model.predict_proba(input_data)[0][1]
 is_high = prob > 0.27
 
-# Título Principal
-st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom:5px;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
+# CABECERA PRINCIPAL (CON ESTADO)
+col_title, col_status = st.columns([3, 1])
+with col_title:
+    st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom:5px;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
+with col_status:
+    if is_high:
+         st.markdown(f"<div style='text-align:right; margin-top:20px; color:{CEMP_PINK}; font-weight:bold; font-size:1.1rem;'>🔴 RIESGO ALTO</div>", unsafe_allow_html=True)
+    else:
+         st.markdown(f"<div style='text-align:right; margin-top:20px; color:{GOOD_TEAL}; font-weight:bold; font-size:1.1rem;'>🟢 BAJO RIESGO</div>", unsafe_allow_html=True)
 
-# Pestañas
+
+# PESTAÑAS
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo Clínico"])
 
-# --- TAB 1: DASHBOARD COMPLETO ---
+# --- TAB 1: DASHBOARD COMPLETO (SIN RECTÁNGULOS FANTASMA) ---
 with tab1:
-    st.write("") # Espaciador mínimo
+    st.write("") # Un pequeño espacio para airear
     
-    # A) RECTÁNGULOS SUPERIORES (FICHA + SMART INSIGHT)
-    insight_text, insight_color, insight_icon = generar_smart_insight(glucose, bmi, insulin)
-    
-    col_top1, col_top2 = st.columns([1, 1], gap="medium")
-    
-    # 1. Ficha del Paciente (Tarjeta Superior Izquierda)
-    with col_top1:
-        st.markdown(f"""
-            <div class="dashboard-card" style="display:flex; justify-content:space-between; align-items:center; padding: 15px 25px;">
-                <div>
-                    <span style="color:#999; font-size:0.7rem; font-weight:bold; letter-spacing:1px;">EXPEDIENTE MÉDICO</span>
-                    <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.3rem;">Paciente #8842-X</h3>
-                    <div style="margin-top:5px; color:#666; font-size:0.85rem;">📅 Revisión: <b>14 Dic 2025</b></div>
-                </div>
-                <div style="background:#F0F2F5; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👤</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    # 2. Smart Insight (Tarjeta Superior Derecha)
-    with col_top2:
-        st.markdown(f"""
-            <div class="dashboard-card" style="display:flex; justify-content:space-between; align-items:center; padding: 15px 25px; border-left: 6px solid {insight_color};">
-                <div>
-                    <span style="color:{insight_color}; font-size:0.7rem; font-weight:bold; letter-spacing:1px;">HALLAZGOS CLAVE</span>
-                    <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.3;">{insight_text}</h3>
-                </div>
-                <div style="font-size:1.8rem;">{insight_icon}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # AQUÍ ESTABA EL PROBLEMA ANTES: Eliminamos cualquier espacio o columna extra entre las tarjetas de arriba y los gráficos.
-    
-    # B) GRÁFICOS PRINCIPALES (Justo debajo)
+    # --- AQUÍ ESTÁ EL CAMBIO: EMPEZAMOS DIRECTAMENTE CON LOS GRÁFICOS ---
     c_left, c_right = st.columns([1, 2], gap="medium")
     
-    # Columna Izquierda: Probabilidad (Donut Chart)
+    # 1. Columna Izquierda: Probabilidad (Donut Chart)
     with c_left:
-        st.markdown('<div class="dashboard-card" style="text-align:center;">', unsafe_allow_html=True)
-        st.markdown('<h4 style="color:#555; margin-bottom:10px;">Probabilidad IA</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="dashboard-card" style="text-align:center; display:flex; flex-direction:column; justify-content:center;">', unsafe_allow_html=True)
+        st.markdown('<h4 style="color:#555; margin-bottom:20px;">Probabilidad IA</h4>', unsafe_allow_html=True)
         
-        fig, ax = plt.subplots(figsize=(3.5, 3.5))
+        fig, ax = plt.subplots(figsize=(4, 4))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
         
         ring_color = CEMP_PINK if is_high else GOOD_TEAL
+        # Donut chart
         ax.pie([prob, 1-prob], colors=[ring_color, '#F0F0F0'], startangle=90, 
-               counterclock=False, wedgeprops=dict(width=0.12, edgecolor='white'))
+               counterclock=False, wedgeprops=dict(width=0.1, edgecolor='white'))
         
-        ax.text(0, 0, f"{prob*100:.1f}%", ha='center', va='center', fontsize=28, fontweight='bold', color=CEMP_DARK)
+        # Texto central
+        ax.text(0, 0, f"{prob*100:.1f}%", ha='center', va='center', fontsize=32, fontweight='bold', color=CEMP_DARK)
+        
         st.pyplot(fig, use_container_width=True)
-        
-        if is_high:
-            st.markdown(f"<div style='color:{CEMP_PINK}; font-weight:bold; margin-top:-10px;'>RIESGO ELEVADO</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='color:{GOOD_TEAL}; font-weight:bold; margin-top:-10px;'>BAJO RIESGO</div>", unsafe_allow_html=True)
+        st.caption("Score basado en 6 variables clínicas.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Columna Derecha: Benchmarking Poblacional (Barras con Gradiente)
+    # 2. Columna Derecha: Benchmarking Poblacional (Barras)
     with c_right:
         st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
-        st.markdown('<h4 style="color:#555; margin-bottom:20px;">Contexto Poblacional</h4>', unsafe_allow_html=True)
+        st.markdown('<h4 style="color:#555; margin-bottom:30px;">Contexto Poblacional</h4>', unsafe_allow_html=True)
         
-        # Barra Glucosa
+        # --- Barra Glucosa ---
         g_pos = min(100, max(0, (glucose - 60) / (200 - 60) * 100))
         st.markdown(f"""
-            <div style="margin-bottom:5px; font-size:0.85rem; color:#666; font-weight:bold;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
+            <div style="margin-bottom:5px; font-size:0.85rem; color:#666; font-weight:bold; letter-spacing:0.5px;">NIVEL DE GLUCOSA <span style="font-weight:normal">({glucose} mg/dL)</span></div>
             <div class="bar-bg">
                 <div class="bar-fill" style="width: 100%; background: {RISK_GRADIENT};"></div>
                 <div class="bar-marker" style="left: {g_pos}%;"></div>
                 <div class="bar-label" style="left: {g_pos}%;">{glucose}</div>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#999; margin-top:-20px; margin-bottom:25px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#999; margin-top:-20px; margin-bottom:35px;">
                 <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
             </div>
         """, unsafe_allow_html=True)
 
-        # Barra BMI
+        # --- Barra BMI ---
         b_pos = min(100, max(0, (bmi - 18) / (40 - 18) * 100))
         st.markdown(f"""
-            <div style="margin-bottom:5px; font-size:0.85rem; color:#666; font-weight:bold;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi})</span></div>
+            <div style="margin-bottom:5px; font-size:0.85rem; color:#666; font-weight:bold; letter-spacing:0.5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi})</span></div>
             <div class="bar-bg">
                 <div class="bar-fill" style="width: 100%; background: {RISK_GRADIENT};"></div>
                 <div class="bar-marker" style="left: {b_pos}%;"></div>

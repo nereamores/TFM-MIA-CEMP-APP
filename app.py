@@ -16,18 +16,17 @@ st.set_page_config(
 CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
-# Color gris para la barra deslizante
-SLIDER_GRAY = "#BDC3C7"
+# Color gris para la barra deslizante del umbral
+SLIDER_GRAY = "#BDC3C7" 
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
 st.markdown(f"""
     <style>
-    /* Ocultar elementos base */
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
-    /* CONTENEDOR PRINCIPAL */
+    /* FONDO PRINCIPAL */
     .block-container {{
         max-width: 1250px; 
         padding-top: 2rem;
@@ -39,60 +38,46 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* ==================================================================
-       ESTILO SLIDER UMBRAL (FONDO ROSA SUTIL 0.1 + BARRA GRIS)
-       ================================================================== */
+    /* === SLIDER UMBRAL (ESTILO GLASSMORPHISM ROSA) === */
     .stMain .stSlider {{
-        /* Fondo Rosa muy suave (rgba 233,127,135 con opacidad 0.1) */
         background-color: rgba(233, 127, 135, 0.1) !important;
-        padding: 20px 25px;
-        border-radius: 12px;
-        margin-bottom: 25px;
-        /* Quitamos bordes sólidos */
+        padding: 25px 30px; /* Un poco más de aire */
+        border-radius: 15px;
+        margin-bottom: 30px;
         border: none !important;
-        box-shadow: none !important;
     }}
     
-    /* 1. EL TÍTULO (Igual que los headers de abajo: Gris y Mayúsculas) */
     .stMain .stSlider label p {{
         font-weight: 700 !important;
-        font-size: 0.75rem !important; /* Tamaño pequeño como los headers */
-        color: #999 !important;        /* Color Gris suave */
+        font-size: 0.85rem !important; /* Ajuste fino de tamaño */
+        color: #777 !important;        /* Gris un poco más oscuro para legibilidad */
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
+        margin-bottom: 10px;
     }}
     
-    /* 2. EL VALOR SELECCIONADO (Oscuro y Bold para que destaque) */
     .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
-         color: {CEMP_DARK} !important; /* Gris oscuro / Negro */
-         font-weight: 800 !important;   /* Muy negrita */
-         font-size: 1rem !important;
+         color: {CEMP_DARK} !important;
+         font-weight: 800 !important;
+         font-size: 1.1rem !important;
     }}
 
-    /* 3. BARRA Y TIRADOR GRISES */
-    /* El tirador (Círculo) */
+    /* Barra y Tirador */
     .stMain .stSlider [role="slider"] {{
         background-color: {SLIDER_GRAY} !important;
-        border: 2px solid white !important; /* Un pequeño borde blanco ayuda a definirlo */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 3px solid white !important; /* Borde más grueso para resaltar */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }}
-    /* La barra llena (Progreso) */
     .stMain .stSlider > div > div > div > div {{
         background: {SLIDER_GRAY} !important;
-        color: {SLIDER_GRAY} !important;
     }}
-    /* La barra vacía (Fondo del track) - Gris muy clarito transparente */
-    .stMain .stSlider > div > div > div > div > div {{
-         background-color: rgba(0, 0, 0, 0.05) !important;
-    }}
-    /* ================================================================== */
     
-    /* TARJETAS ESTÁNDAR */
+    /* === TARJETAS === */
     .card {{
         background-color: white;
         border-radius: 12px;
         padding: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03); /* Sombra un pelín más suave y difusa */
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
         height: 100%;
@@ -101,12 +86,12 @@ st.markdown(f"""
         justify-content: center;
     }}
     
-    /* HEADER UNIFICADO DE LAS TARJETAS */
+    /* HEADER UNIFICADO (Ahora todos iguales) */
     .card-header {{
         color: #999;
-        font-size: 0.75rem;
-        font-weight: bold;
-        letter-spacing: 1px;
+        font-size: 0.7rem;
+        font-weight: 800; /* Extra Bold */
+        letter-spacing: 1.2px;
         text-transform: uppercase;
         margin-bottom: 15px;
         display: block;
@@ -119,7 +104,7 @@ st.markdown(f"""
         box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }}
     
-    /* BARRAS DE PROGRESO (Contexto) */
+    /* BARRAS DE PROGRESO */
     .bar-container {{
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
@@ -137,13 +122,21 @@ st.markdown(f"""
         box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }}
     
-    /* LEYENDA */
-    .legend-row {{ display: flex; justify-content: space-between; font-size: 0.7rem; color: #BBB; margin-top: -5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+    /* LEYENDA (Mejorada la legibilidad) */
+    .legend-row {{ 
+        display: flex; justify-content: space-between; 
+        font-size: 0.7rem; 
+        color: #888; /* Un poco más oscuro que antes */
+        margin-top: -5px; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        font-weight: 600; 
+    }}
     
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPER (IMÁGENES) ---
+# --- 4. HELPER ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -155,7 +148,6 @@ def fig_to_html(fig):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -175,12 +167,11 @@ with st.sidebar:
     
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
-        # CORREGIDO AQUÍ: Añadido 'st.'
         dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
     st.markdown("---")
     
-    # KPIs Rápidos
+    # KPIs
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
@@ -189,20 +180,18 @@ with st.sidebar:
 
 # --- 7. INTERFAZ PRINCIPAL ---
 
-# Título
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
 
-# Pestañas
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
-# --- PESTAÑA 1: DASHBOARD ---
+# --- PESTAÑA 1 ---
 with tab1:
     st.write("")
     
-    # === UMBRAL DE DECISIÓN ===
-    threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
+    # UMBRAL
+    threshold = st.slider("Umbral de Decisión Clínica (Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
 
-    # --- LÓGICA ---
+    # LÓGICA
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
@@ -220,15 +209,15 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # === LAYOUT PRINCIPAL ===
+    # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
-    # === COLUMNA IZQUIERDA ===
+    # === IZQUIERDA ===
     with c_left:
-        # FICHA PACIENTE (DISEÑO RESTAURADO: ICONO IZQUIERDA)
+        # Ficha Paciente (Avatar con fondo Teal muy suave para dar vida)
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
-<div style="background:#F0F2F5; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
+<div style="background:#E0F2F1; width:65px; height:65px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.2rem; color:{GOOD_TEAL};">👤</div>
 <div>
 <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
 <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
@@ -240,7 +229,7 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-        # CONTEXTO POBLACIONAL
+        # Contexto Poblacional
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
@@ -270,18 +259,18 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-    # === COLUMNA DERECHA ===
+    # === DERECHA ===
     with c_right:
-        # HALLAZGOS
+        # Hallazgos (Titulo unificado gris)
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
-    <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
+    <span class="card-header" style="margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
         <div style="font-size:1.8rem;">{'⚠️' if alerts else '✅'}</div>
     </div>
 </div>""", unsafe_allow_html=True)
         
-        # PROBABILIDAD IA
+        # Probabilidad IA
         fig, ax = plt.subplots(figsize=(4, 4))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')

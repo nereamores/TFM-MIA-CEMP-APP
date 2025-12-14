@@ -108,6 +108,7 @@ with st.sidebar:
     st.markdown("---")
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
+    # HTML sin espacios iniciales
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
 
@@ -141,24 +142,17 @@ with tab1:
     
     # === COLUMNA IZQUIERDA ===
     with c_left:
-        # FICHA PACIENTE (DISEÑO MEJORADO: ICONO IZQUIERDA - BADGE DERECHA)
+        # FICHA PACIENTE: HTML pegado al margen izquierdo (SIN sangría)
         st.markdown(f"""<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding: 25px;">
-    
-    <div style="display:flex; align-items:center; gap: 20px;">
-        <div style="background:#F0F2F5; width:55px; height:55px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:{CEMP_DARK}; flex-shrink:0;">
-            👤
-        </div>
-        <div>
-            <span style="color:#999; font-size:0.75rem; font-weight:bold; letter-spacing:1px; display:block; margin-bottom:4px;">EXPEDIENTE MÉDICO</span>
-            <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
-            <div style="font-size:0.85rem; color:#666; margin-top:4px;">📅 Revisión: <b>14 Dic 2025</b></div>
-        </div>
-    </div>
-
-    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px; white-space:nowrap;">
-        {risk_icon} {risk_label}
-    </div>
-
+<div style="display:flex; align-items:center; gap: 20px;">
+<div style="background:#F0F2F5; width:55px; height:55px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:{CEMP_DARK}; flex-shrink:0;">👤</div>
+<div>
+<span style="color:#999; font-size:0.75rem; font-weight:bold; letter-spacing:1px; display:block; margin-bottom:4px;">EXPEDIENTE MÉDICO</span>
+<h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
+<div style="font-size:0.85rem; color:#666; margin-top:4px;">📅 Revisión: <b>14 Dic 2025</b></div>
+</div>
+</div>
+<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px; white-space:nowrap;">{risk_icon} {risk_label}</div>
 </div>""", unsafe_allow_html=True)
 
         # CONTEXTO POBLACIONAL

@@ -51,7 +51,7 @@ st.markdown(f"""
 
     /* === ESTILO DEL DESPLEGABLE (EXPANDER) - FORZAR ROSA === */
     div[data-testid="stExpander"] details > summary {{
-        background-color: rgba(233, 127, 135, 0.1) !important; /* El rosita transparente */
+        background-color: rgba(233, 127, 135, 0.1) !important; /* Rosa transparente */
         border: 1px solid rgba(233, 127, 135, 0.2) !important;
         border-radius: 8px !important;
         color: {CEMP_DARK} !important;
@@ -312,30 +312,30 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA (Ajuste Fino "Valle Marcado") ---
+    # --- UMBRAL CON GRÁFICA REALISTA (Ajustada Fina) ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
         with c_calib_1:
             st.caption("Permite calibrar el modelo manual. Por defecto se establece en **0.27** (Valor óptimo del estudio para maximizar Recall).")
+            # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            st.info("ℹ️ **Criterio Técnico:** Se fija el umbral óptimo en **0.27** (basado en F2-Score) para maximizar la sensibilidad y minimizar falsos negativos.")
+            # Solo información relevante sobre el 0.27
+            st.info("ℹ️ **Nota Técnica:** Se ha seleccionado **0.27** como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).")
 
         with c_calib_2:
-            # --- SIMULACIÓN MATEMÁTICA DE PRECISIÓN ---
-            x = np.linspace(-0.2, 1.3, 500)
+            # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
+            x = np.linspace(-0.15, 1.25, 500)
             
-            # 1. CLASE 0 (Gris):
-            # Pico principal agudo en 0.1.
-            # El segundo "rebote" en 0.45 es ahora más estrecho (sigma=0.12) para crear el valle.
-            y_sanos = 2.0 * np.exp(-((x - 0.1)**2) / (2 * 0.08**2)) + \
-                      0.6 * np.exp(-((x - 0.45)**2) / (2 * 0.12**2))
+            # CLASE 0 (Gris): Pico muy alto y estrecho en 0.1, con rebote pequeño
+            y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.1**2)) + \
+                      0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
             
-            # 2. CLASE 1 (Rosa):
-            # Joroba inicial más definida en 0.28 y pico principal en 0.65.
-            y_enfermos = 0.7 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
-                         1.35 * np.exp(-((x - 0.65)**2) / (2 * 0.18**2))
+            # CLASE 1 (Rosa): Más estrecha que antes (sigma 0.13/0.14) para no verse "gorda"
+            # Centrada en 0.7 con hombro en 0.45
+            y_enfermos = 0.6 * np.exp(-((x - 0.45)**2) / (2 * 0.13**2)) + \
+                         1.35 * np.exp(-((x - 0.7)**2) / (2 * 0.14**2))
             
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
             fig_calib.patch.set_facecolor('none')
@@ -343,11 +343,11 @@ with tab1:
             
             # Dibujo Clase 0 (Gris)
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
-            ax_calib.plot(x, y_sanos, color="gray", lw=1, alpha=0.6)
+            ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
             
             # Dibujo Clase 1 (Rosa)
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
-            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=1, alpha=0.6)
+            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
             
             # LÍNEA 1: ÓPTIMO (Fija 0.27 - Verde Lima)
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
@@ -357,7 +357,7 @@ with tab1:
             
             # Limpieza y Estilos
             ax_calib.set_yticks([])
-            ax_calib.set_xlim(-0.2, 1.3)
+            ax_calib.set_xlim(-0.2, 1.25)
             ax_calib.spines['top'].set_visible(False)
             ax_calib.spines['right'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)

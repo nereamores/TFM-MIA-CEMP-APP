@@ -48,17 +48,36 @@ st.markdown(f"""
         padding-bottom: 10px !important;
     }}
 
-    /* === ESTILO EXPANDER (FONDO ROSA TRANSPARENTE) === */
-    .streamlit-expanderHeader {{
-        background-color: rgba(233, 127, 135, 0.1) !important; /* El rosita transparente */
+    /* === ESTILO DEL DESPLEGABLE (EXPANDER) - FORZAR ROSA === */
+    /* Apuntamos directamente a la etiqueta <summary> que es la cabecera del desplegable */
+    div[data-testid="stExpander"] details > summary {{
+        background-color: rgba(233, 127, 135, 0.1) !important; /* EL ROSITA TRANSPARENTE */
+        border: 1px solid rgba(233, 127, 135, 0.2) !important;
+        border-radius: 8px !important;
         color: {CEMP_DARK} !important;
         font-weight: 700 !important;
-        border: 1px solid rgba(233, 127, 135, 0.1) !important; /* Borde sutil a juego */
-        border-radius: 8px !important;
+        transition: background-color 0.3s;
     }}
-    /* Color del icono de flechita en el expander */
-    .streamlit-expanderHeader svg {{
+    
+    /* Efecto al pasar el ratón por encima (un poco más oscuro) */
+    div[data-testid="stExpander"] details > summary:hover {{
+        background-color: rgba(233, 127, 135, 0.2) !important;
+        color: {CEMP_DARK} !important;
+    }}
+
+    /* Asegurar que el icono de la flecha también sea del color correcto */
+    div[data-testid="stExpander"] details > summary svg {{
         fill: {CEMP_DARK} !important;
+        color: {CEMP_DARK} !important;
+    }}
+    
+    /* El contenido interior del desplegable */
+    div[data-testid="stExpander"] details[open] > div {{
+        border-left: 1px solid rgba(233, 127, 135, 0.2);
+        border-right: 1px solid rgba(233, 127, 135, 0.2);
+        border-bottom: 1px solid rgba(233, 127, 135, 0.2);
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
     }}
 
     /* === INPUTS BARRA LATERAL === */
@@ -212,7 +231,6 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
 
 # --- 7. BARRA LATERAL ---
 with st.sidebar:
-    # LOGO: D(negro) IA(rosa) BETES(negro) .(gris) NME(rosa)
     st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
@@ -297,7 +315,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON ESTILO ROSA ---
+    # --- UMBRAL CON ESTILO ROSA FORZADO ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         st.caption("Permite calibrar el modelo priorizando la detección de casos (mayor sensibilidad) o la precisión (mayor especificidad).")
         threshold = st.slider("Umbral", 0.0, 1.0, 0.31, 0.01, label_visibility="collapsed")

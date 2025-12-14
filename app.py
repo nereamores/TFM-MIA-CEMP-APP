@@ -3,208 +3,179 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# --- CONFIGURACIÓN INICIAL ---
-st.set_page_config(
-    page_title="CEMP AI Predictor",
-    page_icon="🧬",
-    layout="wide"
-)
+# --- CONFIGURACIÓN ---
+st.set_page_config(page_title="CEMP AI", page_icon="🏥", layout="wide")
 
-# --- COLORES Y ESTILOS ---
+# --- COLORES CEMP ---
 CEMP_PINK = "#E97F87"
 SUCCESS_GREEN = "#28a745"
+TEXT_DARK = "#333333"
 
-# CSS para forzar estilos que Streamlit no deja configurar fácil
+# --- ESTILOS CSS (MODO CLARO ENTERPRISE) ---
 st.markdown(f"""
     <style>
-    /* Ocultar menú de hamburguesa y footer para look de App nativa */
+    /* Ocultar elementos extra */
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
-    /* Estilo del Logo CEMP */
+    /* LOGO CEMP (Estilo oscuro para fondo claro) */
     .cemp-logo {{
-        font-family: 'Helvetica', sans-serif;
-        font-weight: 900;
-        font-size: 3rem;
-        color: white;
-        margin-bottom: 0px;
-        letter-spacing: -2px;
+        font-family: 'Arial', sans-serif; font-weight: 900; font-size: 3rem;
+        color: {TEXT_DARK}; margin-bottom: 0px; line-height: 1;
     }}
-    .cemp-logo span {{
-        color: {CEMP_PINK};
-    }}
+    .cemp-logo span {{ color: {CEMP_PINK}; }}
+    .cemp-subtitle {{ color: #666; font-size: 0.8rem; margin-bottom: 30px; letter-spacing: 1px; }}
     
-    /* Cajas de métricas autocalculadas */
+    /* TARJETAS DE MÉTRICAS (Sidebar) - Estilo limpio y blanco */
     .metric-card {{
-        background-color: #383838;
+        background-color: #FFFFFF;
         padding: 15px;
-        border-radius: 10px;
+        border-radius: 12px;
         text-align: center;
-        margin-bottom: 10px;
-        border: 1px solid #444;
+        border: 1px solid #E0E0E0; /* Borde sutil */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra muy suave */
     }}
-    .metric-value {{
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: {CEMP_PINK};
-    }}
-    .metric-label {{
-        font-size: 0.8rem;
-        color: #bbb;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }}
+    .metric-value {{ font-size: 1.6rem; font-weight: bold; color: {CEMP_PINK}; }}
+    .metric-label {{ font-size: 0.75rem; color: #666; text-transform: uppercase; font-weight: 600; }}
     
-    /* Estilo personalizado para resultados */
-    .result-card-high {{
-        background: linear-gradient(135deg, {CEMP_PINK} 0%, #c05e65 100%);
-        padding: 25px;
-        border-radius: 15px;
-        color: white;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(233, 127, 135, 0.4);
+    /* CAJAS DE RESULTADO PRINCIPAL (Estilo Enterprise) */
+    .result-box {{
+        padding: 30px; border-radius: 15px; text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        background-color: #FFFFFF; /* Fondo blanco limpio */
+    }}
+    .result-high {{
+        border-top: 5px solid {CEMP_PINK}; /* Línea superior rosa */
+    }}
+    .result-low {{
+        border-top: 5px solid {SUCCESS_GREEN}; /* Línea superior verde */
+    }}
+    .result-title {{ font-size: 2.2rem; font-weight: bold; margin: 0; }}
+    .result-text {{ font-size: 1.1rem; margin-top: 15px; color: #555; }}
+
+    /* Estilo de pestaña activa */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
+        color: {CEMP_PINK} !important;
+        border-bottom-color: {CEMP_PINK} !important;
+        font-weight: bold;
     }}
     </style>
 """, unsafe_allow_html=True)
 
 # --- MODELO SIMULADO ---
-class MockModel:
-    def predict_proba(self, X):
-        # Lógica dummy basada en glucosa y BMI
-        score = (X[0] * 0.6) + (X[1] * 0.4) # Glucosa + BMI
-        prob = 1 / (1 + np.exp(-(score - 100) / 15))
-        return [[1-prob, prob]]
+if 'model' not in st.session_state:
+    class MockModel:
+        def predict_proba(self, X):
+            score = (X[0] * 0.5) + (X[1] * 0.5) # Glucosa y BMI
+            prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
+            return [[1-prob, prob]]
+    st.session_state.model = MockModel()
 
-if 'model' not in st.session_state: st.session_state.model = MockModel()
-
-# --- BARRA LATERAL (INPUTS CON SLIDERS) ---
+# --- BARRA LATERAL (BLANCA) ---
 with st.sidebar:
-    # Logo Estilo CEMP
-    st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
-    st.markdown("<p style='color: #888; font-size: 0.8rem; margin-bottom: 30px;'>CLINICAL DECISION SUPPORT SYSTEM</p>", unsafe_allow_html=True)
+    st.markdown('<div class="cemp-logo">CEMP<span>.</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="cemp-subtitle">PLATAFORMA DE SALUD DE PRECISIÓN</div>', unsafe_allow_html=True)
     
     st.markdown("### 📝 Parámetros Clínicos")
+    # Sliders (se verán rositas por el config.toml)
+    glucose = st.slider("Glucosa (mg/dL)", 50, 250, 120)
+    bmi = st.slider("BMI (kg/m²)", 15.0, 50.0, 24.5)
+    insulin = st.slider("Insulina (mu U/ml)", 0, 600, 80)
+    age = st.slider("Edad (años)", 18, 90, 35)
     
-    # AQUÍ ESTÁ EL CAMBIO: Usamos st.slider para las "barritas"
-    # El color será ROSA automáticamente por el config.toml
-    
-    glucose = st.slider("Glucosa (mg/dL)", 50, 300, 120, help="Nivel de glucosa en plasma a las 2 horas.")
-    bmi = st.slider("BMI (kg/m²)", 15.0, 60.0, 28.5, format="%.1f")
-    insulin = st.slider("Insulina (mu U/ml)", 0, 800, 80)
-    age = st.slider("Edad (años)", 21, 90, 45)
-    
-    # Expander para datos menos comunes (para limpiar la vista)
-    with st.expander("Ver más parámetros"):
-        pregnancies = st.slider("Embarazos", 0, 15, 1)
-        blood_pressure = st.slider("Presión Arterial", 40, 140, 70)
-        skin_thickness = st.slider("Grosor Piel (mm)", 0, 100, 20)
-        dpf = st.slider("Función Pedigrí (DPF)", 0.0, 2.5, 0.47)
+    with st.expander("Más opciones"):
+        pregnancies = st.slider("Embarazos", 0, 15, 0)
+        dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
-    # --- VARIABLES AUTOCALCULADAS (Visualización bonita) ---
     st.markdown("---")
-    st.markdown("### 🧬 Métricas Derivadas")
+    st.markdown("### 📊 Métricas Calculadas")
     
-    # Cálculos
     res_index = glucose * insulin
     bmi_sq = bmi ** 2
-    is_pre = glucose > 140
     
-    # Mostrar como tarjetitas usando columnas
+    # Tarjetas blancas limpias para las métricas
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{res_index:.0f}</div>
-                <div class="metric-label">Resistencia</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div class="metric-value">{res_index:.0f}</div><div class="metric-label">Resistencia (G×I)</div></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{bmi_sq:.0f}</div>
-                <div class="metric-label">BMI²</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    if is_pre:
-        st.markdown(f'<div style="background-color: {CEMP_PINK}; color: white; padding: 5px; border-radius: 5px; text-align: center; font-size: 0.8rem; font-weight: bold; margin-top:5px;">⚠️ PREDIABETES</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div class="metric-value">{bmi_sq:.0f}</div><div class="metric-label">Índice BMI²</div></div>', unsafe_allow_html=True)
 
-# --- ÁREA PRINCIPAL ---
+# --- PANEL PRINCIPAL (FONDO GRIS CLARO) ---
+st.title("Tablero de Predicción de Diabetes")
+st.markdown("Análisis de riesgo basado en inteligencia artificial.")
 
-# Lógica
 input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
 prob = st.session_state.model.predict_proba(input_data)[0][1]
-threshold = 0.27
-high_risk = prob > threshold
+is_high_risk = prob > 0.27
 
-# Título y Pestañas
-st.title("Sistema de Predicción")
-tab1, tab2, tab3 = st.tabs(["Diagnóstico", "Explicabilidad (SHAP)", "Simulación"])
+tab1, tab2, tab3 = st.tabs(["🏥 Diagnóstico", "🔍 Explicabilidad", "🎛️ Simulación"])
 
 with tab1:
-    col_main_1, col_main_2 = st.columns([1.5, 1])
+    st.write("") # Espacio
+    col_res, col_gauge = st.columns([2, 1], gap="large")
     
-    with col_main_1:
-        st.write("") # Espaciador
-        if high_risk:
+    with col_res:
+        if is_high_risk:
+            # Tarjeta blanca con acento ROSA
             st.markdown(f"""
-                <div class="result-card-high">
-                    <h1 style="margin:0; font-size: 2.5rem;">RIESGO ELEVADO</h1>
-                    <p style="opacity: 0.9;">Se sugiere intervención inmediata.</p>
+                <div class="result-box result-high">
+                    <h2 class="result-title" style="color: {CEMP_PINK};">ALTO RIESGO DETECTADO</h2>
+                    <p class="result-text">La probabilidad calculada es del <strong>{prob*100:.1f}%</strong>. Se recomienda iniciar protocolo de seguimiento.</p>
                 </div>
             """, unsafe_allow_html=True)
         else:
-             st.markdown(f"""
-                <div style="background-color: #383838; padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #555;">
-                    <h1 style="margin:0; font-size: 2.5rem; color: {SUCCESS_GREEN};">Riesgo Bajo</h1>
-                    <p style="color: #bbb;">Mantener control rutinario.</p>
+            # Tarjeta blanca con acento VERDE
+            st.markdown(f"""
+                <div class="result-box result-low">
+                    <h2 class="result-title" style="color: {SUCCESS_GREEN};">BAJO RIESGO</h2>
+                    <p class="result-text">El paciente se mantiene en rangos saludables. Continuar control rutinario.</p>
                 </div>
             """, unsafe_allow_html=True)
-        
-        st.info("ℹ️ Nota Clínica: Valores de Glucosa > 140 requieren confirmación según guías ADA.")
+            
+        st.info("ℹ️ **Nota Clínica:** Valores de Glucosa en ayunas > 126 mg/dL requieren confirmación adicional según guías ADA.")
 
-    with col_main_2:
-        # Gauge Chart Minimalista
+    with col_gauge:
+        # Gráfico Donut limpio para fondo claro
         fig, ax = plt.subplots(figsize=(4, 4))
+        fig.patch.set_facecolor('none') # Transparente
         ax.set_facecolor('none')
-        fig.patch.set_facecolor('none')
         
-        # Donut chart
-        sizes = [prob, 1-prob]
-        colors = [CEMP_PINK if high_risk else SUCCESS_GREEN, '#333333']
+        color_accent = CEMP_PINK if is_high_risk else SUCCESS_GREEN
+        # Anillo exterior gris claro, relleno de color
+        ax.pie([prob, 1-prob], colors=[color_accent, '#E0E0E0'], startangle=90, counterclock=False, 
+               wedgeprops=dict(width=0.12, edgecolor='white', linewidth=2))
         
-        ax.pie(sizes, colors=colors, startangle=90, counterclock=False, 
-               wedgeprops=dict(width=0.1, edgecolor='none'))
-        
-        # Texto central
-        ax.text(0, 0, f"{prob*100:.1f}%", ha='center', va='center', fontsize=30, fontweight='bold', color='white')
-        ax.text(0, -0.3, "Probabilidad", ha='center', va='center', fontsize=10, color='#999')
+        # Texto central oscuro
+        ax.text(0, 0.1, f"{prob*100:.0f}%", ha='center', va='center', fontsize=35, fontweight='bold', color=TEXT_DARK)
+        ax.text(0, -0.25, "Probabilidad", ha='center', va='center', fontsize=12, color='#999')
         
         st.pyplot(fig, use_container_width=True)
 
 with tab2:
-    st.markdown("### ¿Qué influye en este paciente?")
-    # SHAP Simulado con colores correctos
-    features = ["Glucosa", "BMI", "Insulina", "Edad"]
-    vals = [0.3, 0.15, 0.05, -0.1]
+    st.subheader("Análisis de Factores (SHAP)")
+    # Simulación de gráfico SHAP para fondo claro
+    features = ["Glucosa", "BMI", "Edad", "Insulina"]
+    vals = [0.3, 0.15, -0.1, 0.05]
     
     fig_s, ax_s = plt.subplots(figsize=(8, 3))
     fig_s.patch.set_facecolor('none')
     ax_s.set_facecolor('none')
     
     y = np.arange(len(features))
-    colors_shap = [CEMP_PINK if x > 0 else "#555" for x in vals]
+    # Barras Rosas para riesgo, Gris oscuro para salud
+    colors_shap = [CEMP_PINK if x > 0 else "#888" for x in vals]
     
-    ax_s.barh(y, vals, color=colors_shap, edgecolor='none', height=0.6)
+    ax_s.barh(y, vals, color=colors_shap, height=0.6)
     ax_s.set_yticks(y)
-    ax_s.set_yticklabels(features, color="white")
-    ax_s.spines['bottom'].set_color('#555')
-    ax_s.spines['top'].set_visible(False) 
-    ax_s.spines['right'].set_visible(False) 
-    ax_s.spines['left'].set_visible(False) 
+    ax_s.set_yticklabels(features, color=TEXT_DARK, fontsize=11)
+    ax_s.axvline(0, color='#ddd', linewidth=1) # Línea central sutil
+    ax_s.spines['bottom'].set_visible(False)
+    ax_s.spines['top'].set_visible(False)
+    ax_s.spines['right'].set_visible(False)
+    ax_s.spines['left'].set_visible(False)
     ax_s.tick_params(axis='x', colors='#888')
     
     st.pyplot(fig_s)
 
 with tab3:
-    st.write("Simulación interactiva...")
+    st.write("Simulación interactiva disponible próximamente.")

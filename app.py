@@ -240,8 +240,8 @@ with st.sidebar:
     st.write("")
     
     # --- 1. METABÓLICOS ---
-    glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
-    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
+    glucose = input_biomarker("Glucosa (mg/dL)", 50, 300, 120, "gluc", "Glucosa a las 2h de ingesta.")
+    insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.")
     
     proxy_index = glucose * insulin
     st.markdown(f"""
@@ -256,13 +256,13 @@ with st.sidebar:
     st.markdown("---") 
 
     # --- 2. ANTROPOMÉTRICOS ---
-    weight = input_biomarker("Peso (kg)", 30.0, 150.0, 70.0, "weight", "Peso corporal actual.")
+    weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
+    # Resultado BMI (AHORA EN ROSA CEMP_PINK)
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
-    # BMI Box en ROSA
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
@@ -281,21 +281,16 @@ with st.sidebar:
     # --- 3. PACIENTE (EDAD Y EMBARAZOS AGRUPADOS) ---
     c_age, c_preg = st.columns(2)
     
-    # Edad (sin slider para ahorrar espacio horizontal si prefieres, o con slider pequeño)
-    # Aquí uso number_input directo para que quepan bien dos columnas, o la función custom si cabe.
-    # Dado que input_biomarker usa columnas internas, mejor no anidar columnas.
-    # Vamos a ponerlos secuenciales pero visualmente pegados.
-    
+    # Como input_biomarker usa columnas internas, los ponemos secuenciales pero visualmente juntos
+    # Para ahorrar espacio visual, quitamos etiquetas duplicadas
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
-    pregnancies = input_biomarker("Embarazos", 0, 15, 1, "preg")
+    pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg") 
     
     st.markdown("---") # Separador para aislar DPF
 
     # --- 4. DPF CON BARRA DE COLOR DINÁMICA ---
-    # Título
     st.markdown("**Antecedentes Familiares (DPF)**")
     
-    # Slider
     if 'dpf' not in st.session_state: st.session_state.dpf = 0.5
     dpf = st.slider("DPF", 0.0, 2.5, st.session_state.dpf, label_visibility="collapsed")
     st.session_state.dpf = dpf
@@ -310,22 +305,22 @@ with st.sidebar:
     else:
         bar_color = CEMP_PINK      # Rojo/Rosa
 
-    # Barra Visual de Progreso
+    # Barra Visual
     st.markdown(f"""
     <div style="width:100%; background-color:#F0F2F5; border-radius:4px; height:8px; margin-top:-10px; margin-bottom:10px;">
         <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease;"></div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Leyenda Estática
+    # Leyenda Estática (CON DESCRIPCIÓN FAMILIAR EXACTA)
     st.markdown(f"""
     <div class="legend-box">
         <span class="legend-title">Guía de interpretación:</span>
         <ul>
-            <li><b style="color:{GOOD_TEAL}">0.0 - 0.2:</b> Sin antecedentes.</li>
-            <li><b style="color:#D4E157">0.2 - 0.5:</b> Antecedentes lejanos.</li>
-            <li><b style="color:#FFB74D">0.5 - 0.8:</b> 1 Pariente primer grado.</li>
-            <li><b style="color:{CEMP_PINK}">> 0.8:</b> Antecedentes múltiples.</li>
+            <li><b style="color:{GOOD_TEAL}">0.0 - 0.2:</b> Sin antecedentes conocidos.</li>
+            <li><b style="color:#D4E157">0.2 - 0.5:</b> Abuelos, tíos, primos (2º grado).</li>
+            <li><b style="color:#FFB74D">0.5 - 0.8:</b> Padres o hermanos (1er grado).</li>
+            <li><b style="color:{CEMP_PINK}">> 0.8:</b> Alta carga genética (Ambos padres/múltiples).</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -412,6 +407,7 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
+        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">

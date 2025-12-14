@@ -88,6 +88,7 @@ with st.sidebar:
     st.markdown("---")
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
+    # Importante: HTML sin sangría extra
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888">BMI</div></div>', unsafe_allow_html=True)
 
@@ -106,12 +107,11 @@ with c_bad: st.markdown(f"<div style='text-align:right; margin-top:10px; color:{
 
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
-# --- TAB 1: DASHBOARD SIN FANTASMAS ---
+# --- TAB 1: DASHBOARD SIN ERRORES DE RENDERIZADO ---
 with tab1:
     st.write("")
     
     # 1. FICHA Y HALLAZGOS (TOP CARDS)
-    # Lógica Hallazgos
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -122,87 +122,83 @@ with tab1:
     col_top1, col_top2 = st.columns(2, gap="medium")
     
     with col_top1:
+        # IMPORTANTE: El string HTML empieza pegado a la izquierda para evitar que se detecte como código
         st.markdown(f"""
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <span style="color:#999; font-size:0.7rem; font-weight:bold;">EXPEDIENTE</span>
-                <h3 style="margin:0; color:{CEMP_DARK};">Paciente #8842-X</h3>
-                <div style="font-size:0.8rem; color:#666;">📅 14 Dic 2025</div>
-            </div>
-            <div style="background:#F0F2F5; padding:10px; border-radius:50%; font-size:1.5rem;">👤</div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <span style="color:#999; font-size:0.7rem; font-weight:bold;">EXPEDIENTE</span>
+        <h3 style="margin:0; color:{CEMP_DARK};">Paciente #8842-X</h3>
+        <div style="font-size:0.8rem; color:#666;">📅 14 Dic 2025</div>
+    </div>
+    <div style="background:#F0F2F5; padding:10px; border-radius:50%; font-size:1.5rem;">👤</div>
+</div>
+""", unsafe_allow_html=True)
         
     with col_top2:
         st.markdown(f"""
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center; border-left:5px solid {insight_bd};">
-            <div>
-                <span style="color:{insight_bd}; font-size:0.7rem; font-weight:bold;">HALLAZGOS CLAVE</span>
-                <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem;">{insight_txt}</h3>
-            </div>
-            <div style="font-size:1.5rem;">{'⚠️' if alerts else '✅'}</div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="card" style="display:flex; justify-content:space-between; align-items:center; border-left:5px solid {insight_bd};">
+    <div>
+        <span style="color:{insight_bd}; font-size:0.7rem; font-weight:bold;">HALLAZGOS CLAVE</span>
+        <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem;">{insight_txt}</h3>
+    </div>
+    <div style="font-size:1.5rem;">{'⚠️' if alerts else '✅'}</div>
+</div>
+""", unsafe_allow_html=True)
 
-    # 2. GRÁFICOS (MERGED CARDS - NO GHOSTS)
+    # 2. GRÁFICOS (MERGED CARDS)
     c_left, c_right = st.columns([1, 2], gap="medium")
     
-    # CARD PROBABILIDAD (Donut Incrustado en HTML)
+    # CARD PROBABILIDAD
     with c_left:
-        # Generar gráfico en memoria
         fig, ax = plt.subplots(figsize=(3, 3))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
         ax.pie([prob, 1-prob], colors=[risk_color, '#F0F0F0'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='white'))
         ax.text(0, 0, f"{prob*100:.1f}%", ha='center', va='center', fontsize=26, fontweight='bold', color=CEMP_DARK)
-        
-        # Convertir a imagen HTML
         chart_html = fig_to_html(fig)
-        plt.close(fig) # Cerrar para liberar memoria
+        plt.close(fig)
 
-        # Renderizar TARJETA COMPLETA (Título + Gráfico)
         st.markdown(f"""
-        <div class="card" style="text-align:center;">
-            <h4 style="color:#555; margin-bottom:0;">Probabilidad IA</h4>
-            {chart_html}
-            <div style="font-size:0.8rem; color:#888; margin-top:-10px;">Certeza del modelo</div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="card" style="text-align:center;">
+    <h4 style="color:#555; margin-bottom:0;">Probabilidad IA</h4>
+    {chart_html}
+    <div style="font-size:0.8rem; color:#888; margin-top:-10px;">Certeza del modelo</div>
+</div>
+""", unsafe_allow_html=True)
 
-    # CARD CONTEXTO (HTML Puro - Sin Ghosting)
+    # CARD CONTEXTO (CORREGIDA SIN SANGRÍA)
     with c_right:
-        # Cálculos posiciones
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
+        # AQUÍ ESTABA EL ERROR: He quitado la sangría a la izquierda del HTML
         st.markdown(f"""
-        <div class="card">
-            <h4 style="color:#555; margin-bottom:25px;">Contexto Poblacional</h4>
-            
-            <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA <span style="font-weight:normal">({glucose})</span></div>
-            <div class="bar-bg">
-                <div class="bar-fill" style="width:100%; background:{RISK_GRADIENT};"></div>
-                <div class="bar-marker" style="left:{g_pos}%;"></div>
-                <div class="bar-txt" style="left:{g_pos}%;">{glucose}</div>
-            </div>
-            
-            <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px; margin-top:30px;">BMI <span style="font-weight:normal">({bmi})</span></div>
-            <div class="bar-bg">
-                <div class="bar-fill" style="width:100%; background:{RISK_GRADIENT};"></div>
-                <div class="bar-marker" style="left:{b_pos}%;"></div>
-                <div class="bar-txt" style="left:{b_pos}%;">{bmi}</div>
-            </div>
-            
-            <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:#AAA; margin-top:10px;">
-                <span>Sano</span><span>Riesgo</span><span>Peligro</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="card">
+    <h4 style="color:#555; margin-bottom:25px;">Contexto Poblacional</h4>
+    
+    <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA <span style="font-weight:normal">({glucose})</span></div>
+    <div class="bar-bg">
+        <div class="bar-fill" style="width:100%; background:{RISK_GRADIENT};"></div>
+        <div class="bar-marker" style="left:{g_pos}%;"></div>
+        <div class="bar-txt" style="left:{g_pos}%;">{glucose}</div>
+    </div>
+    
+    <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px; margin-top:30px;">BMI <span style="font-weight:normal">({bmi})</span></div>
+    <div class="bar-bg">
+        <div class="bar-fill" style="width:100%; background:{RISK_GRADIENT};"></div>
+        <div class="bar-marker" style="left:{b_pos}%;"></div>
+        <div class="bar-txt" style="left:{b_pos}%;">{bmi}</div>
+    </div>
+    
+    <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:#AAA; margin-top:10px;">
+        <span>Sano</span><span>Riesgo</span><span>Peligro</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- TAB 2: SHAP ---
 with tab2:
     st.write("")
-    # SHAP Simulado
     features = ["Glucosa", "BMI", "Edad", "Insulina"]
     vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
     colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
@@ -216,16 +212,15 @@ with tab2:
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
-    
     chart_html = fig_to_html(fig)
     plt.close(fig)
 
     st.markdown(f"""
-    <div class="card">
-        <h4 style="color:#555;">Drivers de la Predicción</h4>
-        {chart_html}
-    </div>
-    """, unsafe_allow_html=True)
+<div class="card">
+    <h4 style="color:#555;">Drivers de la Predicción</h4>
+    {chart_html}
+</div>
+""", unsafe_allow_html=True)
 
 # --- TAB 3: RECOMENDACIONES ---
 with tab3:

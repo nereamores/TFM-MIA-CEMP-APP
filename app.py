@@ -45,16 +45,12 @@ st.markdown(f"""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: space-between; /* Esto ayuda a distribuir el espacio */
+        justify-content: center; /* Centrado vertical por defecto */
     }}
     
-    /* CLASE PARA IGUALAR ALTURAS (Opcional, visualmente) */
-    .card-tall {{
-        min-height: 320px; /* Forzamos una altura mínima para igualar Probabilidad y Contexto */
-    }}
-
     /* HEADER UNIFICADO DE LAS TARJETAS */
     .card-header {{
         color: #999;
@@ -136,7 +132,6 @@ with st.sidebar:
     # KPIs Rápidos
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
-    # Sin espacios al inicio del HTML para evitar errores
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
     
@@ -171,7 +166,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # Generar alertas texto
+    # Alertas
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -179,30 +174,35 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # Layout: Izquierda (Ancha) - Derecha (Estrecha)
+    # Layout: Izquierda (Contexto) - Derecha (Resultados)
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # === COLUMNA IZQUIERDA ===
     with c_left:
         
-        # 1. FICHA PACIENTE (Icono abajo a la derecha)
-        st.markdown(f"""<div class="card">
-    <div>
-        <span class="card-header">EXPEDIENTE MÉDICO</span>
-        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.8rem;">Paciente #8842-X</h2>
-        <div style="font-size:0.9rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
+        # 1. FICHA PACIENTE (DISEÑO CLÁSICO: ICONO IZQUIERDA | INFO | BADGE DERECHA)
+        st.markdown(f"""<div class="card" style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; padding: 25px;">
+    <div style="display:flex; align-items:center; gap: 20px;">
+        <div style="background:#F0F2F5; width:65px; height:65px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">
+            👤
+        </div>
+        <div>
+            <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
+            <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente #8842-X</h2>
+            <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
+        </div>
     </div>
-    <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-        <div style="background:#F0F2F5; width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:{CEMP_DARK};">👤</div>
+
+    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+        {risk_icon} {risk_label}
     </div>
 </div>""", unsafe_allow_html=True)
 
-        # 2. CONTEXTO POBLACIONAL (Arreglado: Sin sangría)
+        # 2. CONTEXTO POBLACIONAL (Arreglado: Sin sangría HTML)
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
-        # Clase 'card-tall' para intentar igualar altura
-        st.markdown(f"""<div class="card card-tall">
+        st.markdown(f"""<div class="card">
 <span class="card-header">CONTEXTO POBLACIONAL</span>
 
 <div style="margin-top:15px;">
@@ -234,33 +234,26 @@ with tab1:
     # === COLUMNA DERECHA ===
     with c_right:
         
-        # 1. HALLAZGOS Y ESTADO
-        st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd};">
-    <div>
-        <span class="card-header" style="color:{insight_bd};">HALLAZGOS CLAVE</span>
-        <h3 style="margin:5px 0 15px 0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
-    </div>
-    
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto;">
-        <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.8rem; padding:6px 12px; border-radius:20px;">
-            {risk_icon} {risk_label}
-        </div>
-        <div style="font-size:1.5rem;">{'⚠️' if alerts else '✅'}</div>
+        # 1. HALLAZGOS
+        st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
+    <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
+        <div style="font-size:1.8rem;">{'⚠️' if alerts else '✅'}</div>
     </div>
 </div>""", unsafe_allow_html=True)
         
-        # 2. PROBABILIDAD IA (Donut)
-        fig, ax = plt.subplots(figsize=(3, 3)) 
+        # 2. PROBABILIDAD IA (Donut GRANDE para igualar altura)
+        fig, ax = plt.subplots(figsize=(4, 4)) # Aumentado a 4x4
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
         # Donut Chart
-        ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.18, edgecolor='none'))
+        ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        # Clase 'card-tall' y flexbox para centrar verticalmente
-        st.markdown(f"""<div class="card card-tall" style="text-align:center; align-items:center; justify-content:center;">
-    <span class="card-header" style="margin-bottom:15px;">PROBABILIDAD IA</span>
+        st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
+    <span class="card-header" style="margin-bottom:20px;">PROBABILIDAD IA</span>
     
     <div style="position:relative; display:inline-block; margin: auto;">
         {chart_html}
@@ -269,7 +262,7 @@ with tab1:
         </div>
     </div>
     
-    <div style="font-size:0.8rem; color:#888; margin-top:15px;">Confianza: <strong>Alta</strong> <br> Umbral: {threshold}</div>
+    <div style="font-size:0.8rem; color:#888; margin-top:20px;">Confianza: <strong>Alta</strong> <br> Umbral: {threshold}</div>
 </div>""", unsafe_allow_html=True)
 
 # --- TAB 2: SHAP ---

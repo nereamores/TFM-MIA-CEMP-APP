@@ -18,13 +18,13 @@ CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-# --- CSS ENTERPRISE (TAMAÑOS RECALIBRADOS) ---
+# --- CSS ENTERPRISE (Ajustado) ---
 st.markdown(f"""
     <style>
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
-    /* CONTENEDOR CENTRAL: Ancho controlado pero no gigante */
+    /* CONTENEDOR CENTRAL */
     .block-container {{
         max-width: 1200px; 
         padding-top: 2rem;
@@ -36,11 +36,11 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
     
-    /* TARJETAS: Más compactas */
+    /* TARJETAS */
     .card {{
         background-color: white;
         border-radius: 12px;
-        padding: 20px; /* Reducido de 30px */
+        padding: 25px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.04);
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
@@ -114,7 +114,7 @@ with st.sidebar:
     st.markdown("---")
     homa = glucose * insulin / 405
     c1, c2 = st.columns(2)
-    # KPIs tamaño normal
+    # Sin espacios al inicio del HTML
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
 
@@ -125,11 +125,11 @@ is_high = prob > 0.27
 risk_color = CEMP_PINK if is_high else GOOD_TEAL
 risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
 risk_icon = "🔴" if is_high else "🟢"
+risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
+risk_border = CEMP_PINK if is_high else GOOD_TEAL
 
-# CABECERA (Títulos más contenidos)
-c_tit, c_bad = st.columns([3,1], gap="medium")
-with c_tit: st.markdown(f"<h1 style='color:{CEMP_DARK}; margin:0; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
-with c_bad: st.markdown(f"<div style='text-align:center; margin-top:10px; color:{risk_color}; font-weight:bold; font-size:1rem; background:white; padding:8px 12px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05); border:1px solid #EEE;'>{risk_icon} {risk_label}</div>", unsafe_allow_html=True)
+# CABECERA SIMPLE
+st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
@@ -148,54 +148,59 @@ with tab1:
     
     # === COLUMNA IZQUIERDA ===
     with c_left:
-        # Ficha Paciente (Tamaño texto reducido)
-        st.markdown(f"""<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding: 20px;">
-            <div>
-                <span style="color:#999; font-size:0.75rem; font-weight:bold; letter-spacing:1px;">EXPEDIENTE MÉDICO</span>
-                <h2 style="margin:5px 0 5px 0; color:{CEMP_DARK}; font-size:1.6rem;">Paciente #8842-X</h2>
-                <div style="font-size:0.85rem; color:#666;">📅 Última Revisión: <b>14 Dic 2025</b></div>
-            </div>
-            <div style="background:#F0F2F5; width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:{CEMP_DARK};">👤</div>
-        </div>""", unsafe_allow_html=True)
+        # FICHA PACIENTE + BADGE DE RIESGO
+        # IMPORTANTE: Todo el HTML pegado a la izquierda para evitar errores
+        st.markdown(f"""<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding: 25px;">
+<div style="flex-grow:1;">
+<span style="color:#999; font-size:0.75rem; font-weight:bold; letter-spacing:1px;">EXPEDIENTE MÉDICO</span>
+<h2 style="margin:5px 0 5px 0; color:{CEMP_DARK}; font-size:1.6rem;">Paciente #8842-X</h2>
+<div style="font-size:0.85rem; color:#666;">📅 Última Revisión: <b>14 Dic 2025</b></div>
+</div>
+<div style="display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.8rem; padding:5px 10px; border-radius:20px;">
+{risk_icon} {risk_label}
+</div>
+<div style="background:#F0F2F5; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:{CEMP_DARK};">👤</div>
+</div>
+</div>""", unsafe_allow_html=True)
 
-        # Contexto Poblacional
+        # CONTEXTO POBLACIONAL
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
+        # HTML DEL GRÁFICO (SIN ESPACIOS AL INICIO)
         st.markdown(f"""<div class="card">
-        <h3 style="color:{CEMP_DARK}; margin-bottom:25px; font-size:1.2rem;">Contexto Poblacional</h3>
-        
-        <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
-        <div class="bar-container">
-            <div class="bar-bg"><div class="bar-fill"></div></div>
-            <div class="bar-marker" style="left: {g_pos}%;"></div>
-            <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
-        </div>
-        <div class="legend-row" style="margin-bottom:35px;">
-            <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
-        </div>
-
-        <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi})</span></div>
-        <div class="bar-container">
-            <div class="bar-bg"><div class="bar-fill"></div></div>
-            <div class="bar-marker" style="left: {b_pos}%;"></div>
-            <div class="bar-txt" style="left: {b_pos}%;">{bmi}</div>
-        </div>
-        <div class="legend-row">
-            <span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
-        </div>
-        </div>""", unsafe_allow_html=True)
+<h3 style="color:{CEMP_DARK}; margin-bottom:25px; font-size:1.2rem;">Contexto Poblacional</h3>
+<div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
+<div class="bar-container">
+<div class="bar-bg"><div class="bar-fill"></div></div>
+<div class="bar-marker" style="left: {g_pos}%;"></div>
+<div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
+</div>
+<div class="legend-row" style="margin-bottom:35px;">
+<span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
+</div>
+<div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi})</span></div>
+<div class="bar-container">
+<div class="bar-bg"><div class="bar-fill"></div></div>
+<div class="bar-marker" style="left: {b_pos}%;"></div>
+<div class="bar-txt" style="left: {b_pos}%;">{bmi}</div>
+</div>
+<div class="legend-row">
+<span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
+</div>
+</div>""", unsafe_allow_html=True)
 
     # === COLUMNA DERECHA ===
     with c_right:
-        # Hallazgos
+        # HALLAZGOS
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; padding: 20px;">
-            <span style="color:{insight_bd}; font-size:0.7rem; font-weight:bold; letter-spacing:1px;">HALLAZGOS CLAVE</span>
-            <h3 style="margin:8px 0; color:{CEMP_DARK}; font-size:1rem; line-height:1.4;">{insight_txt}</h3>
-            <div style="text-align:right; font-size:1.4rem; margin-top:-5px;">{'⚠️' if alerts else '✅'}</div>
-        </div>""", unsafe_allow_html=True)
+<span style="color:{insight_bd}; font-size:0.7rem; font-weight:bold; letter-spacing:1px;">HALLAZGOS CLAVE</span>
+<h3 style="margin:8px 0; color:{CEMP_DARK}; font-size:1rem; line-height:1.4;">{insight_txt}</h3>
+<div style="text-align:right; font-size:1.4rem; margin-top:-5px;">{'⚠️' if alerts else '✅'}</div>
+</div>""", unsafe_allow_html=True)
         
-        # Probabilidad IA (Tamaño Donut y Texto ajustados)
+        # PROBABILIDAD IA
         fig, ax = plt.subplots(figsize=(3, 3)) 
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -203,18 +208,17 @@ with tab1:
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
+        # HTML DONUT (SIN ESPACIOS AL INICIO)
         st.markdown(f"""<div class="card" style="text-align:center; padding-top:20px; padding-bottom:20px; display:flex; flex-direction:column; justify-content:center; height:100%;">
-            <h4 style="color:#888; margin-bottom:10px; text-transform:uppercase; font-size:0.75rem; letter-spacing:1px; font-weight:700;">Probabilidad IA</h4>
-            
-            <div style="position:relative; display:inline-block; margin: 0 auto;">
-                {chart_html}
-                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
-                    {prob*100:.1f}%
-                </div>
-            </div>
-            
-            <div style="font-size:0.8rem; color:#888; margin-top:15px;">Confianza del Modelo</div>
-        </div>""", unsafe_allow_html=True)
+<h4 style="color:#888; margin-bottom:10px; text-transform:uppercase; font-size:0.75rem; letter-spacing:1px; font-weight:700;">Probabilidad IA</h4>
+<div style="position:relative; display:inline-block; margin: 0 auto;">
+{chart_html}
+<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
+{prob*100:.1f}%
+</div>
+</div>
+<div style="font-size:0.8rem; color:#888; margin-top:15px;">Confianza del Modelo</div>
+</div>""", unsafe_allow_html=True)
 
 # --- TAB 2: SHAP ---
 with tab2:
@@ -234,15 +238,14 @@ with tab2:
     ax.spines['left'].set_visible(False)
     ax.tick_params(axis='x', colors='#999')
     ax.tick_params(axis='y', labelsize=10, labelcolor=CEMP_DARK)
-    
     chart_html = fig_to_html(fig)
     plt.close(fig)
 
     st.markdown(f"""<div class="card">
-        <h3 style="color:{CEMP_DARK}; font-size:1.2rem;">Factores de Riesgo (SHAP)</h3>
-        <p style="color:#666; font-size:0.8rem; margin-bottom:15px;">Variables que más han impactado en la decisión.</p>
-        {chart_html}
-    </div>""", unsafe_allow_html=True)
+<h3 style="color:{CEMP_DARK}; font-size:1.2rem;">Factores de Riesgo (SHAP)</h3>
+<p style="color:#666; font-size:0.8rem; margin-bottom:15px;">Variables que más han impactado en la decisión.</p>
+{chart_html}
+</div>""", unsafe_allow_html=True)
 
 # --- TAB 3: PROTOCOLO ---
 with tab3:

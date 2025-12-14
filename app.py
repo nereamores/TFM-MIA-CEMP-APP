@@ -38,47 +38,48 @@ st.markdown(f"""
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* ==================================================================
-       ESTILO ESPECIAL PARA EL SLIDER DEL UMBRAL (CAJA ROSA AL FINAL)
+       ESTILO ESPECIAL PARA EL SLIDER DEL UMBRAL (PANEL PRINCIPAL)
        ================================================================== */
-    /* 1. Apuntamos al contenedor del ÚLTIMO elemento de la barra lateral */
-    [data-testid="stSidebar"] .stVerticalBlock > div:last-child {{
-        background-color: {CEMP_PINK}; /* Fondo Rosa Coral */
-        padding: 20px;
-        border-radius: 12px;
-        margin-top: 10px;
-        box-shadow: 0 4px 10px rgba(233, 127, 135, 0.2);
+    /* 1. El contenedor del slider: Tarjeta Rosa "Difuminada" */
+    section.main [data-testid="stSlider"] {{
+        background-color: {CEMP_PINK}; /* Color rosita corporativo */
+        padding: 25px 30px; /* Relleno para que parezca una tarjeta */
+        border-radius: 15px;
+        /* Sombra suave rosada para el efecto "difuminado" */
+        box-shadow: 0 8px 20px rgba(233, 127, 135, 0.25); 
+        margin-bottom: 30px;
+        border: none;
     }}
     
-    /* 2. Cambiamos el color de la ETIQUETA a BLANCO */
-    [data-testid="stSidebar"] .stVerticalBlock > div:last-child label p {{
+    /* 2. Textos (Etiqueta y Valores) en BLANCO */
+    section.main [data-testid="stSlider"] label p {{
         color: white !important;
         font-weight: 700 !important;
+        font-size: 1.1rem !important;
         letter-spacing: 0.5px;
-        font-size: 1rem !important;
     }}
-    
-    /* 3. Cambiamos el color de los VALORES numéricos a BLANCO */
-    [data-testid="stSidebar"] .stVerticalBlock > div:last-child [data-testid="stSliderValue"] div {{
+    section.main [data-testid="stSlider"] [data-testid="stMarkdownContainer"] p {{
          color: white !important;
-         font-weight: bold;
-    }}
-    [data-testid="stSidebar"] .stVerticalBlock > div:last-child [data-testid="stSliderTickBar"] p {{
-         color: rgba(255,255,255,0.8) !important;
+         opacity: 0.9;
     }}
 
-    /* 4. Cambiamos el color de la BARRA y el TIRADOR a BLANCO */
+    /* 3. La Barra y el Tirador en BLANCO */
     /* El tirador (círculo) */
-    [data-testid="stSidebar"] .stVerticalBlock > div:last-child [role="slider"] {{
+    section.main [data-testid="stSlider"] [role="slider"] {{
         background-color: white !important;
         border: 2px solid white !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }}
-    /* La pista llena (la línea) */
-    [data-testid="stSidebar"] .stVerticalBlock > div:last-child .stSlider > div > div > div > div {{
-         background: white !important;
+    /* La línea de la barra */
+    section.main [data-testid="stSlider"] .stSlider > div > div > div > div {{
+         background: rgba(255, 255, 255, 0.5) !important; /* Parte vacía semitransparente */
+    }}
+     section.main [data-testid="stSlider"] .stSlider > div > div > div > div > div {{
+         background: white !important; /* Parte llena blanca sólida */
     }}
     /* ================================================================== */
     
-    /* TARJETAS (CARD) */
+    /* TARJETAS ESTÁNDAR (BLANCAS) */
     .card {{
         background-color: white;
         border-radius: 12px;
@@ -89,7 +90,7 @@ st.markdown(f"""
         height: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: center; /* Centrado vertical por defecto */
+        justify-content: center;
     }}
     
     /* HEADER UNIFICADO DE LAS TARJETAS */
@@ -146,13 +147,12 @@ def fig_to_html(fig):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. BARRA LATERAL ---
+# --- 6. BARRA LATERAL (SIN CAMBIOS DE ESTILO) ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
@@ -176,26 +176,8 @@ with st.sidebar:
     with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR</div></div>', unsafe_allow_html=True)
     with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI</div></div>', unsafe_allow_html=True)
     
-    st.markdown("---")
-    st.markdown("### ⚙️ Configuración")
-    # ESTE ES EL SLIDER QUE SE VERÁ ROSA Y BLANCO GRACIAS AL CSS
-    threshold = st.slider("Umbral de Decisión", 0.0, 1.0, 0.27, 0.01, help="Ajusta la sensibilidad del modelo.")
 
-# --- 7. LÓGICA PRINCIPAL ---
-input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
-prob = st.session_state.model.predict_proba(input_data)[0][1]
-
-# USAMOS EL UMBRAL DEL SLIDER
-is_high = prob > threshold 
-
-# Colores y Textos dinámicos
-risk_color = CEMP_PINK if is_high else GOOD_TEAL
-risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
-risk_icon = "🔴" if is_high else "🟢"
-risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
-risk_border = CEMP_PINK if is_high else GOOD_TEAL
-
-# --- 8. INTERFAZ PRINCIPAL ---
+# --- 7. INTERFAZ PRINCIPAL ---
 
 # Título
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -207,7 +189,21 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # Alertas
+    # === UMBRAL DE DECISIÓN (ESTE ES EL QUE SE VERÁ ROSA) ===
+    # El CSS lo detectará automáticamente y le aplicará el estilo de tarjeta rosa.
+    threshold = st.slider("UMBRAL DE DECISIÓN CLÍNICA (SENSITIVITY ADJUSTMENT)", 0.0, 1.0, 0.31, 0.01)
+
+    # --- LÓGICA ---
+    input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
+    prob = st.session_state.model.predict_proba(input_data)[0][1]
+    is_high = prob > threshold 
+    
+    risk_color = CEMP_PINK if is_high else GOOD_TEAL
+    risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
+    risk_icon = "🔴" if is_high else "🟢"
+    risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
+    risk_border = CEMP_PINK if is_high else GOOD_TEAL
+    
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -215,14 +211,13 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # Layout: Izquierda (Contexto) - Derecha (Resultados)
+    # === LAYOUT PRINCIPAL ===
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # === COLUMNA IZQUIERDA ===
     with c_left:
-        
-        # 1. FICHA PACIENTE (DISEÑO ICONO IZQ)
-        st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
+        # FICHA PACIENTE
+        st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:#F0F2F5; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
 <div>
@@ -236,7 +231,7 @@ with tab1:
 </div>
 </div>""", unsafe_allow_html=True)
 
-        # 2. CONTEXTO POBLACIONAL
+        # CONTEXTO POBLACIONAL
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
@@ -268,8 +263,7 @@ with tab1:
 
     # === COLUMNA DERECHA ===
     with c_right:
-        
-        # 1. HALLAZGOS
+        # HALLAZGOS
         st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
     <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -278,25 +272,22 @@ with tab1:
     </div>
 </div>""", unsafe_allow_html=True)
         
-        # 2. PROBABILIDAD IA (Donut GRANDE para igualar altura)
+        # PROBABILIDAD IA
         fig, ax = plt.subplots(figsize=(4, 4))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
-        # Donut Chart
         ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
     <span class="card-header" style="margin-bottom:20px;">PROBABILIDAD IA</span>
-    
     <div style="position:relative; display:inline-block; margin: auto;">
         {chart_html}
         <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
             {prob*100:.1f}%
         </div>
     </div>
-    
     <div style="font-size:0.8rem; color:#888; margin-top:20px;">Confianza: <strong>Alta</strong> <br> Umbral: {threshold}</div>
 </div>""", unsafe_allow_html=True)
 

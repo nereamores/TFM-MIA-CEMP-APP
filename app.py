@@ -38,18 +38,17 @@ st.markdown(f"""
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* ==================================================================
-       ESTILO: UMBRAL DE DECISIÓN (ROSA DIFUMINADO 0.2)
+       ESTILO: UMBRAL DE DECISIÓN (ROSA DIFUMINADO + BARRA BLANCA)
        ================================================================== */
     .stMain .stSlider {{
-        /* Fondo Rosa con Transparencia 0.2 (rgba) */
+        /* Fondo Rosa con Transparencia 0.2 */
         background-color: rgba(233, 127, 135, 0.2) !important;
         padding: 20px 25px;
         border-radius: 12px;
-        /* Sin borde sólido, solo el fondo suave */
         margin-bottom: 25px;
     }}
     
-    /* Texto de la etiqueta en GRIS OSCURO (CEMP_DARK) */
+    /* Texto de la etiqueta en GRIS OSCURO */
     .stMain .stSlider label p {{
         font-weight: 700 !important;
         font-size: 1rem !important;
@@ -64,8 +63,25 @@ st.markdown(f"""
          font-weight: 500;
     }}
     
-    /* La barra del slider se queda con el color por defecto (que suele ser el primaryColor rosa definido en config) 
-       o se ve gris oscuro dependiendo del tema, lo cual encaja perfecto con tu petición "lo de dentro gris". */
+    /* === CAMBIO SOLICITADO: BARRA Y TIRADOR BLANCOS/GRIS CLARO === */
+    
+    /* 1. El tirador (Círculo) */
+    .stMain .stSlider [role="slider"] {{
+        background-color: white !important;
+        border: 2px solid white !important; /* Borde blanco */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    
+    /* 2. La barra llena (Progreso) */
+    .stMain .stSlider > div > div > div > div {{
+        background: white !important; /* Forzamos blanco */
+        color: white !important;
+    }}
+    
+    /* 3. La barra vacía (Fondo del track) */
+    .stMain .stSlider > div > div > div > div > div {{
+         background-color: rgba(255, 255, 255, 0.5) !important;
+    }}
     /* ================================================================== */
     
     /* TARJETAS ESTÁNDAR */
@@ -179,7 +195,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # === UMBRAL DE DECISIÓN (FONDO ROSA DIFUMINADO 0.2) ===
+    # === UMBRAL DE DECISIÓN (FONDO ROSA CLARO 0.2 + BARRA BLANCA) ===
     threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
 
     # --- LÓGICA ---

@@ -14,10 +14,10 @@ st.set_page_config(
 
 # --- 2. COLORES ---
 CEMP_PINK = "#E97F87"
-CEMP_DARK = "#2C3E50" # Azul muy oscuro (Casi negro profesional)
+CEMP_DARK = "#2C3E50" # Azul muy oscuro
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
-OPTIMAL_GREEN = "#8BC34A" # Verde lima parecido a la imagen de referencia
+OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -51,7 +51,7 @@ st.markdown(f"""
 
     /* === ESTILO DEL DESPLEGABLE (EXPANDER) - FORZAR ROSA === */
     div[data-testid="stExpander"] details > summary {{
-        background-color: rgba(233, 127, 135, 0.1) !important; /* El rosita transparente */
+        background-color: rgba(233, 127, 135, 0.1) !important; /* Rosa transparente */
         border: 1px solid rgba(233, 127, 135, 0.2) !important;
         border-radius: 8px !important;
         color: {CEMP_DARK} !important;
@@ -228,7 +228,6 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
 
 # --- 7. BARRA LATERAL ---
 with st.sidebar:
-    # LOGO: D(negro) IA(rosa) BETES(negro) .(gris) NME(rosa)
     st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
@@ -313,47 +312,47 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA IMITANDO LA REALIDAD ---
+    # --- UMBRAL CON GRÁFICA REALISTA (Ajustada Fina) ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
         with c_calib_1:
             st.caption("Permite calibrar el modelo manual. Por defecto se establece en **0.27** (Valor óptimo del estudio para maximizar Recall).")
-            # Slider por defecto en 0.27 para coincidir con el óptimo
+            # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # Mensaje informativo simple
+            # Solo información relevante sobre el 0.27
             st.info("ℹ️ **Nota Técnica:** Se ha seleccionado **0.27** como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).")
 
         with c_calib_2:
-            # --- SIMULACIÓN AVANZADA DE DISTRIBUCIÓN (CLONANDO IMAGEN) ---
+            # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
             x = np.linspace(-0.15, 1.25, 500)
             
-            # 1. CLASE 0 (Gris): Bimodal (Pico alto en 0.1, rebote en 0.55)
-            # Sumamos dos curvas gaussianas para crear esa forma de "joroba"
-            y_sanos = 1.8 * np.exp(-((x - 0.1)**2) / (2 * 0.1**2)) + \
-                      0.6 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+            # CLASE 0 (Gris): Pico muy alto y estrecho en 0.1, con rebote pequeño
+            y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.1**2)) + \
+                      0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
             
-            # 2. CLASE 1 (Rosa): Bimodal achatada (Sube en 0.4, pico en 0.7)
-            y_enfermos = 0.5 * np.exp(-((x - 0.4)**2) / (2 * 0.15**2)) + \
-                         1.2 * np.exp(-((x - 0.7)**2) / (2 * 0.18**2))
+            # CLASE 1 (Rosa): Más estrecha que antes (sigma 0.13/0.14) para no verse "gorda"
+            # Centrada en 0.7 con hombro en 0.45
+            y_enfermos = 0.6 * np.exp(-((x - 0.45)**2) / (2 * 0.13**2)) + \
+                         1.35 * np.exp(-((x - 0.7)**2) / (2 * 0.14**2))
             
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
             fig_calib.patch.set_facecolor('none')
             ax_calib.set_facecolor('none')
             
-            # Dibujo Clase 0 (Gris - No Diabetes)
+            # Dibujo Clase 0 (Gris)
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
             ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
             
-            # Dibujo Clase 1 (Rosa - Diabetes)
+            # Dibujo Clase 1 (Rosa)
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
             ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
             
-            # LÍNEA 1: ÓPTIMO (Fija en 0.27 - Verde Lima)
+            # LÍNEA 1: ÓPTIMO (Fija 0.27 - Verde Lima)
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
             
-            # LÍNEA 2: USUARIO (Móvil - Azul Oscuro/Negro)
+            # LÍNEA 2: USUARIO (Móvil - Azul Oscuro)
             ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
             
             # Limpieza y Estilos
@@ -364,7 +363,7 @@ with tab1:
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
             
-            # Leyenda pequeña arriba a la derecha
+            # Leyenda
             ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
             
             st.pyplot(fig_calib, use_container_width=True)

@@ -250,7 +250,7 @@ with tab1:
         conf_color = "#F39C12"
         conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
     else:
-        conf_text = "LIMÍTROFE"  # CAMBIO DE NOMBRE AQUÍ
+        conf_text = "BAJA"  # VOLVEMOS A BAJA
         conf_color = CEMP_PINK
         conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
@@ -281,7 +281,7 @@ with tab1:
     
     # IZQUIERDA
     with c_left:
-        # FICHA PACIENTE CON TERMINOLOGÍA MEJORADA
+        # FICHA PACIENTE 
         st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>

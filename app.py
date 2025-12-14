@@ -239,17 +239,20 @@ with tab1:
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
     
-    # CONFIANZA
+    # CÁLCULO CONFIANZA / FIABILIDAD
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
-        conf_text = "Alta"
+        conf_text = "ALTA"
         conf_color = GOOD_TEAL
+        conf_desc = "Probabilidad claramente alejada del umbral. Clasificación robusta."
     elif distancia_al_corte > 0.05:
-        conf_text = "Media"
+        conf_text = "MEDIA"
         conf_color = "#F39C12"
+        conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
     else:
-        conf_text = "Baja"
+        conf_text = "LIMÍTROFE"  # CAMBIO DE NOMBRE AQUÍ
         conf_color = CEMP_PINK
+        conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
     # ESTILOS
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
@@ -278,7 +281,7 @@ with tab1:
     
     # IZQUIERDA
     with c_left:
-        # FICHA PACIENTE (DISEÑO MEJORADO: CAJA DE CONFIANZA GRIS CLARA)
+        # FICHA PACIENTE CON TERMINOLOGÍA MEJORADA
         st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -292,8 +295,8 @@ with tab1:
 <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
 {risk_icon} {risk_label}
 </div>
-<div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;">
-<span style="font-size:0.7rem; color:#999; font-weight:600;">Confianza: </span>
+<div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
+<span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
 <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
 </div>
 </div>

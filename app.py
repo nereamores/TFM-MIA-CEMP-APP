@@ -166,6 +166,7 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
+            # El modelo ahora recibe el BMI calculado (X[1])
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -211,21 +212,18 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL (REORGANIZADA) ---
+# --- 7. BARRA LATERAL (Limpia y Vertical) ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
-    # --- GRUPO 1: METABÓLICOS ---
-    st.markdown("### 🩸 Metabólicos")
+    # --- GRUPO 1: GLUCOSA / INSULINA ---
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
     
-    # Cálculo Proxy RI
+    # Resultado Índice RI
     proxy_index = glucose * insulin
-    
-    # Mostrar Resultado RI
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -235,16 +233,16 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # --- GRUPO 2: ANTROPOMÉTRICOS ---
-    st.markdown("### 📏 Antropométricos")
+    st.markdown("---") # Separador sutil
+
+    # --- GRUPO 2: PESO / ALTURA ---
     weight = input_biomarker("Peso (kg)", 30.0, 150.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
-    # Cálculo BMI
+    # Resultado BMI
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
-    # Mostrar Resultado BMI y BMI^2
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {GOOD_TEAL};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
@@ -258,8 +256,9 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # --- GRUPO 3: DEMOGRÁFICOS ---
-    st.markdown("### 👤 Paciente")
+    st.markdown("---") # Separador sutil
+
+    # --- GRUPO 3: EDAD Y OTROS ---
     age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
     
     st.write("")
@@ -348,6 +347,7 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
+        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">

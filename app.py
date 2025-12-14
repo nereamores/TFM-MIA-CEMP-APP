@@ -99,6 +99,28 @@ st.markdown(f"""
         color: {CEMP_DARK}; 
         font-weight: 800;
     }}
+    
+    /* === NUEVO: CAJA LEYENDA DPF === */
+    .legend-box {
+        background-color: #F0F2F5;
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid #D0D7DE;
+        margin-top: 5px;
+        font-size: 0.75rem;
+        color: #666;
+        line-height: 1.4;
+    }
+    .legend-title {
+        font-weight: 700;
+        color: {CEMP_DARK};
+        margin-bottom: 5px;
+        display: block;
+    }
+    .legend-box ul {
+        margin: 5px 0 0 15px;
+        padding: 0;
+    }
 
     /* === TARJETAS === */
     .card {{
@@ -166,6 +188,7 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
+            # El modelo ahora recibe el BMI calculado (X[1])
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -211,16 +234,17 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL ---
+# --- 7. BARRA LATERAL (Limpia y Vertical) ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
-    # 1. GLUCOSA / INSULINA
+    # --- GLUCOSA / INSULINA ---
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
     
+    # Resultado Índice RI
     proxy_index = glucose * insulin
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
@@ -231,17 +255,18 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---") 
+    st.markdown("---") # Separador sutil
 
-    # 2. PESO / ALTURA
+    # --- PESO / ALTURA ---
     weight = input_biomarker("Peso (kg)", 30.0, 150.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
+    # Resultado BMI (AHORA EN ROSA CEMP_PINK)
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
     st.markdown(f"""
-    <div class="calc-box" style="border-left: 4px solid {GOOD_TEAL};">
+    <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span class="calc-label">BMI Calculado</span>
             <span class="calc-value">{bmi:.2f}</span>
@@ -253,25 +278,33 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("---") 
+    st.markdown("---") # Separador sutil
 
-    # 3. EDAD Y FACTORES
+    # --- OTROS FACTORES (SIN EXPANDER) ---
     age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
     
-    st.write("")
-    with st.expander("Factores Secundarios"):
-        pregnancies = st.slider("Embarazos", 0, 15, 1)
-        
-        # --- AQUI ESTA EL CAMBIO SOLICITADO ---
-        dpf_help = """
-        Guía de valores aproximada:
-        • 0.0 - 0.2: Sin antecedentes.
-        • 0.2 - 0.5: Antecedentes lejanos.
-        • 0.5 - 0.8: 1 Pariente de primer grado.
-        • > 0.8: Antecedentes severos o múltiples.
-        """
-        dpf = st.slider("Antecedentes familiares (DPF – escala orientativa)", 0.0, 2.5, 0.5, help=dpf_help)
-        st.caption("Interpretación aproximada basada en el conjunto de datos.")
+    st.markdown("---") # Separador sutil
+
+    pregnancies = st.slider("Embarazos", 0, 15, 1)
+    
+    st.write("") # Espacio
+    
+    # DPF CON LEYENDA VISIBLE DEBAJO
+    dpf = st.slider("Antecedentes familiares (DPF – escala orientativa)", 0.0, 2.5, 0.5)
+    
+    st.markdown(f"""
+    <div class="legend-box">
+        <span class="legend-title">Guía de valores aproximada:</span>
+        <ul>
+            <li><b>0.0 - 0.2:</b> Sin antecedentes conocidos.</li>
+            <li><b>0.2 - 0.5:</b> Antecedentes lejanos (abuelos/tíos).</li>
+            <li><b>0.5 - 0.8:</b> 1 Pariente de primer grado (padre/hermano).</li>
+            <li><b>> 0.8:</b> Antecedentes familiares severos o múltiples.</li>
+        </ul>
+        <div style="margin-top:8px; font-style:italic; font-size:0.7rem;">* Interpretación orientativa basada en el conjunto de datos.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # --- 8. MAIN ---
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -290,7 +323,7 @@ with tab1:
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
     
-    # CONFIANZA
+    # CÁLCULO FIABILIDAD
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
         conf_text = "ALTA"
@@ -312,7 +345,7 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS
+    # LÓGICA ALERTAS
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -354,6 +387,7 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
+        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">

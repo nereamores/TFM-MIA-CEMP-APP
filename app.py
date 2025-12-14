@@ -312,7 +312,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA DINÁMICA ---
+    # --- UMBRAL CON GRÁFICA REALISTA (Ajustada a tu distribución) ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
@@ -328,31 +328,38 @@ with tab1:
                 st.info("✅ Zona Equilibrada: Balance óptimo entre detección y precisión.")
 
         with c_calib_2:
-            # Gráfica de densidades
-            x = np.linspace(0, 1, 200)
-            y_sanos = np.exp(-((x - 0.25)**2) / (2 * 0.15**2)) 
-            y_enfermos = np.exp(-((x - 0.75)**2) / (2 * 0.18**2)) * 0.9
+            # DATOS REALISTAS basados en tu imagen de test
+            x = np.linspace(0, 1, 300)
             
-            fig_calib, ax_calib = plt.subplots(figsize=(6, 1.8))
+            # Clase 0 (Sanos): Pico alto en 0.1
+            y_sanos = np.exp(-((x - 0.1)**2) / (2 * 0.12**2)) * 1.5
+            
+            # Clase 1 (Diabetes): Pico ancho en 0.65
+            y_enfermos = np.exp(-((x - 0.65)**2) / (2 * 0.2**2)) * 0.8
+            
+            fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
             fig_calib.patch.set_facecolor('none')
             ax_calib.set_facecolor('none')
             
-            ax_calib.fill_between(x, y_sanos, color=GOOD_TEAL, alpha=0.2, label="Sanos")
-            ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.2, label="Riesgo")
-            ax_calib.plot(x, y_sanos, color=GOOD_TEAL, lw=1)
+            # Dibujo Clase 0 (Gris - No Diabetes)
+            ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="No Diabetes")
+            ax_calib.plot(x, y_sanos, color="#7F8C8D", lw=1)
+            
+            # Dibujo Clase 1 (Rosa - Diabetes)
+            ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Diabetes")
             ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=1)
             
-            # Línea del umbral dinámica
+            # Línea de Umbral Móvil
             ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2)
-            ax_calib.text(threshold + 0.02, 0.9, "Umbral", color=CEMP_DARK, fontsize=8, transform=ax_calib.get_xaxis_transform())
+            ax_calib.text(threshold + 0.02, 1.2, "Umbral", color=CEMP_DARK, fontsize=8, fontweight="bold", transform=ax_calib.get_xaxis_transform())
 
             ax_calib.set_yticks([])
-            ax_calib.set_xticks([0, 0.5, 1])
+            ax_calib.set_xlim(-0.1, 1.1)
             ax_calib.spines['top'].set_visible(False)
             ax_calib.spines['right'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
-            ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
+            ax_calib.legend(loc='upper right', fontsize=7, frameon=False)
             
             st.pyplot(fig_calib, use_container_width=True)
             plt.close(fig_calib)

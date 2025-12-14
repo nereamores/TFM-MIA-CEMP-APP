@@ -35,7 +35,7 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER UMBRAL === */
+    /* === ESTILO SLIDER UMBRAL (Panel Principal) === */
     .stMain .stSlider {{
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
@@ -130,7 +130,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPERS ---
+# --- 4. HELPERS (IMÁGENES Y TOOLTIPS) ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -151,8 +151,9 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. INPUTS SINCRONIZADOS ---
+# --- 6. INPUTS SINCRONIZADOS (VERSIÓN ROBUSTA CON HELP) ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
+    # 1. Renderizar etiqueta con icono de ayuda
     label_html = f"**{label_text}**"
     if help_text:
         label_html += get_help_icon(help_text)
@@ -160,14 +161,17 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
     
     c1, c2 = st.columns([2.5, 1])
     
+    # 2. Gestionar tipos (int vs float)
     input_type = type(default_val)
     min_val = input_type(min_val)
     max_val = input_type(max_val)
     step = 0.1 if input_type == float else 1
 
+    # 3. Inicializar estado maestro
     if key not in st.session_state:
         st.session_state[key] = default_val
 
+    # 4. CALLBACKS DE SINCRONIZACIÓN FUERTE
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
@@ -179,6 +183,7 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         st.session_state[key] = val
         st.session_state[f"{key}_slider"] = val 
 
+    # 5. Renderizar Widgets
     with c1:
         st.slider(
             label="", min_value=min_val, max_value=max_val, step=step,
@@ -274,7 +279,7 @@ with tab1:
     
     # IZQUIERDA
     with c_left:
-        # ATENCIÓN: HTML SIN ESPACIOS AL PRINCIPIO PARA EVITAR QUE SE VEA COMO CÓDIGO
+        # FICHA PACIENTE: AHORA CON LA COLUMNA DERECHA CENTRADA (align-items:center)
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
@@ -284,11 +289,11 @@ with tab1:
 <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>14 Dic 2025</b></div>
 </div>
 </div>
-<div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+<div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
 <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
 {risk_icon} {risk_label}
 </div>
-<div style="font-size:0.75rem; color:#999; font-weight:600; margin-right:5px;">
+<div style="font-size:0.75rem; color:#999; font-weight:600;">
 Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
 </div>
 </div>
@@ -373,7 +378,7 @@ with tab2:
     plt.close(fig)
     st.markdown(f"""<div class="card">
 <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
-<span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
+<span class="card-header">EXPLICABILIDAD DEL MODELO</span>
 {chart_html}
 </div>""", unsafe_allow_html=True)
 

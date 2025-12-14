@@ -18,6 +18,9 @@ CEMP_DARK = "#2C3E50" # Azul muy oscuro
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
 OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
+# Nuevos colores para la nota técnica
+NOTE_BG = "#F1F3F5" # Gris claro neutro
+NOTE_TEXT = "#5E6E7F" # Gris oscuro para texto
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -321,21 +324,25 @@ with tab1:
             # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # Solo información relevante sobre el 0.27
-            st.info("ℹ️ **Nota Técnica:** Se ha seleccionado **0.27** como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).")
+            # NOTA TÉCNICA PERSONALIZADA (Gris claro)
+            st.markdown(f"""
+            <div style="background-color:{NOTE_BG}; padding:15px; border-radius:8px; color:{NOTE_TEXT}; font-size:0.9rem; display:flex; align-items:start; gap:10px;">
+                <span style="font-size:1.2rem;">ℹ️</span>
+                <div>
+                    <strong>Nota Técnica:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         with c_calib_2:
             # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
             x = np.linspace(-0.15, 1.25, 500)
             
-            # CLASE 0 (Gris): Pico muy alto en 0.1. Lo hacemos un pelín más ancho (sigma 0.11)
-            # para que se mantenga alto y se vea el piquito sobre la rosa.
+            # CLASE 0 (Gris): Pico muy alto en 0.1. Sigma 0.11
             y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
             
-            # CLASE 1 (Rosa): AJUSTE CLAVE
-            # Bajamos la altura del primer hombro (en 0.28) de 0.5 a 0.35.
-            # Esto hace que la curva rosa pase "por debajo" de la gris en el umbral 0.27.
+            # CLASE 1 (Rosa): AJUSTE CLAVE (Altura 0.35 en el hombro)
             y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
                          1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
@@ -368,7 +375,9 @@ with tab1:
             # Leyenda
             ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
             
-            st.pyplot(fig_calib, use_container_width=True)
+            # Renderizar la figura centrada usando HTML
+            chart_html_calib = fig_to_html(fig_calib)
+            st.markdown(f"""<div style="display:flex; justify-content:center; margin-top:10px;">{chart_html_calib}</div>""", unsafe_allow_html=True)
             plt.close(fig_calib)
 
     # LÓGICA IA

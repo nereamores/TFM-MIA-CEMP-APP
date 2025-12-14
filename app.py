@@ -18,9 +18,9 @@ CEMP_DARK = "#2C3E50" # Azul muy oscuro
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
 OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
-# Nuevos colores para la nota técnica
-NOTE_BG = "#F1F3F5" # Gris claro neutro
-NOTE_TEXT = "#5E6E7F" # Gris oscuro para texto
+# Colores para la Nota Técnica (Gris Neutro)
+NOTE_BG = "#F1F3F5" 
+NOTE_TEXT = "#5E6E7F" 
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -324,25 +324,25 @@ with tab1:
             # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # NOTA TÉCNICA PERSONALIZADA (Gris claro)
+            # NOTA TÉCNICA PERSONALIZADA (Gris neutro)
             st.markdown(f"""
             <div style="background-color:{NOTE_BG}; padding:15px; border-radius:8px; color:{NOTE_TEXT}; font-size:0.9rem; display:flex; align-items:start; gap:10px;">
                 <span style="font-size:1.2rem;">ℹ️</span>
                 <div>
-                    <strong>Nota Técnica:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
+                    <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
         with c_calib_2:
-            # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
+            # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES (AJUSTE FINAL) ---
             x = np.linspace(-0.15, 1.25, 500)
             
-            # CLASE 0 (Gris): Pico muy alto en 0.1. Sigma 0.11
+            # CLASE 0 (Gris): Pico muy alto en 0.1. (Asegurando el piquito)
             y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
             
-            # CLASE 1 (Rosa): AJUSTE CLAVE (Altura 0.35 en el hombro)
+            # CLASE 1 (Rosa): Hombro inicial bajo (0.35) para que baje por debajo del gris en 0.27.
             y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
                          1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
@@ -352,11 +352,11 @@ with tab1:
             
             # Dibujo Clase 0 (Gris)
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
-            ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
+            ax_calib.plot(x, y_sanos, color="gray", lw=1, alpha=0.6)
             
             # Dibujo Clase 1 (Rosa)
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
-            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
+            ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=1, alpha=0.6)
             
             # LÍNEA 1: ÓPTIMO (Fija 0.27 - Verde Lima)
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
@@ -369,13 +369,14 @@ with tab1:
             ax_calib.set_xlim(-0.2, 1.25)
             ax_calib.spines['top'].set_visible(False)
             ax_calib.spines['right'].set_visible(False)
+            ax_calib.spines['bottom'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
             
             # Leyenda
             ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
             
-            # Renderizar la figura centrada usando HTML
+            # Renderizar la figura centrada
             chart_html_calib = fig_to_html(fig_calib)
             st.markdown(f"""<div style="display:flex; justify-content:center; margin-top:10px;">{chart_html_calib}</div>""", unsafe_allow_html=True)
             plt.close(fig_calib)

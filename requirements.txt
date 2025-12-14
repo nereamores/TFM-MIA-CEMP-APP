@@ -1,0 +1,8 @@
+streamlit
+pandas
+numpy
+joblib
+shap
+matplotlib
+scikit-learn
+imbalanced-learn # Si estás usando imblearn.pipeline

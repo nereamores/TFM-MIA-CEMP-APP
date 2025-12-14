@@ -7,14 +7,14 @@ import base64
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(
-    page_title="CEMP AI", 
+    page_title="DIABETES.NME", 
     page_icon="🩺", 
     layout="wide"
 )
 
 # --- 2. COLORES ---
 CEMP_PINK = "#E97F87"
-CEMP_DARK = "#2C3E50"
+CEMP_DARK = "#2C3E50" # "Negro" (Azul muy oscuro profesional)
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -28,24 +28,38 @@ st.markdown(f"""
     .block-container {{
         max-width: 1250px; 
         padding-top: 2rem;
-        padding-bottom: 3rem;
+        padding-bottom: 2rem;
         margin: 0 auto;
     }}
     
-    .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
+    /* LOGO PERSONALIZADO */
+    .cemp-logo {{ 
+        font-family: 'Helvetica', sans-serif; 
+        font-weight: 800; 
+        font-size: 1.8rem; 
+        color: {CEMP_DARK}; /* Color base (D...BETES) */
+        margin: 0; 
+    }}
+    /* Todo lo que vaya entre <span> será rosa por defecto (IA, NME) */
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER UMBRAL === */
+    /* === ESTILO SLIDER GENERAL === */
+    .stSlider {{
+        padding-top: 0px !important;
+        padding-bottom: 10px !important;
+    }}
+
+    /* === ESTILO SLIDER UMBRAL (MAIN) - COMPACTO === */
     .stMain .stSlider {{
         background-color: rgba(233, 127, 135, 0.1) !important;
-        padding: 20px 25px;
+        padding: 10px 20px; 
         border-radius: 12px;
-        margin-bottom: 25px;
+        margin-bottom: 15px; 
         border: none !important;
     }}
     .stMain .stSlider label p {{
         font-weight: 700 !important;
-        font-size: 0.75rem !important;
+        font-size: 0.7rem !important; 
         color: #999 !important;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -53,7 +67,7 @@ st.markdown(f"""
     .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
          color: {CEMP_DARK} !important; 
          font-weight: 800 !important;
-         font-size: 1rem !important;
+         font-size: 0.9rem !important; 
     }}
     .stMain .stSlider [role="slider"] {{
         background-color: white !important;
@@ -77,7 +91,6 @@ st.markdown(f"""
         font-weight: 800;
         border-radius: 8px;
     }}
-    /* Alineación vertical para que input y slider se vean bien juntos */
     [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{
         vertical-align: middle;
     }}
@@ -104,40 +117,18 @@ st.markdown(f"""
         font-weight: 800;
     }}
     
-    /* === CAJA LEYENDA DPF === */
-    .legend-box {{
-        background-color: #F0F2F5;
-        border-radius: 8px;
-        padding: 12px;
-        border: 1px solid #D0D7DE;
-        margin-top: 5px;
-        font-size: 0.75rem;
-        color: #666;
-        line-height: 1.4;
-    }}
-    .legend-title {{
-        font-weight: 700;
-        color: {CEMP_DARK};
-        margin-bottom: 5px;
-        display: block;
-    }}
-    .legend-box ul {{
-        margin: 5px 0 0 15px;
-        padding: 0;
-    }}
-
     /* === TARJETAS === */
     .card {{
         background-color: white;
         border-radius: 12px;
-        padding: 25px;
+        padding: 20px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        margin-bottom: 15px; 
         display: flex;
         flex-direction: column;
         justify-content: center;
-        min-height: 320px; 
+        min-height: 300px; 
     }}
     
     .card-auto {{
@@ -156,6 +147,7 @@ st.markdown(f"""
         align-items: center;
     }}
 
+    /* GRÁFICOS */
     .bar-container {{
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
@@ -239,7 +231,9 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
 
 # --- 7. BARRA LATERAL ---
 with st.sidebar:
-    st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
+    # --- LOGO ACTUALIZADO (D-IA-BETES . NME) ---
+    # D (Negro) | IA (Rosa) | BETES (Negro) | . (Gris) | NME (Rosa)
+    st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
@@ -289,27 +283,19 @@ with st.sidebar:
     st.markdown("---") 
 
     # --- 4. DPF (DINÁMICO CON ENTRADA MANUAL) ---
-    # Aquí es donde aplicamos el cambio solicitado:
     dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf")
 
-    # Lógica de Color y Texto Dinámico (Se mantiene igual)
     if dpf <= 0.15:
-        dpf_label = "Carga familiar MUY BAJA"
-        bar_color = GOOD_TEAL      # Verde
+        dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
     elif dpf <= 0.40:
-        dpf_label = "Carga familiar BAJA"
-        bar_color = "#D4E157"      # Lima
+        dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
     elif dpf <= 0.80:
-        dpf_label = "Carga familiar MODERADA"
-        bar_color = "#FFB74D"      # Naranja
+        dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
     elif dpf <= 1.20:
-        dpf_label = "Carga familiar ELEVADA"
-        bar_color = CEMP_PINK      # Rosa/Rojo
+        dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
     else:
-        dpf_label = "Carga familiar MUY ELEVADA"
-        bar_color = "#880E4F"      # Morado oscuro / Rojo intenso
+        dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
 
-    # Mostrar la etiqueta dinámica y la barra
     st.markdown(f"""
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-10px; margin-bottom:2px;">
         <span style="font-size:0.8rem; font-weight:bold; color:{bar_color};">{dpf_label}</span>
@@ -324,14 +310,14 @@ with st.sidebar:
 
 
 # --- 8. MAIN ---
-st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
 with tab1:
     st.write("")
     
-    # UMBRAL
+    # UMBRAL (Compacto)
     threshold_help_txt = "Punto de corte clínico. Un umbral más bajo aumenta la sensibilidad."
     threshold = st.slider(f"Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01, help=threshold_help_txt)
 
@@ -343,39 +329,32 @@ with tab1:
     # CÁLCULO FIABILIDAD
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
-        conf_text = "ALTA"
-        conf_color = GOOD_TEAL
+        conf_text, conf_color = "ALTA", GOOD_TEAL
         conf_desc = "Probabilidad claramente alejada del umbral. Clasificación robusta."
     elif distancia_al_corte > 0.05:
-        conf_text = "MEDIA"
-        conf_color = "#F39C12"
+        conf_text, conf_color = "MEDIA", "#F39C12"
         conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
     else:
-        conf_text = "BAJA" 
-        conf_color = CEMP_PINK
+        conf_text, conf_color = "BAJA", CEMP_PINK
         conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
-    # ESTILOS
+    # ESTILOS RIESGO
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
     risk_icon = "🔴" if is_high else "🟢"
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # LÓGICA ALERTAS
+    # ALERTAS
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
     if proxy_index > 19769.5: alerts.append("Posible Resistencia Insulina")
     
     if not alerts:
-        insight_txt = "Sin hallazgos significativos"
-        insight_bd = GOOD_TEAL
-        alert_icon = "✅"
+        insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
     else:
-        insight_txt = " • ".join(alerts)
-        insight_bd = CEMP_PINK
-        alert_icon = "⚠️"
+        insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
 
     # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
@@ -404,7 +383,6 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
-        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">
@@ -452,8 +430,8 @@ with tab1:
 
         prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
         
-        st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
-    <span class="card-header" style="justify-content:center; margin-bottom:20px;">PROBABILIDAD IA{prob_help}</span>
+        st.markdown(f"""<div class="card" style="text-align:center; padding: 20px;">
+    <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
     <div style="position:relative; display:inline-block; margin: auto;">
         {chart_html}
         <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">

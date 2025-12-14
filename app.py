@@ -6,7 +6,11 @@ import io
 import base64
 
 # --- CONFIGURACIÓN ---
-st.set_page_config(page_title="CEMP AI", page_icon="🩺", layout="wide")
+st.set_page_config(
+    page_title="CEMP AI", 
+    page_icon="🩺", 
+    layout="wide"
+)
 
 # --- COLORES ---
 CEMP_PINK = "#E97F87"
@@ -14,25 +18,32 @@ CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-# --- CSS ENTERPRISE ---
+# --- CSS ENTERPRISE (OPTIMIZADO PARA 100% ZOOM) ---
 st.markdown(f"""
     <style>
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
-    .block-container {{padding-top: 2rem; padding-bottom: 3rem;}}
+    
+    /* 1. TRUCO MAESTRO: LIMITAR EL ANCHO MÁXIMO PARA QUE NO SE DESPARRAME */
+    .block-container {{
+        max-width: 1100px; /* Ancho ideal de dashboard */
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+        margin: 0 auto; /* Centrar en la pantalla */
+    }}
     
     /* LOGO */
-    .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 2.2rem; color: {CEMP_DARK}; margin:0; }}
+    .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 2rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
     
-    /* TARJETAS */
+    /* TARJETAS CON MEJOR RELLENO */
     .card {{
         background-color: white;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border-radius: 15px; /* Bordes más redondeados */
+        padding: 30px; /* Más espacio interno */
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         height: 100%;
         transition: transform 0.2s;
     }}
@@ -46,29 +57,29 @@ st.markdown(f"""
     
     /* BARRAS DE PROGRESO */
     .bar-container {{
-        position: relative; width: 100%; margin-top: 15px; margin-bottom: 20px;
+        position: relative; width: 100%; margin-top: 20px; margin-bottom: 25px;
     }}
-    .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
-    .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 0.9; }}
+    .bar-bg {{ background: #F0F2F5; height: 14px; border-radius: 7px; width: 100%; overflow: hidden; }}
+    .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 7px; opacity: 0.9; }}
     .bar-marker {{ 
-        position: absolute; top: -7px; width: 4px; height: 26px; 
-        background: {CEMP_DARK}; border: 2px solid white; border-radius: 2px;
+        position: absolute; top: -8px; width: 5px; height: 30px; 
+        background: {CEMP_DARK}; border: 2px solid white; border-radius: 3px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; transition: left 0.3s ease;
     }}
     .bar-txt {{ 
-        position: absolute; top: -30px; transform: translateX(-50%); 
-        font-size: 0.9rem; font-weight: bold; color: {CEMP_DARK}; 
-        background: white; padding: 2px 8px; border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        position: absolute; top: -35px; transform: translateX(-50%); 
+        font-size: 1rem; font-weight: bold; color: {CEMP_DARK}; 
+        background: white; padding: 4px 10px; border-radius: 6px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.08);
     }}
     
     /* LEYENDA */
-    .legend-row {{ display: flex; justify-content: space-between; font-size: 0.7rem; color: #999; margin-top: -5px; text-transform: uppercase; letter-spacing: 1px; }}
+    .legend-row {{ display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; margin-top: -5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }}
     
     </style>
 """, unsafe_allow_html=True)
 
-# --- HELPER: GRÁFICOS A HTML ---
+# --- HELPER ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -115,10 +126,10 @@ risk_color = CEMP_PINK if is_high else GOOD_TEAL
 risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
 risk_icon = "🔴" if is_high else "🟢"
 
-# CABECERA
-c_tit, c_bad = st.columns([3,1])
-with c_tit: st.markdown(f"<h1 style='color:{CEMP_DARK}; margin:0; font-size: 2.5rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
-with c_bad: st.markdown(f"<div style='text-align:right; margin-top:15px; color:{risk_color}; font-weight:bold; font-size:1.2rem; background:white; padding:5px 15px; border-radius:20px; box-shadow:0 2px 5px rgba(0,0,0,0.05); border:1px solid #EEE;'>{risk_icon} {risk_label}</div>", unsafe_allow_html=True)
+# CABECERA (Ajustada)
+c_tit, c_bad = st.columns([3,1], gap="medium")
+with c_tit: st.markdown(f"<h1 style='color:{CEMP_DARK}; margin:0; font-size: 2.8rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
+with c_bad: st.markdown(f"<div style='text-align:center; margin-top:15px; color:{risk_color}; font-weight:bold; font-size:1.2rem; background:white; padding:10px 15px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05); border:1px solid #EEE;'>{risk_icon} {risk_label}</div>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
@@ -126,7 +137,6 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # CALCULOS
     alerts = []
     if glucose > 120: alerts.append("Hiperglucemia")
     if bmi > 30: alerts.append("Obesidad")
@@ -134,76 +144,80 @@ with tab1:
     insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
     insight_bd = CEMP_PINK if alerts else GOOD_TEAL
 
-    # --- LAYOUT PRINCIPAL (2 COLUMNAS) ---
-    c_left, c_right = st.columns([2, 1], gap="medium") # Izq (Contexto) Ancha, Der (Resultados) Estrecha
+    # CAMBIO: Usamos ratio 65% - 35% que funciona mejor con el max-width
+    c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
-    # === COLUMNA IZQUIERDA (CONTEXTO Y FICHA) ===
+    # === COLUMNA IZQUIERDA (CONTEXTO) ===
     with c_left:
-        
-        # 1. FICHA PACIENTE (SIN ESPACIOS AL INICIO DEL HTML)
+        # Ficha Paciente
         st.markdown(f"""<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding: 30px;">
-    <div>
-        <span style="color:#999; font-size:0.8rem; font-weight:bold; letter-spacing:1px;">EXPEDIENTE MÉDICO</span>
-        <h2 style="margin:5px 0 5px 0; color:{CEMP_DARK}; font-size:2rem;">Paciente #8842-X</h2>
-        <div style="font-size:0.9rem; color:#666;">📅 Última Revisión: <b>14 Dic 2025</b></div>
-    </div>
-    <div style="background:#F0F2F5; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
-</div>""", unsafe_allow_html=True)
+            <div>
+                <span style="color:#999; font-size:0.8rem; font-weight:bold; letter-spacing:1px;">EXPEDIENTE MÉDICO</span>
+                <h2 style="margin:5px 0 5px 0; color:{CEMP_DARK}; font-size:2.2rem;">Paciente #8842-X</h2>
+                <div style="font-size:1rem; color:#666;">📅 Última Revisión: <b>14 Dic 2025</b></div>
+            </div>
+            <div style="background:#F0F2F5; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:{CEMP_DARK};">👤</div>
+        </div>""", unsafe_allow_html=True)
 
-        # 2. CONTEXTO POBLACIONAL
+        # Contexto Poblacional
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">
-<h3 style="color:{CEMP_DARK}; margin-bottom:30px; font-size:1.3rem;">Contexto Poblacional</h3>
-<div style="font-size:0.85rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
-<div class="bar-container">
-    <div class="bar-bg"><div class="bar-fill"></div></div>
-    <div class="bar-marker" style="left: {g_pos}%;"></div>
-    <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
-</div>
-<div class="legend-row" style="margin-bottom:40px;">
-    <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
-</div>
-<div style="font-size:0.85rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi})</span></div>
-<div class="bar-container">
-    <div class="bar-bg"><div class="bar-fill"></div></div>
-    <div class="bar-marker" style="left: {b_pos}%;"></div>
-    <div class="bar-txt" style="left: {b_pos}%;">{bmi}</div>
-</div>
-<div class="legend-row">
-    <span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
-</div>
-</div>""", unsafe_allow_html=True)
+        <h3 style="color:{CEMP_DARK}; margin-bottom:35px; font-size:1.4rem;">Contexto Poblacional</h3>
+        
+        <div style="font-size:0.9rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
+        <div class="bar-container">
+            <div class="bar-bg"><div class="bar-fill"></div></div>
+            <div class="bar-marker" style="left: {g_pos}%;"></div>
+            <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
+        </div>
+        <div class="legend-row" style="margin-bottom:45px;">
+            <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
+        </div>
+
+        <div style="font-size:0.9rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi})</span></div>
+        <div class="bar-container">
+            <div class="bar-bg"><div class="bar-fill"></div></div>
+            <div class="bar-marker" style="left: {b_pos}%;"></div>
+            <div class="bar-txt" style="left: {b_pos}%;">{bmi}</div>
+        </div>
+        <div class="legend-row">
+            <span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
+        </div>
+        </div>""", unsafe_allow_html=True)
 
     # === COLUMNA DERECHA (RESULTADOS) ===
     with c_right:
+        # Hallazgos
+        st.markdown(f"""<div class="card" style="border-left:6px solid {insight_bd}; padding: 25px;">
+            <span style="color:{insight_bd}; font-size:0.75rem; font-weight:bold; letter-spacing:1px;">HALLAZGOS CLAVE</span>
+            <h3 style="margin:12px 0; color:{CEMP_DARK}; font-size:1.2rem; line-height:1.4;">{insight_txt}</h3>
+            <div style="text-align:right; font-size:1.8rem; margin-top:-10px;">{'⚠️' if alerts else '✅'}</div>
+        </div>""", unsafe_allow_html=True)
         
-        # 1. HALLAZGOS (SIN ESPACIOS AL INICIO)
-        st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; padding: 20px;">
-    <span style="color:{insight_bd}; font-size:0.7rem; font-weight:bold; letter-spacing:1px;">HALLAZGOS CLAVE</span>
-    <h3 style="margin:10px 0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
-    <div style="text-align:right; font-size:1.5rem; margin-top:-10px;">{'⚠️' if alerts else '✅'}</div>
-</div>""", unsafe_allow_html=True)
-        
-        # 2. PROBABILIDAD (CORREGIDO: SIN ESPACIOS AL INICIO)
-        fig, ax = plt.subplots(figsize=(3, 3))
+        # Probabilidad IA (DONUT GRANDE)
+        # Aumentamos figsize para que ocupe más tarjeta
+        fig, ax = plt.subplots(figsize=(4, 4)) 
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
-        ax.pie([prob, 1-prob], colors=[risk_color, '#F0F0F0'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+        # Anillo más grueso (width=0.18)
+        ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.18, edgecolor='none'))
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
-        st.markdown(f"""<div class="card" style="text-align:center; padding-top:40px; padding-bottom:40px;">
-<h4 style="color:#888; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem; letter-spacing:1px;">Probabilidad IA</h4>
-<div style="position:relative; display:inline-block;">
-    {chart_html}
-    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:3.5rem; font-weight:800; color:{CEMP_DARK};">
-        {prob*100:.1f}%
-    </div>
-</div>
-<div style="font-size:0.9rem; color:#888; margin-top:20px;">Confianza del Modelo</div>
-</div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="card" style="text-align:center; padding-top:30px; padding-bottom:30px; display:flex; flex-direction:column; justify-content:center; height:100%;">
+            <h4 style="color:#888; margin-bottom:10px; text-transform:uppercase; font-size:0.85rem; letter-spacing:1px; font-weight:700;">Probabilidad IA</h4>
+            
+            <div style="position:relative; display:inline-block; margin: 0 auto;">
+                {chart_html}
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:3.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
+                    {prob*100:.1f}%
+                </div>
+            </div>
+            
+            <div style="font-size:0.95rem; color:#888; margin-top:15px;">Confianza del Modelo</div>
+        </div>""", unsafe_allow_html=True)
 
 # --- TAB 2: SHAP ---
 with tab2:
@@ -228,10 +242,10 @@ with tab2:
     plt.close(fig)
 
     st.markdown(f"""<div class="card">
-<h3 style="color:{CEMP_DARK};">Factores de Riesgo (SHAP)</h3>
-<p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Variables que más han impactado en la decisión del modelo para este paciente específico.</p>
-{chart_html}
-</div>""", unsafe_allow_html=True)
+        <h3 style="color:{CEMP_DARK};">Factores de Riesgo (SHAP)</h3>
+        <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Variables que más han impactado en la decisión.</p>
+        {chart_html}
+    </div>""", unsafe_allow_html=True)
 
 # --- TAB 3: PROTOCOLO ---
 with tab3:

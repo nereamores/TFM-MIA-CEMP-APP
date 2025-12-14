@@ -35,7 +35,7 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER UMBRAL (Panel Principal) === */
+    /* === ESTILO SLIDER UMBRAL === */
     .stMain .stSlider {{
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
@@ -68,7 +68,7 @@ st.markdown(f"""
          background-color: rgba(255, 255, 255, 0.5) !important;
     }}
 
-    /* === ESTILO INPUTS BARRA LATERAL === */
+    /* === INPUTS BARRA LATERAL === */
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px;
         font-size: 0.9rem;
@@ -86,10 +86,17 @@ st.markdown(f"""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
-        height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        /* NUEVO: Altura mínima para igualar visualmente las tarjetas de abajo */
+        min-height: 320px; 
+    }}
+    
+    /* Clase especial para tarjetas que no necesitan ser tan altas (como la de arriba) */
+    .card-auto {{
+        min-height: auto !important;
+        height: 100%;
     }}
     
     .card-header {{
@@ -130,7 +137,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPERS (IMÁGENES Y TOOLTIPS) ---
+# --- 4. HELPERS ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
@@ -139,7 +146,6 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def get_help_icon(description):
-    """Genera un pequeño icono '?' gris."""
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # --- 5. MODELO MOCK ---
@@ -151,9 +157,8 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. INPUTS SINCRONIZADOS (VERSIÓN ROBUSTA CON HELP) ---
+# --- 6. INPUTS SINCRONIZADOS ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
-    # 1. Renderizar etiqueta con icono de ayuda
     label_html = f"**{label_text}**"
     if help_text:
         label_html += get_help_icon(help_text)
@@ -161,17 +166,14 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
     
     c1, c2 = st.columns([2.5, 1])
     
-    # 2. Gestionar tipos (int vs float)
     input_type = type(default_val)
     min_val = input_type(min_val)
     max_val = input_type(max_val)
     step = 0.1 if input_type == float else 1
 
-    # 3. Inicializar estado maestro
     if key not in st.session_state:
         st.session_state[key] = default_val
 
-    # 4. CALLBACKS DE SINCRONIZACIÓN FUERTE
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
@@ -183,22 +185,15 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         st.session_state[key] = val
         st.session_state[f"{key}_slider"] = val 
 
-    # 5. Renderizar Widgets
     with c1:
         st.slider(
             label="", min_value=min_val, max_value=max_val, step=step,
-            key=f"{key}_slider", 
-            value=st.session_state[key], 
-            on_change=update_from_slider, 
-            label_visibility="collapsed"
+            key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed"
         )
     with c2:
         st.number_input(
             label="", min_value=min_val, max_value=max_val, step=step,
-            key=f"{key}_input", 
-            value=st.session_state[key], 
-            on_change=update_from_input, 
-            label_visibility="collapsed"
+            key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed"
         )
     return st.session_state[key]
 
@@ -209,9 +204,10 @@ with st.sidebar:
     st.write("")
     
     st.markdown("### 🧬 Biomarcadores")
-    glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Nivel de azúcar en sangre en ayunas.")
+    # TOOLTIPS ACTUALIZADOS A CONTEXTO 2H
+    glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
     bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi", "Índice de Masa Corporal.")
-    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Hormona que regula la glucosa.")
+    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
     age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
     
     st.write("")
@@ -220,13 +216,18 @@ with st.sidebar:
         dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
 
     st.markdown("---")
-    homa = glucose * insulin / 405
-    homa_help = get_help_icon("Estimación de resistencia a insulina.")
+    
+    # --- CÁLCULO DEL PROXY INDEX (TFM) ---
+    proxy_index = glucose * insulin
+    
+    # Visualización en KPIs
+    proxy_help = get_help_icon("Índice Proxy de Resistencia (Glucosa x Insulina). P75 = 19769.5")
     bmi_help = get_help_icon("Cálculo basado en peso/altura.")
     
     c1, c2 = st.columns(2)
-    with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{homa:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">HOMA-IR{homa_help}</div></div>', unsafe_allow_html=True)
-    with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.4rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI{bmi_help}</div></div>', unsafe_allow_html=True)
+    # Formateamos el número grande con coma para miles (ej: 14,500)
+    with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.2rem; font-weight:bold; color:{CEMP_DARK}">{proxy_index:,.0f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">ÍNDICE RI{proxy_help}</div></div>', unsafe_allow_html=True)
+    with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.2rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI{bmi_help}</div></div>', unsafe_allow_html=True)
 
 # --- 8. MAIN ---
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -240,25 +241,22 @@ with tab1:
     threshold_help_txt = "Punto de corte clínico. Un umbral más bajo aumenta la sensibilidad."
     threshold = st.slider(f"Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01, help=threshold_help_txt)
 
-    # LÓGICA
+    # LÓGICA IA
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
     prob = st.session_state.model.predict_proba(input_data)[0][1]
     is_high = prob > threshold 
     
-    # CÁLCULO CONFIANZA
+    # CONFIANZA
     distancia_al_corte = abs(prob - threshold)
     if distancia_al_corte > 0.15:
         conf_text = "Alta"
         conf_color = GOOD_TEAL
-        conf_desc = "Clasificación robusta."
     elif distancia_al_corte > 0.05:
         conf_text = "Media"
         conf_color = "#F39C12"
-        conf_desc = "Zona intermedia."
     else:
         conf_text = "Baja"
         conf_color = CEMP_PINK
-        conf_desc = "Zona de incertidumbre (Borderline)."
 
     # ESTILOS
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
@@ -267,20 +265,39 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
+    # --- LÓGICA DE ALERTAS (TFM) ---
     alerts = []
-    if glucose > 120: alerts.append("Hiperglucemia")
-    if bmi > 30: alerts.append("Obesidad")
-    if homa > 2.5: alerts.append("Resistencia Insulina")
-    insight_txt = " • ".join(alerts) if alerts else "Paciente estable"
-    insight_bd = CEMP_PINK if alerts else GOOD_TEAL
+    
+    # 1. Hiperglucemia
+    if glucose > 120: 
+        alerts.append("Hiperglucemia")
+        
+    # 2. Obesidad
+    if bmi > 30: 
+        alerts.append("Obesidad")
+        
+    # 3. Resistencia a Insulina (Usando el Proxy P75 del TFM)
+    # Umbral P75 = 19769.5
+    if proxy_index > 19769.5:
+        alerts.append("Posible Resistencia Insulina")
+    
+    # Gestión de "Sin Hallazgos"
+    if not alerts:
+        insight_txt = "Sin hallazgos significativos"
+        insight_bd = GOOD_TEAL # Verde
+        alert_icon = "✅"
+    else:
+        insight_txt = " • ".join(alerts)
+        insight_bd = CEMP_PINK # Rosa Alerta
+        alert_icon = "⚠️"
 
     # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # IZQUIERDA
     with c_left:
-        # FICHA PACIENTE: AHORA CON LA COLUMNA DERECHA CENTRADA (align-items:center)
-        st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
+        # AÑADIMOS LA CLASE "card-auto" PARA QUE ESTA NO CREZCA INNECESARIAMENTE
+        st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
 <div>
@@ -302,6 +319,7 @@ Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
+        # Esta tarjeta SÍ tendrá la altura mínima de 320px
         st.markdown(f"""<div class="card">
 <span class="card-header">CONTEXTO POBLACIONAL</span>
 <div style="margin-top:15px;">
@@ -330,11 +348,12 @@ Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
 
     # DERECHA
     with c_right:
-        st.markdown(f"""<div class="card" style="border-left:5px solid {insight_bd}; justify-content:center;">
+        # Hallazgos
+        st.markdown(f"""<div class="card card-auto" style="border-left:5px solid {insight_bd}; justify-content:center;">
     <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
-        <div style="font-size:1.8rem;">{'⚠️' if alerts else '✅'}</div>
+        <div style="font-size:1.8rem;">{alert_icon}</div>
     </div>
 </div>""", unsafe_allow_html=True)
         
@@ -345,16 +364,17 @@ Confianza: <span style="color:{conf_color}; font-weight:800;">{conf_text}</span>
         chart_html = fig_to_html(fig)
         plt.close(fig)
 
+        # Probabilidad IA (Sin texto abajo, solo tooltip arriba)
+        prob_help = get_help_icon("Probabilidad calculada por el modelo de IA basada en los biomarcadores introducidos.")
+        
+        # Esta tarjeta SÍ tendrá la altura mínima de 320px para igualar a la de la izquierda
         st.markdown(f"""<div class="card" style="text-align:center; padding: 40px 20px;">
-    <span class="card-header" style="margin-bottom:20px;">PROBABILIDAD IA</span>
+    <span class="card-header" style="justify-content:center; margin-bottom:20px;">PROBABILIDAD IA{prob_help}</span>
     <div style="position:relative; display:inline-block; margin: auto;">
         {chart_html}
         <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
             {prob*100:.1f}%
         </div>
-    </div>
-    <div style="font-size:0.8rem; color:#888; margin-top:20px;">
-        Probabilidad calculada por el modelo
     </div>
 </div>""", unsafe_allow_html=True)
 
@@ -378,7 +398,7 @@ with tab2:
     plt.close(fig)
     st.markdown(f"""<div class="card">
 <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
-<span class="card-header">EXPLICABILIDAD DEL MODELO</span>
+<span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
 {chart_html}
 </div>""", unsafe_allow_html=True)
 

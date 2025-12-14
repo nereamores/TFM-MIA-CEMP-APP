@@ -23,6 +23,7 @@ RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK
 # --- 3. CSS (ESTILOS AVANZADOS) ---
 st.markdown(f"""
     <style>
+    /* Ocultar elementos base */
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
@@ -39,44 +40,50 @@ st.markdown(f"""
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* ==================================================================
-       ESTILO SLIDER UMBRAL (FONDO ROSA SUTIL + LÍNEA BLANCA)
+       ESTILO SLIDER UMBRAL (FONDO ROSA SUTIL + LÍNEA GRIS)
        ================================================================== */
     .stMain .stSlider {{
+        /* Fondo Rosa muy suave (rgba 233,127,135 con opacidad 0.1) */
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
         border-radius: 12px;
         margin-bottom: 25px;
         border: none !important;
+        box-shadow: none !important;
     }}
+    
+    /* TÍTULO DEL SLIDER */
     .stMain .stSlider label p {{
         font-weight: 700 !important;
-        font-size: 0.75rem !important;
-        color: #999 !important;
+        font-size: 0.75rem !important; /* Tamaño pequeño */
+        color: #999 !important;        /* Color Gris suave */
         text-transform: uppercase;
         letter-spacing: 1px;
     }}
+    
+    /* VALOR DEL SLIDER */
     .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
          color: {CEMP_DARK} !important; 
          font-weight: 800 !important;
          font-size: 1rem !important;
     }}
+
+    /* BARRA Y TIRADOR */
     .stMain .stSlider [role="slider"] {{
-        background-color: white !important;
-        border: 2px solid {SLIDER_GRAY} !important; 
+        background-color: {SLIDER_GRAY} !important;
+        border: 2px solid white !important; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }}
     .stMain .stSlider > div > div > div > div {{
-        background: white !important;
-        color: white !important;
+        background: {SLIDER_GRAY} !important;
+        color: {SLIDER_GRAY} !important;
     }}
     .stMain .stSlider > div > div > div > div > div {{
-         background-color: rgba(255, 255, 255, 0.5) !important;
+         background-color: rgba(0, 0, 0, 0.05) !important;
     }}
+    /* ================================================================== */
 
-    /* ==================================================================
-       ESTILO PARA LA BARRA LATERAL (INPUTS SINCRONIZADOS)
-       ================================================================== */
-    /* Ajustamos el number_input para que se vea limpio al lado del slider */
+    /* ESTILO PARA LA BARRA LATERAL (INPUTS) */
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px;
         font-size: 0.9rem;
@@ -155,43 +162,63 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. FUNCION HELPER PARA INPUTS SINCRONIZADOS ---
+# --- 6. FUNCION HELPER PARA INPUTS SINCRONIZADOS (CORREGIDA) ---
 def input_biomarker(label, min_val, max_val, default_val, key):
-    """Crea un slider y un number_input sincronizados."""
     st.markdown(f"**{label}**")
-    c1, c2 = st.columns([3, 1]) # Columna ancha para slider, estrecha para cajita
+    c1, c2 = st.columns([3, 1])
     
-    # Inicializar estado si no existe
+    # 1. Determinar el tipo de dato (Entero o Decimal)
+    # Si default_val es float (ej: 28.5), el paso será 0.1, si es int (ej: 120), será 1
+    input_type = type(default_val)
+    step = 0.1 if input_type == float else 1
+    
+    # Asegurar que min y max sean del mismo tipo
+    min_val = input_type(min_val)
+    max_val = input_type(max_val)
+
+    # 2. Inicializar estado maestro si no existe
     if key not in st.session_state:
         st.session_state[key] = default_val
 
-    # Callbacks para sincronizar
+    # 3. Callbacks de Sincronización Bidireccional
+    # El truco: Cuando uno cambia, forzamos la actualización de la variable del OTRO
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
-    def update_from_box():
-        st.session_state[key] = st.session_state[f"{key}_box"]
+        st.session_state[f"{key}_box"] = st.session_state[f"{key}_slider"]
 
+    def update_from_box():
+        # Clamp para evitar errores si el usuario escribe un número fuera de rango
+        val = st.session_state[f"{key}_box"]
+        if val < min_val: val = min_val
+        if val > max_val: val = max_val
+        
+        st.session_state[key] = val
+        st.session_state[f"{key}_slider"] = val
+
+    # 4. Renderizar Widgets
     with c1:
         st.slider(
-            label="", # Ocultamos label porque ya pusimos el título arriba
-            min_value=min_val, max_value=max_val, 
-            key=f"{key}_slider", 
-            value=st.session_state[key], 
-            on_change=update_from_slider,
+            label="",
+            min_value=min_val, max_value=max_val,
+            value=st.session_state[key], # Lee del estado maestro
+            step=step,
+            key=f"{key}_slider",
+            on_change=update_from_slider, # Llama a la función al mover
             label_visibility="collapsed"
         )
     with c2:
         st.number_input(
-            label="", 
-            min_value=min_val, max_value=max_val, 
-            key=f"{key}_box", 
-            value=st.session_state[key], 
-            on_change=update_from_box,
+            label="",
+            min_value=min_val, max_value=max_val,
+            value=st.session_state[key], # Lee del estado maestro
+            step=step,
+            key=f"{key}_box",
+            on_change=update_from_box, # Llama a la función al escribir
             label_visibility="collapsed"
         )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL (NUEVA VERSIÓN) ---
+# --- 7. BARRA LATERAL ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
@@ -199,9 +226,9 @@ with st.sidebar:
     
     st.markdown("### 🧬 Biomarcadores")
     
-    # Usamos la nueva función para inputs cómodos
+    # Inputs sincronizados (Enteros y Decimales manejados automáticamente)
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc")
-    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi")
+    bmi = input_biomarker("BMI (kg/m²)", 15.0, 50.0, 28.5, "bmi") # Float
     insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins")
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
     
@@ -235,7 +262,7 @@ with tab1:
     # LÓGICA
     input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
     prob = st.session_state.model.predict_proba(input_data)[0][1]
-    is_high = prob > threshold # Aquí es donde el umbral decide si es ALTO o BAJO
+    is_high = prob > threshold 
     
     risk_color = CEMP_PINK if is_high else GOOD_TEAL
     risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"

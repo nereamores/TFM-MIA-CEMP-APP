@@ -78,6 +78,28 @@ st.markdown(f"""
         border-radius: 8px;
     }}
 
+    /* === CAJA DE CÁLCULOS (SIDEBAR) === */
+    .calc-box {{
+        background-color: #F8F9FA;
+        border-radius: 8px;
+        padding: 12px 15px;
+        border: 1px solid #EEE;
+        margin-top: 5px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }}
+    .calc-label {{
+        font-size: 0.75rem; 
+        color: #888; 
+        font-weight: 600; 
+        text-transform: uppercase;
+    }}
+    .calc-value {{
+        font-size: 1rem; 
+        color: {CEMP_DARK}; 
+        font-weight: 800;
+    }}
+
     /* === TARJETAS === */
     .card {{
         background-color: white;
@@ -108,22 +130,6 @@ st.markdown(f"""
         align-items: center;
     }}
 
-    .kpi-box {{
-        background: white; border-left: 4px solid {CEMP_PINK};
-        padding: 12px; border-radius: 6px; margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-    }}
-    
-    /* CAJA DE RESULTADOS CALCULADOS (SIDEBAR) */
-    .calc-box {{
-        background-color: #F8F9FA;
-        border-radius: 8px;
-        padding: 15px;
-        border: 1px solid #EEE;
-        margin-top: 10px;
-        margin-bottom: 20px;
-    }}
-    
     .bar-container {{
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
@@ -160,7 +166,6 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # El modelo ahora recibe el BMI calculado (X[1])
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -206,55 +211,61 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL ---
+# --- 7. BARRA LATERAL (REORGANIZADA) ---
 with st.sidebar:
     st.markdown('<div class="cemp-logo">CEMP<span>.</span>AI</div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
-    st.markdown("### 🧬 Biomarcadores")
+    # --- GRUPO 1: METABÓLICOS ---
+    st.markdown("### 🩸 Metabólicos")
     glucose = input_biomarker("Glucosa (mg/dL)", 50, 250, 120, "gluc", "Glucosa a las 2h de ingesta.")
+    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
     
-    # --- CAMBIO IMPORTANTE: PESO Y ALTURA ---
-    # Usamos dos inputs separados para calcular el BMI
+    # Cálculo Proxy RI
+    proxy_index = glucose * insulin
+    
+    # Mostrar Resultado RI
+    st.markdown(f"""
+    <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="calc-label">Índice RI (Proxy)</span>
+            <span class="calc-value">{proxy_index:,.0f}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- GRUPO 2: ANTROPOMÉTRICOS ---
+    st.markdown("### 📏 Antropométricos")
     weight = input_biomarker("Peso (kg)", 30.0, 150.0, 70.0, "weight", "Peso corporal actual.")
     height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
     
-    # CÁLCULO DEL BMI Y BMI^2
+    # Cálculo BMI
     bmi = weight / (height * height)
     bmi_sq = bmi ** 2
     
-    # MOSTRAR RESULTADOS CALCULADOS EN LA BARRA LATERAL
+    # Mostrar Resultado BMI y BMI^2
     st.markdown(f"""
-    <div class="calc-box">
+    <div class="calc-box" style="border-left: 4px solid {GOOD_TEAL};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span style="font-size:0.8rem; color:#666; font-weight:600;">BMI Calculado:</span>
-            <span style="font-size:0.9rem; color:{CEMP_DARK}; font-weight:bold;">{bmi:.2f}</span>
+            <span class="calc-label">BMI Calculado</span>
+            <span class="calc-value">{bmi:.2f}</span>
         </div>
         <div style="display:flex; justify-content:space-between;">
-            <span style="font-size:0.8rem; color:#666; font-weight:600;">BMI²:</span>
-            <span style="font-size:0.9rem; color:{CEMP_DARK}; font-weight:bold;">{bmi_sq:.2f}</span>
+            <span class="calc-label">BMI² (Non-Linear)</span>
+            <span class="calc-value">{bmi_sq:.2f}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    insulin = input_biomarker("Insulina (mu U/ml)", 0, 600, 100, "ins", "Insulina a las 2h de ingesta.")
+    # --- GRUPO 3: DEMOGRÁFICOS ---
+    st.markdown("### 👤 Paciente")
     age = input_biomarker("Edad (años)", 18, 90, 45, "age", "Factor de riesgo no modificable.")
     
     st.write("")
     with st.expander("Factores Secundarios"):
         pregnancies = st.slider("Embarazos", 0, 15, 1)
         dpf = st.slider("Función Pedigrí", 0.0, 2.5, 0.5)
-
-    st.markdown("---")
-    
-    proxy_index = glucose * insulin
-    proxy_help = get_help_icon("Índice Proxy de Resistencia (Glucosa x Insulina). P75 = 19769.5")
-    bmi_help = get_help_icon("Cálculo basado en peso/altura.")
-    
-    c1, c2 = st.columns(2)
-    with c1: st.markdown(f'<div class="kpi-box"><div style="font-size:1.2rem; font-weight:bold; color:{CEMP_DARK}">{proxy_index:,.0f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">ÍNDICE RI{proxy_help}</div></div>', unsafe_allow_html=True)
-    with c2: st.markdown(f'<div class="kpi-box"><div style="font-size:1.2rem; font-weight:bold; color:{CEMP_DARK}">{bmi:.1f}</div><div style="font-size:0.7rem; color:#888; font-weight:600;">BMI{bmi_help}</div></div>', unsafe_allow_html=True)
 
 # --- 8. MAIN ---
 st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 20px; font-size: 2.2rem;'>Perfil de Riesgo Metabólico</h1>", unsafe_allow_html=True)
@@ -284,7 +295,7 @@ with tab1:
         conf_color = "#F39C12"
         conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
     else:
-        conf_text = "BAJA"  # "BAJA" como pediste
+        conf_text = "BAJA" 
         conf_color = CEMP_PINK
         conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
@@ -337,7 +348,6 @@ with tab1:
 </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
-        # Ajustamos el contexto poblacional al BMI calculado
         b_pos = min(100, max(0, (bmi - 18) / 0.22))
         
         st.markdown(f"""<div class="card">

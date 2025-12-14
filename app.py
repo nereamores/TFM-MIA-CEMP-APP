@@ -38,21 +38,18 @@ st.markdown(f"""
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* ==================================================================
-       ESTILO NUEVO PARA EL SLIDER DEL UMBRAL (CAJA BLANCA CON BORDE ROSA)
+       ESTILO: UMBRAL DE DECISIÓN (ROSA DIFUMINADO 0.2)
        ================================================================== */
-    /* Apuntamos al contenedor del slider en el área principal */
     .stMain .stSlider {{
-        background-color: white;
+        /* Fondo Rosa con Transparencia 0.2 (rgba) */
+        background-color: rgba(233, 127, 135, 0.2) !important;
         padding: 20px 25px;
         border-radius: 12px;
-        /* Sombra suave y borde sutil como las otras tarjetas */
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-        /* EL DETALLE CLAVE: Borde grueso rosa a la izquierda */
-        border-left: 5px solid {CEMP_PINK} !important;
+        /* Sin borde sólido, solo el fondo suave */
         margin-bottom: 25px;
     }}
-    /* Aseguramos que el texto de la etiqueta se vea bien y destacado */
+    
+    /* Texto de la etiqueta en GRIS OSCURO (CEMP_DARK) */
     .stMain .stSlider label p {{
         font-weight: 700 !important;
         font-size: 1rem !important;
@@ -60,6 +57,15 @@ st.markdown(f"""
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }}
+    
+    /* Valores numéricos en GRIS */
+    .stMain .stSlider [data-testid="stMarkdownContainer"] p {{
+         color: {CEMP_DARK} !important;
+         font-weight: 500;
+    }}
+    
+    /* La barra del slider se queda con el color por defecto (que suele ser el primaryColor rosa definido en config) 
+       o se ve gris oscuro dependiendo del tema, lo cual encaja perfecto con tu petición "lo de dentro gris". */
     /* ================================================================== */
     
     /* TARJETAS ESTÁNDAR */
@@ -130,6 +136,7 @@ def fig_to_html(fig):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
+            # Simulación simple
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -172,7 +179,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # === UMBRAL DE DECISIÓN (AHORA EN CAJA BLANCA CON BORDE ROSA) ===
+    # === UMBRAL DE DECISIÓN (FONDO ROSA DIFUMINADO 0.2) ===
     threshold = st.slider("Umbral de Decisión Clínica (Ajuste de Sensibilidad)", 0.0, 1.0, 0.31, 0.01)
 
     # --- LÓGICA ---
@@ -198,7 +205,7 @@ with tab1:
     
     # === COLUMNA IZQUIERDA ===
     with c_left:
-        # FICHA PACIENTE
+        # FICHA PACIENTE (DISEÑO RESTAURADO: ICONO IZQUIERDA)
         st.markdown(f"""<div class="card" style="flex-direction:row; align-items:center; justify-content:space-between;">
 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
 <div style="background:#F0F2F5; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>

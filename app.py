@@ -48,22 +48,17 @@ st.markdown(f"""
         padding-bottom: 10px !important;
     }}
 
-    /* === ESTILO EXPANDER PERSONALIZADO (ROSA TRANSPARENTE) === */
-    /* Esto cambia el fondo de la cabecera del desplegable */
+    /* === ESTILO EXPANDER (FONDO ROSA TRANSPARENTE) === */
     .streamlit-expanderHeader {{
-        background-color: rgba(233, 127, 135, 0.1) !important; /* Fondo rosa sutil */
+        background-color: rgba(233, 127, 135, 0.1) !important; /* El rosita transparente */
         color: {CEMP_DARK} !important;
         font-weight: 700 !important;
-        border: 1px solid rgba(233, 127, 135, 0.2) !important;
+        border: 1px solid rgba(233, 127, 135, 0.1) !important; /* Borde sutil a juego */
         border-radius: 8px !important;
     }}
-    /* Esto cambia el contenido interno del expander si quisieras, 
-       pero mejor dejarlo blanco para que el slider resalte */
-    [data-testid="stExpanderDetails"] {{
-        border: 1px solid rgba(233, 127, 135, 0.1);
-        border-top: none;
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
+    /* Color del icono de flechita en el expander */
+    .streamlit-expanderHeader svg {{
+        fill: {CEMP_DARK} !important;
     }}
 
     /* === INPUTS BARRA LATERAL === */
@@ -217,6 +212,7 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
 
 # --- 7. BARRA LATERAL ---
 with st.sidebar:
+    # LOGO: D(negro) IA(rosa) BETES(negro) .(gris) NME(rosa)
     st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
@@ -302,7 +298,6 @@ with tab1:
     st.write("")
     
     # --- UMBRAL CON ESTILO ROSA ---
-    # Usamos el nombre clínico que hemos hablado
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         st.caption("Permite calibrar el modelo priorizando la detección de casos (mayor sensibilidad) o la precisión (mayor especificidad).")
         threshold = st.slider("Umbral", 0.0, 1.0, 0.31, 0.01, label_visibility="collapsed")

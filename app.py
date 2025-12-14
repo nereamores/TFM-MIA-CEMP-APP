@@ -35,7 +35,13 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin:0; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER UMBRAL === */
+    /* === ESTILO SLIDER GENERAL === */
+    .stSlider {{
+        padding-top: 0px !important;
+        padding-bottom: 10px !important;
+    }}
+
+    /* === ESTILO SLIDER UMBRAL (MAIN) === */
     .stMain .stSlider {{
         background-color: rgba(233, 127, 135, 0.1) !important;
         padding: 20px 25px;
@@ -55,27 +61,22 @@ st.markdown(f"""
          font-weight: 800 !important;
          font-size: 1rem !important;
     }}
-    .stMain .stSlider [role="slider"] {{
-        background-color: white !important;
-        border: 2px solid {SLIDER_GRAY} !important; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }}
-    .stMain .stSlider > div > div > div > div {{
-        background: white !important;
-        color: white !important;
-    }}
-    .stMain .stSlider > div > div > div > div > div {{
-         background-color: rgba(255, 255, 255, 0.5) !important;
-    }}
 
-    /* === INPUTS BARRA LATERAL === */
+    /* === INPUTS MANUALES BARRA LATERAL (NUEVO) === */
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px;
-        font-size: 0.9rem;
+        font-size: 1rem;
         text-align: center;
         color: {CEMP_DARK};
-        font-weight: bold;
+        font-weight: 800;
         border-radius: 8px;
+        background-color: white;
+        border: 1px solid #ddd;
+    }}
+    
+    /* Alineación vertical slider/input */
+    [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{
+        vertical-align: middle;
     }}
 
     /* === CAJA DE CÁLCULOS (SIDEBAR) === */
@@ -100,28 +101,6 @@ st.markdown(f"""
         font-weight: 800;
     }}
     
-    /* === CAJA LEYENDA DPF === */
-    .legend-box {{
-        background-color: #F0F2F5;
-        border-radius: 8px;
-        padding: 12px;
-        border: 1px solid #D0D7DE;
-        margin-top: 5px;
-        font-size: 0.75rem;
-        color: #666;
-        line-height: 1.4;
-    }}
-    .legend-title {{
-        font-weight: 700;
-        color: {CEMP_DARK};
-        margin-bottom: 5px;
-        display: block;
-    }}
-    .legend-box ul {{
-        margin: 5px 0 0 15px;
-        padding: 0;
-    }}
-
     /* === TARJETAS === */
     .card {{
         background-color: white;
@@ -193,43 +172,58 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-# --- 6. INPUTS SINCRONIZADOS ---
+# --- 6. INPUTS SINCRONIZADOS (BIDIRECCIONALES) ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
+    # 1. Renderizado de etiqueta
     label_html = f"**{label_text}**"
     if help_text:
         label_html += get_help_icon(help_text)
     st.markdown(label_html, unsafe_allow_html=True)
     
-    c1, c2 = st.columns([2.5, 1])
-    
+    # 2. Inicializar estado si no existe
+    if key not in st.session_state:
+        st.session_state[key] = default_val
+
+    # 3. Definir tipos
     input_type = type(default_val)
     min_val = input_type(min_val)
     max_val = input_type(max_val)
     step = 0.1 if input_type == float else 1
 
-    if key not in st.session_state:
-        st.session_state[key] = default_val
-
+    # --- CALLBACKS DE SINCRONIZACIÓN ---
     def update_from_slider():
+        st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
         st.session_state[key] = st.session_state[f"{key}_slider"]
-        st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
-    
-    def update_from_input():
-        val = st.session_state[f"{key}_input"]
-        if val < min_val: val = min_val
-        if val > max_val: val = max_val
-        st.session_state[key] = val
-        st.session_state[f"{key}_slider"] = val 
 
+    def update_from_input():
+        curr_val = st.session_state[f"{key}_input"]
+        # Clamping (Limitar valores para no romper el slider)
+        if curr_val < min_val: curr_val = min_val
+        if curr_val > max_val: curr_val = max_val
+        
+        st.session_state[f"{key}_slider"] = curr_val
+        st.session_state[key] = curr_val
+
+    # 4. Layout visual (Slider ancho | Input numérico estrecho)
+    c1, c2 = st.columns([2.5, 1], gap="small")
+    
     with c1:
         st.slider(
-            label="", min_value=min_val, max_value=max_val, step=step,
-            key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed"
+            label="", 
+            min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_slider", 
+            value=st.session_state[key], # Lee del estado central
+            on_change=update_from_slider, 
+            label_visibility="collapsed"
         )
     with c2:
         st.number_input(
-            label="", min_value=min_val, max_value=max_val, step=step,
-            key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed"
+            label="", 
+            min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_input", 
+            value=st.session_state[key], # Lee del estado central
+            on_change=update_from_input, 
+            label_visibility="collapsed"
         )
     return st.session_state[key]
 
@@ -278,13 +272,13 @@ with st.sidebar:
     st.markdown("---") 
 
     # --- 3. PACIENTE ---
-    c_age, c_preg = st.columns(2)
+    # Usamos la misma función para edad y embarazos
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
     pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg") 
     
     st.markdown("---") 
 
-    # --- 4. DPF (DINÁMICO) ---
+    # --- 4. DPF (DINÁMICO - Se mantiene slider único por diseño visual especial) ---
     st.markdown("**Antecedentes Familiares (DPF)**")
     
     if 'dpf' not in st.session_state: st.session_state.dpf = 0.5
@@ -293,20 +287,15 @@ with st.sidebar:
 
     # Lógica de Color y Texto Dinámico
     if dpf <= 0.15:
-        dpf_label = "Carga familiar MUY BAJA"
-        bar_color = GOOD_TEAL      # Verde
+        dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
     elif dpf <= 0.40:
-        dpf_label = "Carga familiar BAJA"
-        bar_color = "#D4E157"      # Lima
+        dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
     elif dpf <= 0.80:
-        dpf_label = "Carga familiar MODERADA"
-        bar_color = "#FFB74D"      # Naranja
+        dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
     elif dpf <= 1.20:
-        dpf_label = "Carga familiar ELEVADA"
-        bar_color = CEMP_PINK      # Rosa/Rojo
+        dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
     else:
-        dpf_label = "Carga familiar MUY ELEVADA"
-        bar_color = "#880E4F"      # Morado oscuro / Rojo intenso
+        dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
 
     # Mostrar la etiqueta dinámica y la barra
     st.markdown(f"""
@@ -319,7 +308,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # Leyenda Estática Reducida (Opcional, ya que es dinámico, pero ayuda a ver el panorama)
     st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 

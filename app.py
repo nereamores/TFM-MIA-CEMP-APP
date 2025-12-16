@@ -419,16 +419,12 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS (Lógica de Hallazgos)
+    # ALERTAS
     alerts = []
-    
-    # Glucosa 2h - TEXTO SIMPLIFICADO AQUI
     if glucose >= 200:
         alerts.append("Posible Diabetes")
     elif glucose >= 140:
-        alerts.append("Posible Prediabetes") # Sin "Intolerancia" ni rangos
-        
-    # BMI
+        alerts.append("Posible Prediabetes") # Simplificado como pediste
     if bmi >= 40:
         alerts.append("Obesidad Mórbida (G3)")
     elif bmi >= 35:
@@ -439,7 +435,6 @@ with tab1:
         alerts.append("Sobrepeso")
     elif bmi < 18.5:
         alerts.append("Bajo Peso")
-        
     if proxy_index > 19769.5: 
         alerts.append("Resistencia Insulina")
     
@@ -520,10 +515,25 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
         
+        # FIGURA CON LÍNEA DE UMBRAL (DASHED LINE)
         fig, ax = plt.subplots(figsize=(3.2, 3.2))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
         ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+        
+        # LÍNEA DEL UMBRAL: 0.27 es el valor, hay que mapearlo al círculo
+        # 0 -> 90 grados, 1 -> -270 grados
+        threshold_angle = 90 - (threshold * 360)
+        theta_rad = np.deg2rad(threshold_angle)
+        
+        # Dibujar la línea desde dentro del donut hacia fuera
+        x1 = 0.85 * np.cos(theta_rad)
+        y1 = 0.85 * np.sin(theta_rad)
+        x2 = 1.15 * np.cos(theta_rad)
+        y2 = 1.15 * np.sin(theta_rad)
+        
+        ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
+        
         chart_html = fig_to_html(fig)
         plt.close(fig)
 

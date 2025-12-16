@@ -72,12 +72,25 @@ st.markdown(f"""
         color: #FFF;
         padding: 8px 20px;
         border-radius: 30px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 800;
         letter-spacing: 1px;
-        margin-bottom: 40px;
+        margin-bottom: 25px;
+        text-transform: uppercase;
     }}
 
+    /* TEXTO INSTITUCIÓN (CEMP) */
+    .landing-institution {{
+        font-family: 'Helvetica', sans-serif;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: {CEMP_DARK};
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }}
+
+    /* TÍTULO PRINCIPAL */
     .landing-title-text {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 900;
@@ -86,6 +99,7 @@ st.markdown(f"""
         line-height: 1;
         letter-spacing: -2px;
         margin-bottom: 25px;
+        margin-top: 10px;
     }}
     
     .landing-pink {{ color: {CEMP_PINK}; }}
@@ -93,15 +107,15 @@ st.markdown(f"""
     
     .landing-hero-text {{
         font-family: 'Inter', sans-serif;
-        font-size: 1.8rem;
-        font-weight: 800;
+        font-size: 1.6rem;
+        font-weight: 700;
         color: {CEMP_DARK};
         margin-bottom: 25px;
-        line-height: 1.3;
+        line-height: 1.4;
     }}
     
     .landing-description {{
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         color: #666;
         line-height: 1.6;
         max-width: 750px;
@@ -111,14 +125,14 @@ st.markdown(f"""
     .disclaimer-box {{
         background-color: #F8F9FA;
         border-left: 5px solid {CEMP_PINK};
-        padding: 25px;
+        padding: 20px;
         margin: 0 auto 40px auto;
         text-align: left;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         color: #555;
-        border-radius: 12px;
+        border-radius: 8px;
         max-width: 800px;
-        line-height: 1.6;
+        line-height: 1.5;
     }}
     
     /* BOTONES */
@@ -193,7 +207,7 @@ def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 def generate_report(data_dict, prob, risk_label, alerts):
-    return f"""==================================================\nINFORME TFM - DIABETES.NME (SIMULACIÓN ACADÉMICA)\n==================================================\nFecha: {date.today().strftime("%d/%m/%Y")}\nID Paciente: {data_dict.get('id')}\n--------------------------------------------------\nRESULTADOS:\nRiesgo Estimado: {risk_label} ({prob*100:.1f}%)\nFactores Clave: {', '.join(alerts)}\n--------------------------------------------------\nDATOS:\nGlucosa 2h: {data_dict['glucose']} mg/dL | BMI: {data_dict['bmi']:.2f}\nEdad: {data_dict['age']} | DPF: {data_dict['dpf']}\n==================================================\nAVISO: Este informe no tiene validez clínica."""
+    return f"""==================================================\nINFORME TFM - DIABETES.NME\n==================================================\nFecha: {date.today().strftime("%d/%m/%Y")}\nID Paciente: {data_dict.get('id')}\n--------------------------------------------------\nRESULTADOS:\nRiesgo: {risk_label} ({prob*100:.1f}%)\nHallazgos: {', '.join(alerts)}\n=================================================="""
 
 # Función de input sincronizado
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
@@ -227,29 +241,25 @@ if st.session_state.step == 1:
     st.write("")
     
     with st.container():
-        st.markdown(f"""
-        <div class="landing-wrapper">
-            <div class="cemp-badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</div>
-
-            <div class="landing-title-text">
-                D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
-            </div>
-            
-            <div class="landing-hero-text">
-                Prototipo de Inteligencia Artificial para el futuro de la prevención diabética.
-            </div>
-
-            <p class="landing-description">
-                Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
-            </p>
-            
-            <div class="disclaimer-box">
-                <strong>🎓 CONTEXTO ACADÉMICO Y LIMITACIONES</strong><br><br>
-                Aplicación desarrollada con fines exclusivamente educativos e investigativos como parte de un Trabajo de Fin de Máster, utilizando el dataset público <em>Pima Indians Diabetes</em>.<br><br>
-                <strong>⚠️ AVISO IMPORTANTE:</strong> Esta herramienta <strong>NO es un dispositivo médico certificado</strong>. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # AQUÍ ESTÁ LA CORRECCIÓN: HTML SIN INDENTACIÓN PARA EVITAR QUE SE VEA COMO CÓDIGO
+        st.markdown(f"""<div class="landing-wrapper">
+<div class="cemp-badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</div>
+<div class="landing-institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>
+<div class="landing-title-text">
+D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
+</div>
+<div class="landing-hero-text">
+Prototipo de Inteligencia Artificial para el futuro de la prevención diabética.
+</div>
+<p class="landing-description">
+Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
+</p>
+<div class="disclaimer-box">
+<strong>🎓 CONTEXTO ACADÉMICO Y LIMITACIONES</strong><br><br>
+Aplicación desarrollada con fines exclusivamente educativos e investigativos como parte de un Trabajo de Fin de Máster.<br><br>
+<strong>⚠️ AVISO IMPORTANTE:</strong> Esta herramienta <strong>NO es un dispositivo médico certificado</strong>. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
+</div>
+</div>""", unsafe_allow_html=True)
         
         # --- BOTÓN CENTRADO ---
         st.markdown('<div style="display: flex; justify-content: center; margin-top: -30px; position: relative; z-index: 10;">', unsafe_allow_html=True)
@@ -394,6 +404,7 @@ if st.session_state.step == 3:
 
     with tab2:
         st.write("")
+        # (Gráfico SHAP estático como placeholder)
         features = ["Glucosa", "BMI", "Edad", "Insulina"]; vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
         colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
         fig, ax = plt.subplots(figsize=(8, 4)); fig.patch.set_facecolor('none'); ax.set_facecolor('none')

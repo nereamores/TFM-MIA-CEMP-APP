@@ -181,7 +181,8 @@ def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # --- 5. MODELO MOCK ---
-if 'model' not in session_state:
+# CORREGIDO: st.session_state en lugar de session_state
+if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
@@ -315,15 +316,17 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL ---
+    # --- UMBRAL CON GRÁFICA REALISTA ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
         with c_calib_1:
             st.caption("Permite calibrar el modelo manual. Por defecto se establece en **0.27** (Valor óptimo del estudio para maximizar Recall).")
+            # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
             # NOTA TÉCNICA (Gris y con BOMBILLA 💡)
+            # Margen derecho añadido para que no pegue al borde
             st.markdown(f"""
             <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                 <span style="font-size:1.1rem;">💡</span> 
@@ -336,20 +339,29 @@ with tab1:
         with c_calib_2:
             # --- SIMULACIÓN MATEMÁTICA ---
             x = np.linspace(-0.15, 1.25, 500)
+            
+            # CLASE 0 (Gris)
             y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+            
+            # CLASE 1 (Rosa)
             y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
                          1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
-            fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
+            # Aumentamos un poco la altura (figsize 6, 2.5) para que se vea más "cuadrada/alta"
+            fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
             fig_calib.patch.set_facecolor('none')
             ax_calib.set_facecolor('none')
+            
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
             ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
+            
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
             ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
+            
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
             ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
+            
             ax_calib.set_yticks([])
             ax_calib.set_xlim(-0.2, 1.25)
             ax_calib.spines['top'].set_visible(False)
@@ -357,9 +369,10 @@ with tab1:
             ax_calib.spines['bottom'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
+            
             ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
             
-            # Renderizar la figura CENTRADA
+            # Renderizar la figura CENTRADA (Flexbox)
             chart_html_calib = fig_to_html(fig_calib)
             st.markdown(f"""
             <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
@@ -468,7 +481,7 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
         
-        # AJUSTE DE TAMAÑO DEL GRÁFICO PARA EQUILIBRAR ALTURA
+        # AJUSTE: Mantenemos la gráfica cuadrada del donut (3.2x3.2)
         fig, ax = plt.subplots(figsize=(3.2, 3.2))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -478,7 +491,7 @@ with tab1:
 
         prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
         
-        # TARJETA DE PROBABILIDAD (Sin padding extra y centrada verticalmente)
+        # TARJETA DE PROBABILIDAD (Centrado vertical)
         st.markdown(f"""<div class="card" style="text-align:center; justify-content: center;">
             <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
             <div style="position:relative; display:inline-block; margin: auto;">

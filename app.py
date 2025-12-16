@@ -21,14 +21,32 @@ OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
 
-# Gradiente específico para BMI 
-BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 50%, #FFB74D 75%, #880E4F 100%)"
+# --- GRADIENTES CLÍNICOS EXACTOS (HARD STOPS) ---
+# Usamos cortes duros para que se vea claramente dónde cambia el riesgo
 
-# --- GRADIENTE CORREGIDO PARA GLUCOSA 2H (Rango Slider 50-350) ---
-# Normal (<140): Verde (hasta aprox 30%)
-# Intolerancia (140-199): Amarillo (de 30% a 50%)
-# Diabetes (>200): Rojo (del 50% en adelante)
-GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 30%, #FFB74D 48%, #E97F87 50%, #880E4F 100%)"
+# BMI (Escala 10 - 50)
+# <18.5 (Bajo): Hasta 21.25%
+# 18.5-25 (Normal): 21.25% - 37.5%
+# 25-30 (Sobrepeso): 37.5% - 50%
+# 30-35 (Ob. G1): 50% - 62.5%
+# 35-40 (Ob. G2): 62.5% - 75%
+# >40 (Ob. G3): 75% - 100%
+BMI_GRADIENT = """linear-gradient(90deg, 
+    #81D4FA 0%, #81D4FA 21.25%, 
+    #4DB6AC 21.25%, #4DB6AC 37.5%, 
+    #FFF176 37.5%, #FFF176 50%, 
+    #FFB74D 50%, #FFB74D 62.5%, 
+    #E97F87 62.5%, #E97F87 75%, 
+    #880E4F 75%, #880E4F 100%)"""
+
+# GLUCOSE (Escala 50 - 350) => Rango total 300 unidades
+# Normal <140 (90 uds desde 50): 90/300 = 30%
+# Prediabetes 140-199 (60 uds): 60/300 = 20% (Total 50%)
+# Diabetes >200 (150 uds): 150/300 = 50% (Total 100%)
+GLUCOSE_GRADIENT = """linear-gradient(90deg, 
+    #4DB6AC 0%, #4DB6AC 30%, 
+    #FFF176 30%, #FFF176 50%, 
+    #E97F87 50%, #E97F87 100%)"""
 
 # Gradiente genérico
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -159,27 +177,35 @@ st.markdown(f"""
 
     /* GRÁFICOS */
     .bar-container {{
-        position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
+        position: relative; width: 100%; margin-top: 15px; margin-bottom: 10px;
     }}
-    .bar-bg {{ background: #F0F2F5; height: 10px; border-radius: 5px; width: 100%; overflow: hidden; }}
+    .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
     
     /* Clases de Relleno para Barras */
-    .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
-    .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
-    .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
+    .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
+    .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
+    .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
 
     .bar-marker {{ 
-        position: absolute; top: -5px; width: 4px; height: 20px; 
+        position: absolute; top: -4px; width: 4px; height: 20px; 
         background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; transition: left 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10; transition: left 0.3s ease;
     }}
     .bar-txt {{ 
-        position: absolute; top: -28px; transform: translateX(-50%); 
+        position: absolute; top: -25px; transform: translateX(-50%); 
         font-size: 0.8rem; font-weight: bold; color: {CEMP_DARK}; 
         background: white; padding: 2px 6px; border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }}
-    .legend-row {{ display: flex; justify-content: space-between; font-size: 0.6rem; color: #BBB; margin-top: -5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+    /* Etiquetas debajo de la barra más grandes y limpias */
+    .legend-row {{ 
+        display: flex; 
+        justify-content: space-between; 
+        font-size: 0.7rem; 
+        color: #777; 
+        margin-top: 5px; 
+        font-weight: 600;
+    }}
     
     </style>
 """, unsafe_allow_html=True)
@@ -199,7 +225,6 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
-            # Modelo Mock Ajustado
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -252,7 +277,6 @@ with st.sidebar:
     st.write("")
     
     # 1. METABÓLICOS
-    # Rango ampliado hasta 350 para cubrir diabetes severa en test de tolerancia
     glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.")
     insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.")
     
@@ -332,7 +356,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL (TITULO SIN ENGRANAJE) ---
+    # --- UMBRAL ---
     with st.expander("Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
@@ -478,7 +502,7 @@ with tab1:
                     <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                 </div>
                 <div class="legend-row">
-                    <span>Normal (<140)</span><span>Intolerancia (140-199)</span><span>Diabetes (>200)</span>
+                    <span>Normal (<140)</span><span>Prediabetes (140-199)</span><span>Diabetes (>200)</span>
                 </div>
             </div>
             <div style="margin-top:35px;">

@@ -21,14 +21,16 @@ OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
 
-# Gradiente específico para BMI (De azul desnutrición a rojo oscuro obesidad mórbida)
+# Gradiente específico para BMI 
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 50%, #FFB74D 75%, #880E4F 100%)"
 
-# Gradiente específico para Glucosa (Verde normal -> Amarillo Prediabetes -> Rojo Diabetes)
-# Ajustado para que el amarillo caiga aprox en la zona de 100-125 del slider (50-300)
-GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 20%, #FFF176 30%, #FFB74D 45%, #E97F87 100%)"
+# --- GRADIENTE CORREGIDO PARA GLUCOSA 2H (Rango Slider 50-350) ---
+# Normal (<140): Verde (hasta aprox 30%)
+# Intolerancia (140-199): Amarillo (de 30% a 50%)
+# Diabetes (>200): Rojo (del 50% en adelante)
+GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 30%, #FFB74D 48%, #E97F87 50%, #880E4F 100%)"
 
-# Gradiente genérico para otras barras
+# Gradiente genérico
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -197,6 +199,7 @@ def get_help_icon(description):
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
+            # Modelo Mock Ajustado
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -249,7 +252,8 @@ with st.sidebar:
     st.write("")
     
     # 1. METABÓLICOS
-    glucose = input_biomarker("Glucosa (mg/dL)", 50, 300, 120, "gluc", "Glucosa a las 2h de ingesta.")
+    # Rango ampliado hasta 350 para cubrir diabetes severa en test de tolerancia
+    glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.")
     insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.")
     
     proxy_index = glucose * insulin
@@ -336,7 +340,6 @@ with tab1:
             st.caption("Selecciona manualmente el umbral de decisión.")
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # NOTA TÉCNICA CON BOMBILLA
             st.markdown(f"""
             <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                 <span style="font-size:1.1rem;">💡</span> 
@@ -404,18 +407,22 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS (Hallazgos Clave) - Lógica mejorada
+    # ALERTAS (CORREGIDAS: CRITERIOS 2h PTOG y BMI COMPLETO)
     alerts = []
     
-    # Alerta Glucosa (Prediabetes / Diabetes)
-    if glucose >= 126:
-        alerts.append("Posible Diabetes (>126 mg/dL)")
-    elif glucose >= 100:
-        alerts.append("Posible Prediabetes (100-125 mg/dL)")
+    # Glucosa 2h
+    if glucose >= 200:
+        alerts.append("Posible Diabetes (>200 mg/dL)")
+    elif glucose >= 140:
+        alerts.append("Intolerancia Glucosa / Prediabetes (140-199 mg/dL)")
         
-    # Alerta BMI
-    if bmi >= 30:
-        alerts.append("Obesidad")
+    # BMI
+    if bmi >= 40:
+        alerts.append("Obesidad Mórbida (G3)")
+    elif bmi >= 35:
+        alerts.append("Obesidad G2")
+    elif bmi >= 30:
+        alerts.append("Obesidad G1")
     elif bmi >= 25:
         alerts.append("Sobrepeso")
     elif bmi < 18.5:
@@ -455,20 +462,23 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
 
-        g_pos = min(100, max(0, (glucose - 50) / 2.5)) # Escalado simple para 50-300
+        # CÁLCULO POSICIÓN GLUCOSA (Escala 50 a 350 = 300 uds)
+        g_pos = min(100, max(0, (glucose - 50) / 3.0)) 
+        
+        # CÁLCULO POSICIÓN BMI (Escala 10 a 50 = 40 uds)
         b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
         
         st.markdown(f"""<div class="card">
             <span class="card-header">CONTEXTO POBLACIONAL</span>
             <div style="margin-top:15px;">
-                <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
+                <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA 2H (TEST TOLERANCIA) <span style="font-weight:normal">({glucose} mg/dL)</span></div>
                 <div class="bar-container">
                     <div class="bar-bg"><div class="bar-fill-glucose"></div></div>
                     <div class="bar-marker" style="left: {g_pos}%;"></div>
                     <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                 </div>
                 <div class="legend-row">
-                    <span>Hipoglucemia</span><span>Normal</span><span>Prediabetes</span><span>Diabetes</span>
+                    <span>Normal (<140)</span><span>Intolerancia (140-199)</span><span>Diabetes (>200)</span>
                 </div>
             </div>
             <div style="margin-top:35px;">

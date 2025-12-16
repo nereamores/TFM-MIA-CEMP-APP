@@ -55,7 +55,8 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        padding: 50px 40px;
+        /* Aumentado padding inferior para alojar el botón */
+        padding: 50px 40px 90px 40px;
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -79,11 +80,10 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
-    /* TÍTULOS AJUSTADOS DE TAMAÑO */
     .landing-institution {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 700;
-        font-size: 1rem; /* Reducido */
+        font-size: 1rem;
         color: {CEMP_DARK};
         letter-spacing: 1.2px;
         text-transform: uppercase;
@@ -93,7 +93,7 @@ st.markdown(f"""
     .landing-title-text {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 900;
-        font-size: 3.5rem; /* Reducido para que quepa mejor */
+        font-size: 3.5rem;
         color: {CEMP_DARK};
         line-height: 1.1;
         letter-spacing: -1.5px;
@@ -106,27 +106,30 @@ st.markdown(f"""
     
     .landing-hero-text {{
         font-family: 'Inter', sans-serif;
-        font-size: 1.3rem; /* Ajustado */
+        font-size: 1.3rem;
         font-weight: 700;
         color: {CEMP_DARK};
         margin-bottom: 20px;
         line-height: 1.4;
     }}
     
+    /* Párrafo justificado */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
         max-width: 700px;
         margin: 0 auto 35px auto;
+        text-align: justify;
     }}
 
+    /* Caja de disclaimer centrada */
     .disclaimer-box {{
         background-color: #F8F9FA;
         border-left: 4px solid {CEMP_PINK};
         padding: 20px;
         margin: 0 auto 30px auto;
-        text-align: left;
+        text-align: center; /* Texto centrado */
         font-size: 0.85rem;
         color: #555;
         border-radius: 8px;
@@ -253,13 +256,14 @@ Prototipo de CDSS para el diagnóstico temprano de diabetes
 Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
 </p>
 <div class="disclaimer-box">
-<strong>Aplicación desarrollada con fines exclusivamente educativos e investigativos como parte de un Trabajo de Fin de Máster.</strong><br><br>
+<strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong><br><br>
 ⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
 </div>
 </div>""", unsafe_allow_html=True)
         
-        # --- BOTÓN CENTRADO ---
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -30px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        # --- BOTÓN CENTRADO DENTRO DE LA CAJA (Visualmente) ---
+        # Se ha aumentado el margen negativo a -80px para subirlo más
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -80px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()

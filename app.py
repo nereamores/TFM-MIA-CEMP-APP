@@ -20,6 +20,10 @@ SLIDER_GRAY = "#BDC3C7"
 OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
+
+# Gradiente para BMI incluyendo Bajo Peso (Azul) hasta Obesidad III (Oscuro)
+BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 20%, #FFF176 40%, #FFB74D 60%, #E97F87 80%, #880E4F 100%)"
+# Gradiente original para riesgo
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -151,7 +155,13 @@ st.markdown(f"""
         position: relative; width: 100%; margin-top: 15px; margin-bottom: 25px;
     }}
     .bar-bg {{ background: #F0F2F5; height: 10px; border-radius: 5px; width: 100%; overflow: hidden; }}
+    
+    /* Gradiente dinámico por defecto (Riesgo) */
     .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
+    
+    /* Gradiente específico para BMI */
+    .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
+
     .bar-marker {{ 
         position: absolute; top: -5px; width: 4px; height: 20px; 
         background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
@@ -163,7 +173,7 @@ st.markdown(f"""
         background: white; padding: 2px 6px; border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }}
-    .legend-row {{ display: flex; justify-content: space-between; font-size: 0.7rem; color: #BBB; margin-top: -5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+    .legend-row {{ display: flex; justify-content: space-between; font-size: 0.6rem; color: #BBB; margin-top: -5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
     
     </style>
 """, unsafe_allow_html=True)
@@ -171,7 +181,6 @@ st.markdown(f"""
 # --- 4. HELPERS ---
 def fig_to_html(fig):
     buf = io.BytesIO()
-    # DPI=300 PARA ALTA DEFINICIÓN
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
@@ -181,7 +190,6 @@ def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # --- 5. MODELO MOCK ---
-# CORREGIDO: st.session_state en lugar de session_state
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
@@ -244,7 +252,7 @@ with st.sidebar:
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="calc-label">Índice RI (Proxy)</span>
+            <span class="calc-label">Índice RI (Glucosa x Insulina)</span>
             <span class="calc-value">{proxy_index:,.0f}</span>
         </div>
     </div>
@@ -262,7 +270,7 @@ with st.sidebar:
     st.markdown(f"""
     <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span class="calc-label">BMI Calculado</span>
+            <span class="calc-label">BMI (kg/m²)</span>
             <span class="calc-value">{bmi:.2f}</span>
         </div>
         <div style="display:flex; justify-content:space-between;">
@@ -277,12 +285,12 @@ with st.sidebar:
     # 3. PACIENTE
     c_age, c_preg = st.columns(2)
     age = input_biomarker("Edad (años)", 18, 90, 45, "age")
-    pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg") 
+    pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).") 
     
     st.markdown("---") 
 
     # 4. DPF
-    dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf")
+    dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
 
     if dpf <= 0.15:
         dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
@@ -316,17 +324,16 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA ---
-    with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
+    # --- UMBRAL (TITULO SIN ENGRANAJE) ---
+    with st.expander("Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
         with c_calib_1:
-            st.caption("Permite calibrar el modelo manual. Por defecto se establece en **0.27** (Valor óptimo del estudio para maximizar Recall).")
-            # Slider por defecto en 0.27
+            # TEXTO SIMPLIFICADO COMO INSTRUCCIÓN
+            st.caption("Selecciona manualmente el umbral de decisión.")
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # NOTA TÉCNICA (Gris y con BOMBILLA 💡)
-            # Margen derecho añadido para que no pegue al borde
+            # NOTA TÉCNICA CON BOMBILLA
             st.markdown(f"""
             <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                 <span style="font-size:1.1rem;">💡</span> 
@@ -339,29 +346,20 @@ with tab1:
         with c_calib_2:
             # --- SIMULACIÓN MATEMÁTICA ---
             x = np.linspace(-0.15, 1.25, 500)
-            
-            # CLASE 0 (Gris)
             y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-            
-            # CLASE 1 (Rosa)
             y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
                          1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
-            # Aumentamos un poco la altura (figsize 6, 2.5) para que se vea más "cuadrada/alta"
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
             fig_calib.patch.set_facecolor('none')
             ax_calib.set_facecolor('none')
-            
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
             ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
-            
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
             ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
-            
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
             ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
-            
             ax_calib.set_yticks([])
             ax_calib.set_xlim(-0.2, 1.25)
             ax_calib.spines['top'].set_visible(False)
@@ -369,10 +367,8 @@ with tab1:
             ax_calib.spines['bottom'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
-            
             ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
             
-            # Renderizar la figura CENTRADA (Flexbox)
             chart_html_calib = fig_to_html(fig_calib)
             st.markdown(f"""
             <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
@@ -416,7 +412,7 @@ with tab1:
     else:
         insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
 
-    # LAYOUT PRINCIPAL
+    # LAYOUT
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # IZQUIERDA
@@ -443,7 +439,10 @@ with tab1:
         </div>""", unsafe_allow_html=True)
 
         g_pos = min(100, max(0, (glucose - 60) / 1.4))
-        b_pos = min(100, max(0, (bmi - 18) / 0.22))
+        
+        # CÁLCULO POSICIÓN BMI (Escala extendida 10-50 para incluir los nuevos rangos)
+        # Rango 10 a 50 = 40 unidades.
+        b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
         
         st.markdown(f"""<div class="card">
             <span class="card-header">CONTEXTO POBLACIONAL</span>
@@ -461,12 +460,12 @@ with tab1:
             <div style="margin-top:35px;">
                 <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
                 <div class="bar-container">
-                    <div class="bar-bg"><div class="bar-fill"></div></div>
+                    <div class="bar-bg"><div class="bar-fill-bmi"></div></div>
                     <div class="bar-marker" style="left: {b_pos}%;"></div>
                     <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
                 </div>
-                <div class="legend-row">
-                    <span>Sano</span><span>Sobrepeso</span><span>Obesidad G1</span><span>Obesidad G2</span>
+                <div class="legend-row" style="font-size:0.55rem;">
+                    <span>Bajo</span><span>Normal</span><span>Sobrepeso</span><span>Ob. G1</span><span>Ob. G2</span><span>Ob. G3</span>
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
@@ -481,7 +480,6 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
         
-        # AJUSTE: Mantenemos la gráfica cuadrada del donut (3.2x3.2)
         fig, ax = plt.subplots(figsize=(3.2, 3.2))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -491,7 +489,6 @@ with tab1:
 
         prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
         
-        # TARJETA DE PROBABILIDAD (Centrado vertical)
         st.markdown(f"""<div class="card" style="text-align:center; justify-content: center;">
             <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
             <div style="position:relative; display:inline-block; margin: auto;">

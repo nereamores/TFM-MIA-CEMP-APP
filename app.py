@@ -55,8 +55,8 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        /* Aumentado mucho el padding inferior para que el botón quepa dentro */
-        padding: 50px 40px 110px 40px; 
+        /* Aumentamos mucho el padding inferior para "reservar sitio" al botón dentro de la caja */
+        padding: 50px 40px 140px 40px; 
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -65,6 +65,7 @@ st.markdown(f"""
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
+        position: relative; /* Importante para el posicionamiento */
     }}
     
     .cemp-badge {{
@@ -80,7 +81,6 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
-    /* TÍTULOS AJUSTADOS DE TAMAÑO */
     .landing-institution {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 700;
@@ -114,22 +114,21 @@ st.markdown(f"""
         line-height: 1.4;
     }}
     
-    /* Párrafo CENTRADO (arreglado) */
+    /* Párrafo JUSTIFICADO y CENTRADO en bloque */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
-        max-width: 700px;
-        margin: 0 auto 35px auto;
-        text-align: center; /* Cambiado de justify a center */
+        max-width: 700px;       /* Ancho máximo para que no sea muy largo */
+        margin: 0 auto 35px auto; /* Centrado del bloque */
+        text-align: justify;    /* Texto justificado */
     }}
 
-    /* Caja de disclaimer centrada */
     .disclaimer-box {{
         background-color: #F8F9FA;
         border-left: 4px solid {CEMP_PINK};
         padding: 20px;
-        margin: 0 auto 30px auto;
+        margin: 0 auto 10px auto; /* Margen inferior reducido para acercar el botón */
         text-align: center;
         font-size: 0.85rem;
         color: #555;
@@ -139,9 +138,10 @@ st.markdown(f"""
     }}
     
     /* BOTONES */
+    /* Estilos base del botón */
     div.stButton > button:first-child {{
         background-color: {CEMP_PINK}; color: white; font-weight: 800; font-size: 1.1rem;
-        padding: 1rem 3rem; border-radius: 16px; border: none;
+        padding: 1rem 3rem; border-radius: 50px; border: none; /* Border radius 50px para redondear */
         width: auto; min-width: 280px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease;
         box-shadow: 0 10px 25px rgba(233, 127, 135, 0.4);
     }}
@@ -156,6 +156,7 @@ st.markdown(f"""
         border: 2px solid {CEMP_DARK} !important;
         color: {CEMP_DARK} !important;
         box-shadow: none !important; padding: 0.6rem 2rem !important; font-size: 0.9rem !important;
+        border-radius: 12px !important;
     }}
     .secondary-btn button:hover {{
         background-color: {CEMP_DARK} !important; color: white !important; transform: translateY(-2px);
@@ -263,8 +264,8 @@ Este proyecto explora el potencial de integrar modelos predictivos avanzados en 
 </div>""", unsafe_allow_html=True)
         
         # --- BOTÓN CENTRADO DENTRO DE LA CAJA (Visualmente) ---
-        # Se ha aumentado el margen negativo a -100px para subirlo bien dentro del nuevo padding
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -100px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        # Margen negativo de -110px para asegurar que sube al espacio de padding-bottom (140px)
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -110px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()

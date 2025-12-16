@@ -171,7 +171,7 @@ st.markdown(f"""
 # --- 4. HELPERS ---
 def fig_to_html(fig):
     buf = io.BytesIO()
-    # AÑADIDO dpi=300 PARA ALTA DEFINICIÓN
+    # DPI=300 PARA ALTA DEFINICIÓN
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
@@ -181,7 +181,7 @@ def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # --- 5. MODELO MOCK ---
-if 'model' not in st.session_state:
+if 'model' not in session_state:
     class MockModel:
         def predict_proba(self, X):
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
@@ -315,19 +315,18 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA (AJUSTE FINO: PIQUITO GRIS VISIBLE) ---
+    # --- UMBRAL ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
         with c_calib_1:
             st.caption("Permite calibrar el modelo manual. Por defecto se establece en **0.27** (Valor óptimo del estudio para maximizar Recall).")
-            # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # NOTA TÉCNICA PERSONALIZADA (Gris neutro) CON MARGEN DERECHO AÑADIDO
+            # NOTA TÉCNICA (Gris y con BOMBILLA 💡)
             st.markdown(f"""
             <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
-                <span style="font-size:1.1rem;">ℹ️</span>
+                <span style="font-size:1.1rem;">💡</span> 
                 <div>
                     <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
                 </div>
@@ -335,36 +334,22 @@ with tab1:
             """, unsafe_allow_html=True)
 
         with c_calib_2:
-            # --- SIMULACIÓN MATEMÁTICA DE TUS CURVAS REALES ---
+            # --- SIMULACIÓN MATEMÁTICA ---
             x = np.linspace(-0.15, 1.25, 500)
-            
-            # CLASE 0 (Gris): Pico muy alto en 0.1.
             y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                       0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-            
-            # CLASE 1 (Rosa): Hombro inicial bajo en 0.28
             y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
                          1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
             
             fig_calib, ax_calib = plt.subplots(figsize=(6, 2))
             fig_calib.patch.set_facecolor('none')
             ax_calib.set_facecolor('none')
-            
-            # Dibujo Clase 0 (Gris)
             ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
             ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
-            
-            # Dibujo Clase 1 (Rosa)
             ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
             ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
-            
-            # LÍNEA 1: ÓPTIMO (Fija 0.27 - Verde Lima)
             ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
-            
-            # LÍNEA 2: USUARIO (Móvil - Azul Oscuro)
             ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
-            
-            # Limpieza y Estilos
             ax_calib.set_yticks([])
             ax_calib.set_xlim(-0.2, 1.25)
             ax_calib.spines['top'].set_visible(False)
@@ -372,11 +357,9 @@ with tab1:
             ax_calib.spines['bottom'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
-            
-            # Leyenda
             ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
             
-            # Renderizar la figura CENTRADA usando un div flexbox
+            # Renderizar la figura CENTRADA
             chart_html_calib = fig_to_html(fig_calib)
             st.markdown(f"""
             <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
@@ -420,7 +403,7 @@ with tab1:
     else:
         insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
 
-    # LAYOUT
+    # LAYOUT PRINCIPAL
     c_left, c_right = st.columns([1.8, 1], gap="medium") 
     
     # IZQUIERDA
@@ -485,7 +468,8 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
         
-        fig, ax = plt.subplots(figsize=(4, 4))
+        # AJUSTE DE TAMAÑO DEL GRÁFICO PARA EQUILIBRAR ALTURA
+        fig, ax = plt.subplots(figsize=(3.2, 3.2))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
         ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
@@ -494,7 +478,8 @@ with tab1:
 
         prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
         
-        st.markdown(f"""<div class="card" style="text-align:center; padding: 20px;">
+        # TARJETA DE PROBABILIDAD (Sin padding extra y centrada verticalmente)
+        st.markdown(f"""<div class="card" style="text-align:center; justify-content: center;">
             <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
             <div style="position:relative; display:inline-block; margin: auto;">
                 {chart_html}

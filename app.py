@@ -21,20 +21,21 @@ OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
 
-# --- GRADIENTES SUAVES PERO PRECISOS ---
-# Usamos un degradado fluido que transiciona en los puntos clínicos clave
+# --- GRADIENTES SUAVES PERO CLÍNICOS ---
+# Ajustados para que la transición de color ocurra cerca de los puntos de corte
 
-# BMI: Azul(bajo) -> Verde(normal) -> Amarillo(sobrepeso) -> Naranja(Ob1) -> Rojo(Ob2) -> Burdeos(Ob3)
+# BMI (Escala 10-50)
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 
-# GLUCOSA: Verde(Normal) -> Amarillo(Prediabetes) -> Rojo(Diabetes)
-# Los cortes visuales están ajustados a la escala del slider (50-350)
+# GLUCOSA (Escala 50-350)
+# Cortes en 140 (30%) y 200 (50%)
 GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 25%, #FFF176 35%, #FFB74D 45%, #E97F87 55%, #880E4F 100%)"
 
-# Gradiente genérico
+# Genérico
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
+# IMPORTANTE: Usamos {{ y }} para escapar las llaves en el f-string
 st.markdown(f"""
     <style>
     #MainMenu {{visibility: hidden;}}
@@ -63,9 +64,9 @@ st.markdown(f"""
         padding-bottom: 10px !important;
     }}
 
-    /* === ESTILO DEL DESPLEGABLE (EXPANDER) - FORZAR ROSA === */
+    /* === ESTILO DEL DESPLEGABLE (EXPANDER) === */
     div[data-testid="stExpander"] details > summary {{
-        background-color: rgba(233, 127, 135, 0.1) !important; /* Rosa transparente */
+        background-color: rgba(233, 127, 135, 0.1) !important;
         border: 1px solid rgba(233, 127, 135, 0.2) !important;
         border-radius: 8px !important;
         color: {CEMP_DARK} !important;
@@ -160,11 +161,10 @@ st.markdown(f"""
 
     /* GRÁFICOS DE BARRAS */
     .bar-container {{
-        position: relative; width: 100%; margin-top: 20px; margin-bottom: 25px;
+        position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px;
     }}
     .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
     
-    /* Clases de Relleno para Barras con gradientes suaves */
     .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
     .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
     .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
@@ -182,21 +182,22 @@ st.markdown(f"""
     }}
     
     /* LEYENDA POSICIONADA ABSOLUTAMENTE PARA ALINEACIÓN PERFECTA */
-    .legend-container {
+    /* He corregido el error de sintaxis aquí poniendo dobles llaves */
+    .legend-container {{
         position: relative;
         width: 100%;
         height: 20px;
-        margin-top: 5px;
-    }
-    .legend-label {
+        margin-top: 8px;
+    }}
+    .legend-label {{
         position: absolute;
-        transform: translateX(-50%); /* Esto centra el texto en su punto exacto */
-        font-size: 0.75rem; 
-        color: #777; 
+        transform: translateX(-50%);
+        font-size: 0.7rem; 
+        color: #888; 
         font-weight: 600;
         text-align: center;
         white-space: nowrap;
-    }
+    }}
     
     </style>
 """, unsafe_allow_html=True)

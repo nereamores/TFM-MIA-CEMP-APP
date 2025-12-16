@@ -4,15 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 import base64
-import time
 from datetime import date
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(
     page_title="DIABETES.NME", 
     page_icon="🩺", 
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 # --- 2. COLORES ---
@@ -29,15 +27,9 @@ BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FF
 GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-# --- 3. CSS (EL ORIGINAL + ESTILOS DE INICIO) ---
+# --- 3. CSS (ESTILOS AVANZADOS) ---
 st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-    
-    html, body, [class*="css"] {{
-        font-family: 'Inter', sans-serif;
-    }}
-
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
@@ -48,7 +40,7 @@ st.markdown(f"""
         margin: 0 auto;
     }}
     
-    /* LOGO PERSONALIZADO SIDEBAR */
+    /* LOGO PERSONALIZADO */
     .cemp-logo {{ 
         font-family: 'Helvetica', sans-serif; 
         font-weight: 800; 
@@ -58,130 +50,125 @@ st.markdown(f"""
     }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO SLIDER GENERAL (RESTAURADO) === */
+    /* ESTILO BOTÓN PRIMARIO (PREDECIR) - CORAL PINK */
+    div.stButton > button:first-child {{
+        background-color: {CEMP_PINK};
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 800;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        border: none;
+        width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }}
+    div.stButton > button:first-child:hover {{
+        background-color: #D66E76; /* Un poco más oscuro al pasar el ratón */
+        transform: scale(1.02);
+        color: white;
+    }}
+    div.stButton > button:first-child:active {{
+        background-color: {CEMP_PINK};
+        color: white;
+    }}
+
+    /* BOTÓN SECUNDARIO (Modo resultado) */
+    .secondary-btn button {{
+        background-color: transparent !important;
+        border: 2px solid {CEMP_DARK} !important;
+        color: {CEMP_DARK} !important;
+    }}
+
+    /* === ESTILO SLIDER GENERAL === */
     .stSlider {{
         padding-top: 0px !important;
         padding-bottom: 10px !important;
     }}
 
-    /* === INPUTS BARRA LATERAL (RESTAURADO) === */
-    [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
-        padding: 0px 5px;
-        font-size: 0.9rem;
-        text-align: center;
-        color: {CEMP_DARK};
-        font-weight: 800;
-        border-radius: 8px;
-        background-color: white;
-        border: 1px solid #ddd;
+    /* === ESTILO DEL DESPLEGABLE (EXPANDER) === */
+    div[data-testid="stExpander"] details > summary {{
+        background-color: rgba(233, 127, 135, 0.1) !important;
+        border: 1px solid rgba(233, 127, 135, 0.2) !important;
+        border-radius: 8px !important;
+        color: {CEMP_DARK} !important;
+        font-weight: 700 !important;
+        transition: background-color 0.3s;
     }}
-    [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{
-        vertical-align: middle;
+    div[data-testid="stExpander"] details > summary:hover {{
+        background-color: rgba(233, 127, 135, 0.2) !important;
+        color: {CEMP_DARK} !important;
+    }}
+    div[data-testid="stExpander"] details[open] > div {{
+        border-left: 1px solid rgba(233, 127, 135, 0.2);
+        border-right: 1px solid rgba(233, 127, 135, 0.2);
+        border-bottom: 1px solid rgba(233, 127, 135, 0.2);
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
     }}
 
-    /* === CAJA DE CÁLCULOS SIDEBAR (RESTAURADO) === */
+    /* === INPUTS BARRA LATERAL === */
+    [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
+        padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK};
+        font-weight: 800; border-radius: 8px; background-color: white; border: 1px solid #ddd;
+    }}
+    [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{ vertical-align: middle; }}
+
+    /* === CAJA DE CÁLCULOS (SIDEBAR) === */
     .calc-box {{
-        background-color: #F8F9FA;
-        border-radius: 8px;
-        padding: 12px 15px;
-        border: 1px solid #EEE;
-        margin-top: 5px;
-        margin-bottom: 20px;
-        border-left: 4px solid {CEMP_PINK}; /* Borde rosa original */
+        background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px;
+        border: 1px solid #EEE; margin-top: 5px; margin-bottom: 20px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }}
-    .calc-label {{
-        font-size: 0.75rem; 
-        color: #888; 
-        font-weight: 600; 
-        text-transform: uppercase;
-    }}
-    .calc-value {{
-        font-size: 1rem; 
-        color: {CEMP_DARK}; 
-        font-weight: 800;
-    }}
-
-    /* === ESTILO PANTALLA DE INICIO (HOME) === */
-    .home-container {{
-        background-color: white;
-        border-radius: 20px;
-        padding: 60px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.06);
-        text-align: center;
-        border: 1px solid #EEE;
-        max-width: 800px;
-        margin: auto;
-    }}
-    .home-title {{
-        font-size: 2.5rem;
-        font-weight: 900;
-        color: {CEMP_DARK};
-        margin-bottom: 10px;
-    }}
-    .home-subtitle {{
-        font-size: 1.1rem;
-        color: #666;
-        margin-bottom: 40px;
-        font-weight: 400;
-    }}
+    .calc-label {{ font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }}
+    .calc-value {{ font-size: 1rem; color: {CEMP_DARK}; font-weight: 800; }}
     
-    /* BOTÓN PREDECIR GIGANTE */
-    .big-button button {{
-        background-color: {CEMP_PINK} !important;
-        color: white !important;
-        font-size: 1.2rem !important;
-        font-weight: 800 !important;
-        padding: 15px 30px !important;
-        border-radius: 50px !important;
-        border: none !important;
-        box-shadow: 0 10px 20px rgba(233, 127, 135, 0.3) !important;
-        transition: transform 0.2s, box-shadow 0.2s !important;
-        width: 100%;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }}
-    .big-button button:hover {{
-        transform: translateY(-3px) !important;
-        box-shadow: 0 15px 30px rgba(233, 127, 135, 0.4) !important;
-        background-color: #D66E76 !important;
-    }}
-
-    /* === TARJETAS DEL DASHBOARD === */
+    /* === TARJETAS === */
     .card {{
-        background-color: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 15px; 
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 300px; 
+        background-color: white; border-radius: 12px; padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 15px; display: flex; flex-direction: column;
+        justify-content: center; min-height: 300px; 
     }}
     .card-auto {{ min-height: auto !important; height: 100%; }}
     .card-header {{
-        color: #999;
-        font-size: 0.75rem;
-        font-weight: bold;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
+        color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
+        text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
     }}
 
-    /* GRÁFICOS */
+    /* GRÁFICOS DE BARRAS */
     .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
     .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
-    .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; }}
-    .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; }}
-    .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; }}
-    .bar-marker {{ position: absolute; top: -6px; width: 4px; height: 24px; background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }}
-    .bar-txt {{ position: absolute; top: -30px; transform: translateX(-50%); font-size: 0.85rem; font-weight: bold; color: {CEMP_DARK}; background: white; padding: 2px 8px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
+    
+    .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
+    .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
+    .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
+
+    .bar-marker {{ 
+        position: absolute; top: -6px; width: 4px; height: 24px; 
+        background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10; transition: left 0.3s ease;
+    }}
+    .bar-txt {{ 
+        position: absolute; top: -30px; transform: translateX(-50%); 
+        font-size: 0.85rem; font-weight: bold; color: {CEMP_DARK}; 
+        background: white; padding: 2px 8px; border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }}
+    
+    /* LEYENDA */
     .legend-container {{ position: relative; width: 100%; height: 20px; margin-top: 8px; }}
-    .legend-label {{ position: absolute; transform: translateX(-50%); font-size: 0.7rem; color: #888; font-weight: 600; text-align: center; white-space: nowrap; }}
+    .legend-label {{
+        position: absolute; transform: translateX(-50%); font-size: 0.7rem; 
+        color: #888; font-weight: 600; text-align: center; white-space: nowrap;
+    }}
+    
+    /* ESTILO PARA EL FORMULARIO DE INICIO */
+    .form-header {{
+        font-size: 1.5rem; color: {CEMP_DARK}; font-weight: 700; margin-bottom: 20px;
+        border-bottom: 2px solid {CEMP_PINK}; padding-bottom: 10px; display: inline-block;
+    }}
     
     </style>
 """, unsafe_allow_html=True)
@@ -197,10 +184,47 @@ def fig_to_html(fig):
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
+# Función para generar el informe en texto
 def generate_report(data_dict, prob, risk_label, alerts):
-    return f"""INFORME CLÍNICO - DIABETES.NME\nFecha: {date.today()}\nPaciente: {data_dict.get('patient_name', 'N/A')}\nID: {data_dict.get('patient_id', 'N/A')}\n\nRESULTADOS:\nRiesgo: {risk_label}\nProbabilidad IA: {prob*100:.1f}%\nHallazgos: {', '.join(alerts)}\n\nDATOS CLÍNICOS:\nGlucosa 2h: {data_dict['glucose']}\nBMI: {data_dict['bmi']:.2f}\nInsulina: {data_dict['insulin']}"""
+    report = f"""
+    ==================================================
+    INFORME DE EVALUACIÓN DE RIESGO DIABÉTICO (CDSS)
+    ==================================================
+    Fecha: {date.today().strftime("%d/%m/%Y")}
+    ID Paciente: {data_dict.get('patient_id', 'N/A')}
+    Nombre: {data_dict.get('patient_name', 'N/A')}
+    
+    --------------------------------------------------
+    RESULTADOS DEL ANÁLISIS
+    --------------------------------------------------
+    Probabilidad Estimada (IA): {prob*100:.1f}%
+    Categoría de Riesgo: {risk_label}
+    
+    Hallazgos Clave:
+    {', '.join(alerts) if alerts else "Sin hallazgos significativos."}
+    
+    --------------------------------------------------
+    DATOS CLÍNICOS REGISTRADOS
+    --------------------------------------------------
+    • Glucosa 2h (PTOG): {data_dict['glucose']} mg/dL
+    • Insulina: {data_dict['insulin']} µU/ml
+    • Índice RI: {data_dict['proxy_index']:,.0f}
+    • Peso: {data_dict['weight']} kg
+    • Altura: {data_dict['height']} m
+    • BMI: {data_dict['bmi']:.2f} kg/m²
+    • Edad: {data_dict['age']} años
+    • Embarazos: {data_dict['pregnancies']}
+    • DPF (Genética): {data_dict['dpf']}
+    
+    --------------------------------------------------
+    Nota: Este informe es una herramienta de apoyo a la 
+    decisión clínica y no sustituye el diagnóstico médico.
+    ==================================================
+    Generado por DIABETES.NME
+    """
+    return report
 
-# --- 5. MODELO Y ESTADO ---
+# --- 5. GESTIÓN DE ESTADO (SESSION STATE) ---
 if 'model' not in st.session_state:
     class MockModel:
         def predict_proba(self, X):
@@ -209,10 +233,15 @@ if 'model' not in st.session_state:
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
-if 'page' not in st.session_state: st.session_state.page = 'home'
-if 'patient' not in st.session_state: st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
+# Estado para controlar si se ha pulsado "PREDECIR"
+if 'prediction_done' not in st.session_state:
+    st.session_state.prediction_done = False
 
-# --- 6. INPUTS SINCRONIZADOS (TU CÓDIGO ORIGINAL RESTAURADO) ---
+# Estado para datos del paciente
+if 'patient_info' not in st.session_state:
+    st.session_state.patient_info = {'name': '', 'id': '', 'date': date.today()}
+
+# --- 6. INPUTS SINCRONIZADOS ---
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
     label_html = f"**{label_text}**"
     if help_text:
@@ -220,16 +249,19 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
     st.markdown(label_html, unsafe_allow_html=True)
     
     c1, c2 = st.columns([2.5, 1], gap="small")
+    
     input_type = type(default_val)
     min_val = input_type(min_val)
     max_val = input_type(max_val)
     step = 0.1 if input_type == float else 1
 
-    if key not in st.session_state: st.session_state[key] = default_val
+    if key not in st.session_state:
+        st.session_state[key] = default_val
 
     def update_from_slider():
         st.session_state[key] = st.session_state[f"{key}_slider"]
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
+    
     def update_from_input():
         val = st.session_state[f"{key}_input"]
         if val < min_val: val = min_val
@@ -238,24 +270,31 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         st.session_state[f"{key}_slider"] = val 
 
     with c1:
-        st.slider(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed")
+        st.slider(
+            label="", min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed"
+        )
     with c2:
-        st.number_input(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed")
+        st.number_input(
+            label="", min_value=min_val, max_value=max_val, step=step,
+            key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed"
+        )
     return st.session_state[key]
 
-# --- 7. BARRA LATERAL (LA ORIGINAL QUE TE GUSTABA) ---
+# --- 7. BARRA LATERAL (SIEMPRE VISIBLE) ---
 with st.sidebar:
     st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
     st.caption("CLINICAL DECISION SUPPORT SYSTEM")
     st.write("")
     
+    st.markdown("**1. Parámetros Clínicos**")
     # 1. METABÓLICOS
     glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.")
     insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.")
     
     proxy_index = glucose * insulin
     st.markdown(f"""
-    <div class="calc-box">
+    <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <span class="calc-label">Índice RI (Glucosa x Insulina)</span>
             <span class="calc-value">{proxy_index:,.0f}</span>
@@ -273,7 +312,7 @@ with st.sidebar:
     bmi_sq = bmi ** 2
     
     st.markdown(f"""
-    <div class="calc-box">
+    <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span class="calc-label">BMI (kg/m²)</span>
             <span class="calc-value">{bmi:.2f}</span>
@@ -297,12 +336,16 @@ with st.sidebar:
     # 4. DPF
     dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
 
-    # Lógica de barra DPF
-    if dpf <= 0.15: dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
-    elif dpf <= 0.40: dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
-    elif dpf <= 0.80: dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
-    elif dpf <= 1.20: dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
-    else: dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
+    if dpf <= 0.15:
+        dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
+    elif dpf <= 0.40:
+        dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
+    elif dpf <= 0.80:
+        dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
+    elif dpf <= 1.20:
+        dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
+    else:
+        dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
 
     st.markdown(f"""
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-10px; margin-bottom:2px;">
@@ -313,76 +356,44 @@ with st.sidebar:
         <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease, background-color 0.3s ease;"></div>
     </div>
     """, unsafe_allow_html=True)
+    
     st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
-# --- 8. ZONA PRINCIPAL ---
 
-# PÁGINA DE INICIO (MODO LOGIN / SETUP)
-if st.session_state.page == 'home':
+# --- 8. ZONA PRINCIPAL (MAIN) ---
+
+# Título General
+st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
+
+# LÓGICA DE FLUJO: Si NO se ha predicho aún
+if not st.session_state.prediction_done:
     st.write("")
-    st.write("")
+    st.markdown(f'<div class="form-header">Registro del Paciente</div>', unsafe_allow_html=True)
+    st.write("Por favor, introduce los datos administrativos del paciente y configura las variables clínicas en la barra lateral antes de realizar la predicción.")
     
-    # Contenedor centrado limpio
-    c_spacer_l, c_main, c_spacer_r = st.columns([1, 2, 1])
-    
-    with c_main:
-        st.markdown(f"""
-        <div class="home-container">
-            <div style="font-size:3.5rem; margin-bottom:15px;">🩺</div>
-            <div class="home-title">Evaluación de Riesgo Diabético</div>
-            <div class="home-subtitle">
-                Sistema de Soporte a la Decisión Clínica (CDSS) basado en IA.<br>
-                Por favor, introduzca los datos del paciente y configure las variables clínicas en el panel lateral.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.write("")
-        st.write("")
-        
-        # Formulario de paciente simple
-        with st.container():
-            c1, c2 = st.columns(2)
-            with c1:
-                st.session_state.patient['id'] = st.text_input("Nº Historia / ID", placeholder="Ej: 8842-X")
-            with c2:
-                st.session_state.patient['name'] = st.text_input("Nombre (Opcional)", placeholder="Iniciales o Nombre")
+    with st.container():
+        # Usamos columnas para el formulario simple
+        c_form1, c_form2, c_form3 = st.columns([1, 1, 1])
+        with c_form1:
+            st.session_state.patient_info['id'] = st.text_input("ID Paciente", value=st.session_state.patient_info.get('id', ''))
+        with c_form2:
+            st.session_state.patient_info['name'] = st.text_input("Nombre / Iniciales", value=st.session_state.patient_info.get('name', ''))
+        with c_form3:
+            st.session_state.patient_info['date'] = st.date_input("Fecha de Consulta", value=st.session_state.patient_info.get('date', date.today()))
             
-            st.session_state.patient['date'] = st.date_input("Fecha Consulta", value=date.today())
-
-        st.write("")
-        st.write("")
-        st.write("")
-
-        # BOTÓN GRANDE
-        st.markdown('<div class="big-button">', unsafe_allow_html=True)
-        if st.button("GENERAR PREDICCIÓN CLÍNICA  ➔"):
-            if not st.session_state.patient['id']:
-                st.error("⚠️ Por favor, introduzca al menos un ID de paciente.")
-            else:
-                with st.spinner("Procesando datos del paciente..."):
-                    time.sleep(1.5)
-                    st.session_state.page = 'results'
-                    st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# PÁGINA DE RESULTADOS (EL DASHBOARD QUE TE GUSTABA)
-elif st.session_state.page == 'results':
+    st.write("")
+    st.write("")
     
-    # Header con botón volver
-    c_head, c_back = st.columns([4, 1])
-    with c_head:
-        st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 0px;'>Resultados del Análisis</h1>", unsafe_allow_html=True)
-        st.caption(f"Paciente: {st.session_state.patient['name']} | ID: {st.session_state.patient['id']}")
-    with c_back:
-        st.write("")
-        if st.button("⬅ Nueva Consulta"):
-            st.session_state.page = 'home'
-            st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
+    # BOTÓN GRANDE DE PREDECIR
+    _, col_btn, _ = st.columns([1, 2, 1])
+    with col_btn:
+        if st.button("PREDECIR RIESGO"):
+            st.session_state.prediction_done = True
             st.rerun()
-            
-    st.write("")
 
+# LÓGICA DE FLUJO: Si YA se ha predicho (Muestra el Dashboard)
+else:
+    # --- PESTAÑAS ---
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
     with tab1:
@@ -391,35 +402,52 @@ elif st.session_state.page == 'results':
         # --- UMBRAL ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
+            
             with c_calib_1:
                 st.caption("Selecciona manualmente el umbral de decisión.")
                 threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
+                
                 st.markdown(f"""
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                     <span style="font-size:1.1rem;">💡</span> 
-                    <div><strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score).</div>
-                </div>""", unsafe_allow_html=True)
+                    <div>
+                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             with c_calib_2:
-                # GRÁFICA
+                # --- SIMULACIÓN MATEMÁTICA ---
                 x = np.linspace(-0.15, 1.25, 500)
-                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + 0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + 1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
+                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
+                          0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
+                             1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
                 
                 fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
-                fig_calib.patch.set_facecolor('none'); ax_calib.set_facecolor('none')
+                fig_calib.patch.set_facecolor('none')
+                ax_calib.set_facecolor('none')
                 ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
                 ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
                 ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
                 ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
                 ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
                 ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
-                ax_calib.set_yticks([]); ax_calib.set_xlim(-0.2, 1.25)
-                ax_calib.spines['top'].set_visible(False); ax_calib.spines['right'].set_visible(False); ax_calib.spines['left'].set_visible(False)
+                ax_calib.set_yticks([])
+                ax_calib.set_xlim(-0.2, 1.25)
+                ax_calib.spines['top'].set_visible(False)
+                ax_calib.spines['right'].set_visible(False)
+                ax_calib.spines['bottom'].set_visible(False)
+                ax_calib.spines['left'].set_visible(False)
+                ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
                 ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
                 
                 chart_html_calib = fig_to_html(fig_calib)
-                st.markdown(f"""<div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">{chart_html_calib}</div>""", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
+                    {chart_html_calib}
+                </div>
+                """, unsafe_allow_html=True)
                 plt.close(fig_calib)
 
         # LÓGICA IA
@@ -427,46 +455,65 @@ elif st.session_state.page == 'results':
         prob = st.session_state.model.predict_proba(input_data)[0][1]
         is_high = prob > threshold 
         
+        # CÁLCULO FIABILIDAD
         distancia_al_corte = abs(prob - threshold)
-        if distancia_al_corte > 0.15: conf_text, conf_color = "ALTA", GOOD_TEAL
-        elif distancia_al_corte > 0.05: conf_text, conf_color = "MEDIA", "#F39C12"
-        else: conf_text, conf_color = "BAJA", CEMP_PINK
-        conf_desc = "Fiabilidad basada en distancia al umbral."
+        if distancia_al_corte > 0.15:
+            conf_text, conf_color = "ALTA", GOOD_TEAL
+            conf_desc = "Probabilidad claramente alejada del umbral. Clasificación robusta."
+        elif distancia_al_corte > 0.05:
+            conf_text, conf_color = "MEDIA", "#F39C12"
+            conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
+        else:
+            conf_text, conf_color = "BAJA", CEMP_PINK
+            conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
+        # ESTILOS
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
         risk_icon = "🔴" if is_high else "🟢"
         risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
         risk_border = CEMP_PINK if is_high else GOOD_TEAL
         
+        # ALERTAS
         alerts = []
-        if glucose >= 200: alerts.append("Posible Diabetes")
-        elif glucose >= 140: alerts.append("Posible Prediabetes")
-        if bmi >= 40: alerts.append("Obesidad Mórbida (G3)")
-        elif bmi >= 35: alerts.append("Obesidad G2")
-        elif bmi >= 30: alerts.append("Obesidad G1")
-        elif bmi >= 25: alerts.append("Sobrepeso")
-        elif bmi < 18.5: alerts.append("Bajo Peso")
-        if proxy_index > 19769.5: alerts.append("Resistencia Insulina")
+        if glucose >= 200:
+            alerts.append("Posible Diabetes")
+        elif glucose >= 140:
+            alerts.append("Posible Prediabetes")
+        if bmi >= 40:
+            alerts.append("Obesidad Mórbida (G3)")
+        elif bmi >= 35:
+            alerts.append("Obesidad G2")
+        elif bmi >= 30:
+            alerts.append("Obesidad G1")
+        elif bmi >= 25:
+            alerts.append("Sobrepeso")
+        elif bmi < 18.5:
+            alerts.append("Bajo Peso")
+        if proxy_index > 19769.5: 
+            alerts.append("Resistencia Insulina")
         
-        if not alerts: insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
-        else: insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
+        if not alerts:
+            insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
+        else:
+            insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
 
         # LAYOUT
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
+        # IZQUIERDA
         with c_left:
             # FICHA PACIENTE 
-            pat_name = st.session_state.patient['name'] if st.session_state.patient['name'] else "Desconocido"
-            pat_id = st.session_state.patient['id'] if st.session_state.patient['id'] else "---"
+            pat_name = st.session_state.patient_info['name'] if st.session_state.patient_info['name'] else "#8842-X"
+            pat_date = st.session_state.patient_info['date'].strftime("%d %b %Y")
             
             st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
                     <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
                     <div>
                         <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
-                        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">{pat_name}</h2>
-                        <div style="font-size:0.85rem; color:#666; margin-top:5px;">ID: <b>{pat_id}</b></div>
+                        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">Paciente {pat_name}</h2>
+                        <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{pat_date}</b></div>
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
@@ -516,6 +563,7 @@ elif st.session_state.page == 'results':
                 </div>
             </div>""", unsafe_allow_html=True)
 
+        # DERECHA
         with c_right:
             st.markdown(f"""<div class="card card-auto" style="border-left:5px solid {insight_bd}; justify-content:center;">
                 <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
@@ -585,9 +633,33 @@ elif st.session_state.page == 'results':
     with tab3:
         st.write("")
         st.info("💡 Módulo de recomendaciones clínicas y generación de informes.")
+    
+    # --- BOTONES DE ACCIÓN (INFORME Y NUEVO PACIENTE) ---
+    st.markdown("---")
+    c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1])
+    
+    with c_btn1:
+        # Preparar datos para el informe
+        data_for_report = {
+            'patient_id': st.session_state.patient_info['id'],
+            'patient_name': st.session_state.patient_info['name'],
+            'age': age, 'pregnancies': pregnancies, 'dpf': dpf,
+            'glucose': glucose, 'insulin': insulin, 'proxy_index': proxy_index,
+            'weight': weight, 'height': height, 'bmi': bmi
+        }
+        report_text = generate_report(data_for_report, prob, risk_label, alerts)
         
-        # Generar informe
-        report_data = {'patient_name': st.session_state.patient['name'], 'patient_id': st.session_state.patient['id'], 'glucose': glucose, 'insulin': insulin, 'bmi': bmi, 'age': age, 'pregnancies': pregnancies, 'dpf': dpf, 'proxy_index': proxy_index, 'weight': weight, 'height': height}
-        report_text = generate_report(report_data, prob, risk_label, alerts)
+        st.download_button(
+            label="📥 DESCARGAR INFORME CLÍNICO",
+            data=report_text,
+            file_name=f"Informe_Diabetes_{st.session_state.patient_info['id']}.txt",
+            mime="text/plain"
+        )
         
-        st.download_button("📥 Descargar Informe Completo (TXT)", data=report_text, file_name=f"Informe_{st.session_state.patient['id']}.txt")
+    with c_btn3:
+        # Botón para resetear
+        if st.button("🔄 NUEVO PACIENTE", key="reset_btn"):
+            st.session_state.prediction_done = False
+            # Opcional: Limpiar datos del paciente
+            st.session_state.patient_info = {'name': '', 'id': '', 'date': date.today()}
+            st.rerun()

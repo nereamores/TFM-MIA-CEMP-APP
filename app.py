@@ -24,8 +24,7 @@ if 'model' not in st.session_state:
     # Mock Model para la demostración
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple basada en glucosa e IMC para que el resultado tenga sentido visual
-            # glucosa es X[0], bmi es X[1], edad es X[3]
+            # Simulación simple basada en glucosa e IMC
             score = (X[0]*0.5) + (X[1]*0.6) + (X[3]*0.1) 
             # Ajustamos la sigmoide para que de valores variados
             prob = 1 / (1 + np.exp(-(score - 110) / 20)) 
@@ -54,47 +53,74 @@ st.markdown(f"""
     #MainMenu, footer, header {{visibility: hidden;}}
     .block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 1250px; }}
 
-    /* LOGO GLOBAL (Usado en sidebar y portada) */
+    /* LOGO GLOBAL (Usado en sidebar) */
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 900; color: {CEMP_DARK}; display: flex; align-items: center; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* === ESTILOS ESPECÍFICOS DE LA PORTADA (LANDING) === */
     .landing-wrapper {{
-        background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        padding: 60px 40px;
+        background: #FFFFFF;
+        padding: 60px 50px;
         border-radius: 24px;
         text-align: center;
-        border: 1px solid rgba(233, 127, 135, 0.15);
-        box-shadow: 0 20px 40px rgba(233, 127, 135, 0.08);
-        margin-top: 30px;
-        max-width: 950px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+        margin-top: 40px; /* Un poco más de margen superior al quitar el logo */
+        max-width: 900px;
         margin-left: auto;
         margin-right: auto;
-        position: relative;
+        border: 1px solid rgba(0,0,0,0.02);
     }}
-    .landing-title {{
-        font-family: 'Inter', sans-serif;
+    
+    .cemp-badge {{
+        display: inline-block;
+        background-color: {CEMP_DARK};
+        color: #FFF;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin-bottom: 40px; /* Más espacio debajo del badge */
+    }}
+
+    /* ESTILO ESPECÍFICO PARA EL TÍTULO DE PORTADA MULTICOLOR */
+    .landing-title-text {{
+        font-family: 'Helvetica', sans-serif; /* Misma fuente que el sidebar */
         font-weight: 900;
-        font-size: 4rem;
+        font-size: 4.5rem; /* Un poco más grande para impacto */
         color: {CEMP_DARK};
-        margin-bottom: 0px;
         line-height: 1;
-        letter-spacing: -1px;
+        letter-spacing: -2px;
+        margin-bottom: 25px;
     }}
-    /* AÑADIDO: Para que los spans dentro del título de portada sean rosas */
-    .landing-title span {{
-        color: {CEMP_PINK};
+    .landing-pink {{ color: {CEMP_PINK}; }}
+    .landing-gray {{ color: {SLIDER_GRAY}; }}
+    
+    .landing-hero-text {{
+        font-family: 'Inter', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: {CEMP_DARK};
+        margin-bottom: 25px;
+        line-height: 1.3;
+    }}
+    
+    .landing-description {{
+        font-size: 1.15rem;
+        color: #666;
+        line-height: 1.6;
+        max-width: 750px;
+        margin: 0 auto 40px auto;
     }}
 
     .disclaimer-box {{
-        background-color: #FFF;
-        border-left: 4px solid {CEMP_PINK};
+        background-color: #F8F9FA;
+        border-left: 5px solid {CEMP_PINK};
         padding: 25px;
-        margin: 40px auto 20px auto;
+        margin: 0 auto 40px auto;
         text-align: left;
         font-size: 0.95rem;
         color: #555;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
         border-radius: 12px;
         max-width: 800px;
         line-height: 1.6;
@@ -105,11 +131,11 @@ st.markdown(f"""
         background-color: {CEMP_PINK}; color: white; font-weight: 800; font-size: 1.1rem;
         padding: 1rem 3rem; border-radius: 16px; border: none;
         width: auto; min-width: 280px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease;
-        box-shadow: 0 10px 20px rgba(233, 127, 135, 0.3);
+        box-shadow: 0 10px 25px rgba(233, 127, 135, 0.4);
     }}
     div.stButton > button:first-child:hover {{
         background-color: #D66E76; transform: translateY(-3px);
-        box-shadow: 0 15px 30px rgba(233, 127, 135, 0.4);
+        box-shadow: 0 15px 35px rgba(233, 127, 135, 0.5);
     }}
     
     /* BOTÓN SECUNDARIO (OUTLINE) */
@@ -208,37 +234,30 @@ if st.session_state.step == 1:
     with st.container():
         st.markdown(f"""
         <div class="landing-wrapper">
-            <div style="margin-bottom: 30px;">
-                <div class="cemp-logo" style="font-size: 3.5rem; justify-content: center; margin-bottom: 0px; letter-spacing: -2px;">
-                    CEMP<span>.</span>
-                </div>
-                <div style="font-family: 'Helvetica', sans-serif; font-weight: 600; font-size: 1rem; color: #666; letter-spacing: 1px; text-transform: uppercase;">
-                    Centro Europeo de Másteres y Posgrados
-                </div>
-            </div>
+            <div class="cemp-badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</div>
 
-            <div class="landing-title">
-                D<span>IA</span>BETES<span>.NME</span>
+            <div class="landing-title-text">
+                D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
             </div>
             
-            <p style="font-size: 1.5rem; font-weight: 600; color: {CEMP_DARK}; margin-top: 25px; margin-bottom: 20px;">
-                Prototipo de IA para el futuro de la salud preventiva.
-            </p>
+            <div class="landing-hero-text">
+                Prototipo de Inteligencia Artificial para el futuro de la prevención diabética.
+            </div>
 
-            <p style="font-size: 1.15rem; color: #666; margin-bottom: 40px; max-width: 750px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-                Este proyecto de <strong>Trabajo de Fin de Máster (TFM)</strong> explora cómo los modelos predictivos avanzados pueden integrarse en la práctica clínica, visualizando un futuro donde la inteligencia artificial actúa como una potente herramienta de apoyo en la detección temprana de patologías.
+            <p class="landing-description">
+                Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
             </p>
             
             <div class="disclaimer-box">
                 <strong>🎓 CONTEXTO ACADÉMICO Y LIMITACIONES</strong><br><br>
-                Aplicación desarrollada con fines exclusivamente educativos e investigativos utilizando el dataset público <em>Pima Indians Diabetes</em>.<br><br>
+                Aplicación desarrollada con fines exclusivamente educativos e investigativos como parte de un Trabajo de Fin de Máster, utilizando el dataset público <em>Pima Indians Diabetes</em>.<br><br>
                 <strong>⚠️ AVISO IMPORTANTE:</strong> Esta herramienta <strong>NO es un dispositivo médico certificado</strong>. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
             </div>
         </div>
         """, unsafe_allow_html=True)
         
         # --- BOTÓN CENTRADO ---
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -50px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -30px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN PROFESIONAL ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()

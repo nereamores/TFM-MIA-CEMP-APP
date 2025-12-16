@@ -12,21 +12,17 @@ st.set_page_config(
     page_title="DIABETES.NME | TFM", 
     page_icon="🎓", 
     layout="wide",
-    initial_sidebar_state="collapsed" # Colapsada al inicio para la portada
+    initial_sidebar_state="collapsed"
 )
 
-# --- 2. GESTIÓN DE ESTADO (SESSION STATE) ---
-# Inicializamos las variables para navegar entre pantallas
+# --- 2. GESTIÓN DE ESTADO ---
 if 'step' not in st.session_state: st.session_state.step = 1
 if 'patient' not in st.session_state: st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
 if 'threshold' not in st.session_state: st.session_state.threshold = 0.27
 if 'model' not in st.session_state:
-    # Mock Model para la demostración
     class MockModel:
         def predict_proba(self, X):
-            # Simulación simple basada en glucosa e IMC
             score = (X[0]*0.5) + (X[1]*0.6) + (X[3]*0.1) 
-            # Ajustamos la sigmoide para que de valores variados
             prob = 1 / (1 + np.exp(-(score - 110) / 20)) 
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
@@ -44,7 +40,6 @@ RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 
-# CSS CON DOBLES LLAVES {{ }} PARA EVITAR ERRORES DE F-STRING
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
@@ -53,18 +48,18 @@ st.markdown(f"""
     #MainMenu, footer, header {{visibility: hidden;}}
     .block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 1250px; }}
 
-    /* LOGO GLOBAL (Usado en sidebar) */
+    /* LOGO SIDEBAR */
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 900; color: {CEMP_DARK}; display: flex; align-items: center; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILOS ESPECÍFICOS DE LA PORTADA (LANDING) === */
+    /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: #FFFFFF;
         padding: 60px 50px;
         border-radius: 24px;
         text-align: center;
         box-shadow: 0 15px 40px rgba(0,0,0,0.05);
-        margin-top: 40px; /* Un poco más de margen superior al quitar el logo */
+        margin-top: 40px;
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
@@ -80,19 +75,19 @@ st.markdown(f"""
         font-size: 0.75rem;
         font-weight: 800;
         letter-spacing: 1px;
-        margin-bottom: 40px; /* Más espacio debajo del badge */
+        margin-bottom: 40px;
     }}
 
-    /* ESTILO ESPECÍFICO PARA EL TÍTULO DE PORTADA MULTICOLOR */
     .landing-title-text {{
-        font-family: 'Helvetica', sans-serif; /* Misma fuente que el sidebar */
+        font-family: 'Helvetica', sans-serif;
         font-weight: 900;
-        font-size: 4.5rem; /* Un poco más grande para impacto */
+        font-size: 4.5rem;
         color: {CEMP_DARK};
         line-height: 1;
         letter-spacing: -2px;
         margin-bottom: 25px;
     }}
+    
     .landing-pink {{ color: {CEMP_PINK}; }}
     .landing-gray {{ color: {SLIDER_GRAY}; }}
     
@@ -138,7 +133,7 @@ st.markdown(f"""
         box-shadow: 0 15px 35px rgba(233, 127, 135, 0.5);
     }}
     
-    /* BOTÓN SECUNDARIO (OUTLINE) */
+    /* BOTÓN SECUNDARIO */
     .secondary-btn button {{
         background-color: transparent !important;
         border: 2px solid {CEMP_DARK} !important;
@@ -149,7 +144,7 @@ st.markdown(f"""
         background-color: {CEMP_DARK} !important; color: white !important; transform: translateY(-2px);
     }}
 
-    /* SIDEBAR Y CONTROLES */
+    /* SIDEBAR */
     .stSlider {{ padding-top: 0px !important; padding-bottom: 10px !important; }}
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK}; font-weight: 800;
@@ -163,7 +158,7 @@ st.markdown(f"""
     .calc-label {{ font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }}
     .calc-value {{ font-size: 1rem; color: {CEMP_DARK}; font-weight: 800; }}
 
-    /* TARJETAS DASHBOARD */
+    /* TARJETAS */
     .card {{
         background-color: white; border-radius: 12px; padding: 20px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
@@ -172,7 +167,7 @@ st.markdown(f"""
     .card-auto {{ min-height: auto !important; height: 100%; }}
     .card-header {{ color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; }}
     
-    /* GRÁFICOS BARRAS */
+    /* GRÁFICOS */
     .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
     .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
     .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; }}
@@ -200,7 +195,7 @@ def get_help_icon(description):
 def generate_report(data_dict, prob, risk_label, alerts):
     return f"""==================================================\nINFORME TFM - DIABETES.NME (SIMULACIÓN ACADÉMICA)\n==================================================\nFecha: {date.today().strftime("%d/%m/%Y")}\nID Paciente: {data_dict.get('id')}\n--------------------------------------------------\nRESULTADOS:\nRiesgo Estimado: {risk_label} ({prob*100:.1f}%)\nFactores Clave: {', '.join(alerts)}\n--------------------------------------------------\nDATOS:\nGlucosa 2h: {data_dict['glucose']} mg/dL | BMI: {data_dict['bmi']:.2f}\nEdad: {data_dict['age']} | DPF: {data_dict['dpf']}\n==================================================\nAVISO: Este informe no tiene validez clínica."""
 
-# Función de input sincronizado (Barra lateral)
+# Función de input sincronizado
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
     label_html = f"**{label_text}**"
     if help_text: label_html += get_help_icon(help_text)
@@ -215,7 +210,7 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
     def update_from_input():
         val = st.session_state[f"{key}_input"]
-        val = max(min_val, min(val, max_val)) # Asegurar límites
+        val = max(min_val, min(val, max_val))
         st.session_state[key] = val
         st.session_state[f"{key}_slider"] = val 
     with c1: st.slider(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed")
@@ -268,7 +263,6 @@ if st.session_state.step > 1:
     
     # --- RENDERIZADO DE LA BARRA LATERAL ---
     with st.sidebar:
-        # Logo pequeño para la barra lateral (MANTENIENDO ESTILO ORIGINAL)
         st.markdown(f'<div class="cemp-logo" style="font-size: 1.8rem;">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
         st.caption("CLINICAL DECISION SUPPORT SYSTEM | TFM")
         st.write("")
@@ -400,7 +394,6 @@ if st.session_state.step == 3:
 
     with tab2:
         st.write("")
-        # (Gráfico SHAP estático como placeholder)
         features = ["Glucosa", "BMI", "Edad", "Insulina"]; vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
         colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
         fig, ax = plt.subplots(figsize=(8, 4)); fig.patch.set_facecolor('none'); ax.set_facecolor('none')

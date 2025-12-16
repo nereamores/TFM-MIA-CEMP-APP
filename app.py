@@ -52,18 +52,18 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 900; color: {CEMP_DARK}; display: flex; align-items: center; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === PORTADA (LANDING) === */
+    /* === PORTADA (LANDING) - ESTILO "ROSITA" RESTAURADO === */
     .landing-wrapper {{
-        background: #FFFFFF;
+        background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%); /* Degradado sutil */
         padding: 60px 50px;
         border-radius: 24px;
         text-align: center;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+        border: 1px solid rgba(233, 127, 135, 0.15); /* Borde rosado */
+        box-shadow: 0 20px 40px rgba(233, 127, 135, 0.08); /* Sombra rosada */
         margin-top: 40px;
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
-        border: 1px solid rgba(0,0,0,0.02);
     }}
     
     .cemp-badge {{
@@ -79,7 +79,6 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
-    /* TEXTO INSTITUCIÓN (CEMP) */
     .landing-institution {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 700;
@@ -90,7 +89,6 @@ st.markdown(f"""
         margin-bottom: 10px;
     }}
 
-    /* TÍTULO PRINCIPAL */
     .landing-title-text {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 900;
@@ -241,7 +239,6 @@ if st.session_state.step == 1:
     st.write("")
     
     with st.container():
-        # AQUÍ ESTÁ LA CORRECCIÓN: HTML SIN INDENTACIÓN PARA EVITAR QUE SE VEA COMO CÓDIGO
         st.markdown(f"""<div class="landing-wrapper">
 <div class="cemp-badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</div>
 <div class="landing-institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>

@@ -16,14 +16,19 @@ st.set_page_config(
 )
 
 # --- 2. GESTIÓN DE ESTADO (SESSION STATE) ---
+# Inicializamos las variables para navegar entre pantallas
 if 'step' not in st.session_state: st.session_state.step = 1
 if 'patient' not in st.session_state: st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
 if 'threshold' not in st.session_state: st.session_state.threshold = 0.27
 if 'model' not in st.session_state:
+    # Mock Model para la demostración
     class MockModel:
         def predict_proba(self, X):
-            score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
-            prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
+            # Simulación simple basada en glucosa e IMC para que el resultado tenga sentido visual
+            # glucosa es X[0], bmi es X[1], edad es X[3]
+            score = (X[0]*0.5) + (X[1]*0.6) + (X[3]*0.1) 
+            # Ajustamos la sigmoide para que de valores variados
+            prob = 1 / (1 + np.exp(-(score - 110) / 20)) 
             return [[1-prob, prob]]
     st.session_state.model = MockModel()
 
@@ -40,82 +45,66 @@ RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 
-# NOTA IMPORTANTE: Se usan DOBLES LLAVES {{ }} en el CSS para evitar el SyntaxError con f-strings.
+# CSS CON DOBLES LLAVES {{ }} PARA EVITAR ERRORES DE F-STRING
 st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
     html, body, [class*="css"] {{ font-family: 'Inter', sans-serif; }}
     
     #MainMenu, footer, header {{visibility: hidden;}}
     .block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 1250px; }}
 
-    /* LOGO Y TÍTULOS EN SIDEBAR */
-    .cemp-logo-sidebar {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; }}
-    .cemp-logo-sidebar span {{ color: {CEMP_PINK}; }}
+    /* LOGO GLOBAL (Usado en sidebar y portada) */
+    .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 900; color: {CEMP_DARK}; display: flex; align-items: center; }}
+    .cemp-logo span {{ color: {CEMP_PINK}; }}
 
     /* === ESTILOS ESPECÍFICOS DE LA PORTADA (LANDING) === */
     .landing-wrapper {{
-        background: linear-gradient(135deg, #FFF0F1 0%, #FFFFFF 100%);
-        padding: 50px 40px;
-        border-radius: 20px;
+        background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
+        padding: 60px 40px;
+        border-radius: 24px;
         text-align: center;
-        border: 1px solid rgba(233, 127, 135, 0.2);
-        box-shadow: 0 10px 30px rgba(233, 127, 135, 0.1);
-        margin-top: 20px;
-        max-width: 900px;
+        border: 1px solid rgba(233, 127, 135, 0.15);
+        box-shadow: 0 20px 40px rgba(233, 127, 135, 0.08);
+        margin-top: 30px;
+        max-width: 950px;
         margin-left: auto;
         margin-right: auto;
-        position: relative; /* Necesario para el z-index del botón */
-    }}
-    .landing-institution {{
-        font-weight: 800;
-        font-size: 1.4rem;
-        color: {CEMP_DARK};
-        margin-bottom: 10px;
-        letter-spacing: 0.5px;
+        position: relative;
     }}
     .landing-title {{
-        font-family: 'Helvetica', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-weight: 900;
-        font-size: 3.5rem;
-        color: {CEMP_PINK};
-        margin-bottom: 15px;
+        font-size: 4rem;
+        color: {CEMP_DARK};
+        margin-bottom: 0px;
         line-height: 1;
+        letter-spacing: -1px;
     }}
     .disclaimer-box {{
         background-color: #FFF;
-        border-left: 5px solid {CEMP_PINK};
-        padding: 20px;
-        margin: 30px auto;
+        border-left: 4px solid {CEMP_PINK};
+        padding: 25px;
+        margin: 40px auto 20px auto;
         text-align: left;
         font-size: 0.95rem;
         color: #555;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border-radius: 8px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border-radius: 12px;
+        max-width: 800px;
+        line-height: 1.6;
     }}
-    .cemp-badge {{
-        background-color: {CEMP_DARK};
-        color: white;
-        padding: 6px 18px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        display: inline-block;
-        margin-bottom: 20px;
-    }}
-
+    
     /* BOTONES */
     div.stButton > button:first-child {{
-        background-color: {CEMP_PINK}; color: white; font-weight: 800;
-        padding: 0.8rem 2.5rem; border-radius: 12px; border: none;
-        width: auto; min-width: 250px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
-        box-shadow: 0 4px 10px rgba(233, 127, 135, 0.3);
+        background-color: {CEMP_PINK}; color: white; font-weight: 800; font-size: 1.1rem;
+        padding: 1rem 3rem; border-radius: 16px; border: none;
+        width: auto; min-width: 280px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease;
+        box-shadow: 0 10px 20px rgba(233, 127, 135, 0.3);
     }}
     div.stButton > button:first-child:hover {{
-        background-color: #D66E76; transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(233, 127, 135, 0.4);
+        background-color: #D66E76; transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(233, 127, 135, 0.4);
     }}
     
     /* BOTÓN SECUNDARIO (OUTLINE) */
@@ -123,12 +112,10 @@ st.markdown(f"""
         background-color: transparent !important;
         border: 2px solid {CEMP_DARK} !important;
         color: {CEMP_DARK} !important;
-        box-shadow: none !important;
+        box-shadow: none !important; padding: 0.6rem 2rem !important; font-size: 0.9rem !important;
     }}
     .secondary-btn button:hover {{
-        background-color: {CEMP_DARK} !important;
-        color: white !important;
-        transform: translateY(-2px);
+        background-color: {CEMP_DARK} !important; color: white !important; transform: translateY(-2px);
     }}
 
     /* SIDEBAR Y CONTROLES */
@@ -180,8 +167,9 @@ def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 def generate_report(data_dict, prob, risk_label, alerts):
-    return f"INFORME TFM - DIABETES.NME\nID: {data_dict.get('id')}\nRiesgo: {risk_label} ({prob*100:.1f}%)\nHallazgos: {', '.join(alerts)}"
+    return f"""==================================================\nINFORME TFM - DIABETES.NME (SIMULACIÓN ACADÉMICA)\n==================================================\nFecha: {date.today().strftime("%d/%m/%Y")}\nID Paciente: {data_dict.get('id')}\n--------------------------------------------------\nRESULTADOS:\nRiesgo Estimado: {risk_label} ({prob*100:.1f}%)\nFactores Clave: {', '.join(alerts)}\n--------------------------------------------------\nDATOS:\nGlucosa 2h: {data_dict['glucose']} mg/dL | BMI: {data_dict['bmi']:.2f}\nEdad: {data_dict['age']} | DPF: {data_dict['dpf']}\n==================================================\nAVISO: Este informe no tiene validez clínica."""
 
+# Función de input sincronizado (Barra lateral)
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
     label_html = f"**{label_text}**"
     if help_text: label_html += get_help_icon(help_text)
@@ -196,7 +184,7 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
     def update_from_input():
         val = st.session_state[f"{key}_input"]
-        val = max(min_val, min(val, max_val))
+        val = max(min_val, min(val, max_val)) # Asegurar límites
         st.session_state[key] = val
         st.session_state[f"{key}_slider"] = val 
     with c1: st.slider(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed")
@@ -215,25 +203,38 @@ if st.session_state.step == 1:
     with st.container():
         st.markdown(f"""
         <div class="landing-wrapper">
-            <div class="cemp-badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</div>
-            <div class="landing-institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>
-            <div class="landing-title">DIABETES.NME</div>
-            <p style="font-size: 1.2rem; color: #666; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                Sistema de Soporte a la Decisión Clínica (CDSS) basado en IA para la estimación de riesgo diabético.
+            <div style="margin-bottom: 40px;">
+                <div class="cemp-logo" style="font-size: 4rem; justify-content: center; margin-bottom: 5px;">
+                    CEMP<span>.</span>
+                </div>
+                <div style="font-family: 'Helvetica', sans-serif; font-weight: 500; font-size: 1.1rem; color: {CEMP_DARK}; letter-spacing: 2px; text-transform: uppercase;">
+                    Centro Europeo de Másteres y Posgrados
+                </div>
+            </div>
+
+            <div class="landing-title">
+                DIABETES<span style="color:{CEMP_PINK}">.NME</span>
+            </div>
+            
+            <p style="font-size: 1.5rem; font-weight: 600; color: {CEMP_DARK}; margin-top: 20px; margin-bottom: 20px;">
+                Prototipo de IA para el futuro de la salud preventiva.
             </p>
+
+            <p style="font-size: 1.15rem; color: #666; margin-bottom: 40px; max-width: 750px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                Este proyecto de <strong>Trabajo de Fin de Máster (TFM)</strong> explora cómo los modelos predictivos avanzados pueden integrarse en la práctica clínica, visualizando un futuro donde la inteligencia artificial actúa como una potente herramienta de apoyo en la detección temprana de patologías.
+            </p>
+            
             <div class="disclaimer-box">
-                <strong>🎓 AVISO IMPORTANTE - CONTEXTO ACADÉMICO</strong><br><br>
-                Esta aplicación ha sido desarrollada como parte de un <strong>Trabajo de Fin de Máster (TFM)</strong>.<br>
-                El modelo predictivo subyacente (Random Forest) se ha entrenado con fines educativos utilizando el dataset público <em>Pima Indians Diabetes</em>.<br><br>
-                <strong>⚠️ NO ES UN DISPOSITIVO MÉDICO CERTIFICADO.</strong> Los resultados son meramente informativos y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas sin la supervisión de un profesional de la salud cualificado.
+                <strong>🎓 CONTEXTO ACADÉMICO Y LIMITACIONES</strong><br><br>
+                Aplicación desarrollada con fines exclusivamente educativos e investigativos utilizando el dataset público <em>Pima Indians Diabetes</em>.<br><br>
+                <strong>⚠️ AVISO IMPORTANTE:</strong> Esta herramienta <strong>NO es un dispositivo médico certificado</strong>. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # --- BOTÓN CENTRADO (CORREGIDO) ---
-        # Usamos un contenedor flex para centrarlo perfectamente sin depender de columnas
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -40px; position: relative; z-index: 1;">', unsafe_allow_html=True)
-        if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
+        # --- BOTÓN CENTRADO ---
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -50px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        if st.button("INICIAR SIMULACIÓN PROFESIONAL ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -243,7 +244,8 @@ if st.session_state.step > 1:
     
     # --- RENDERIZADO DE LA BARRA LATERAL ---
     with st.sidebar:
-        st.markdown(f'<div class="cemp-logo-sidebar">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
+        # Logo pequeño para la barra lateral
+        st.markdown(f'<div class="cemp-logo" style="font-size: 1.8rem;">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
         st.caption("CLINICAL DECISION SUPPORT SYSTEM | TFM")
         st.write("")
         st.markdown("**1. Parámetros Clínicos**")
@@ -374,7 +376,6 @@ if st.session_state.step == 3:
 
     with tab2:
         st.write("")
-        # (Gráfico SHAP estático como placeholder)
         features = ["Glucosa", "BMI", "Edad", "Insulina"]; vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
         colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
         fig, ax = plt.subplots(figsize=(8, 4)); fig.patch.set_facecolor('none'); ax.set_facecolor('none')

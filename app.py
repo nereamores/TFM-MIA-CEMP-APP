@@ -4,15 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 import base64
-import time
 from datetime import date
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(
     page_title="DIABETES.NME", 
     page_icon="🩺", 
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 # --- 2. COLORES ---
@@ -30,15 +28,8 @@ GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%,
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
-# NOTA: Usamos dobles llaves {{ }} para evitar conflictos con f-strings de Python
 st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-    
-    html, body, [class*="css"] {{
-        font-family: 'Inter', sans-serif;
-    }}
-
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     
@@ -59,54 +50,37 @@ st.markdown(f"""
     }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === ESTILO PANTALLA DE INICIO (HOME) === */
-    .home-container {{
-        background-color: white;
-        border-radius: 20px;
-        padding: 50px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.06);
-        text-align: center;
-        border: 1px solid #EEE;
-        max-width: 900px;
-        margin: auto;
-    }}
-    .home-title {{
-        font-size: 2.2rem;
+    /* ESTILO BOTÓN PRIMARIO (PREDECIR) - CORAL PINK */
+    div.stButton > button:first-child {{
+        background-color: {CEMP_PINK};
+        color: white;
+        font-size: 1.2rem;
         font-weight: 800;
-        color: {CEMP_DARK};
-        margin-bottom: 10px;
-    }}
-    .home-subtitle {{
-        font-size: 1rem;
-        color: #666;
-        margin-bottom: 40px;
-        line-height: 1.5;
-    }}
-    
-    /* BOTÓN PREDECIR GIGANTE Y CENTRADO */
-    .big-button-container {{
-        display: flex;
-        justify-content: center;
-        margin-top: 30px;
-    }}
-    
-    .big-button-container button {{
-        background-color: {CEMP_PINK} !important;
-        color: white !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        padding: 12px 40px !important;
-        border-radius: 50px !important;
-        border: none !important;
-        box-shadow: 0 8px 20px rgba(233, 127, 135, 0.3) !important;
-        transition: transform 0.2s, box-shadow 0.2s !important;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        border: none;
+        width: 100%;
         text-transform: uppercase;
         letter-spacing: 1px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }}
-    .big-button-container button:hover {{
-        transform: translateY(-3px) !important;
-        box-shadow: 0 12px 25px rgba(233, 127, 135, 0.4) !important;
-        background-color: #D66E76 !important;
+    div.stButton > button:first-child:hover {{
+        background-color: #D66E76; /* Un poco más oscuro al pasar el ratón */
+        transform: scale(1.02);
+        color: white;
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    }}
+    div.stButton > button:first-child:active {{
+        background-color: {CEMP_PINK};
+        color: white;
+    }}
+
+    /* BOTÓN SECUNDARIO (Modo resultado) */
+    .secondary-btn button {{
+        background-color: transparent !important;
+        border: 2px solid {CEMP_DARK} !important;
+        color: {CEMP_DARK} !important;
     }}
 
     /* === ESTILO SLIDER GENERAL === */
@@ -148,7 +122,6 @@ st.markdown(f"""
         background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px;
         border: 1px solid #EEE; margin-top: 5px; margin-bottom: 20px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        border-left: 4px solid {CEMP_PINK};
     }}
     .calc-label {{ font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }}
     .calc-value {{ font-size: 1rem; color: {CEMP_DARK}; font-weight: 800; }}
@@ -323,7 +296,7 @@ with st.sidebar:
     
     proxy_index = glucose * insulin
     st.markdown(f"""
-    <div class="calc-box">
+    <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <span class="calc-label">Índice RI (Glucosa x Insulina)</span>
             <span class="calc-value">{proxy_index:,.0f}</span>
@@ -341,7 +314,7 @@ with st.sidebar:
     bmi_sq = bmi ** 2
     
     st.markdown(f"""
-    <div class="calc-box">
+    <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span class="calc-label">BMI (kg/m²)</span>
             <span class="calc-value">{bmi:.2f}</span>
@@ -391,70 +364,39 @@ with st.sidebar:
 
 # --- 8. ZONA PRINCIPAL (MAIN) ---
 
-# LÓGICA DE FLUJO: Si NO se ha predicho aún (PANTALLA DE INICIO NUEVA)
+# Título General
+st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
+
+# LÓGICA DE FLUJO: Si NO se ha predicho aún
 if not st.session_state.prediction_done:
     st.write("")
-    st.write("")
+    st.markdown(f'<div class="form-header">Registro del Paciente</div>', unsafe_allow_html=True)
+    st.write("Por favor, introduce los datos administrativos del paciente y configura las variables clínicas en la barra lateral antes de realizar la predicción.")
     
-    # Contenedor limpio y centrado para la Admisión
-    c_spacer_l, c_main, c_spacer_r = st.columns([1, 2, 1])
-    
-    with c_main:
-        st.markdown(f"""
-        <div class="home-container">
-            <div style="font-size:3rem; margin-bottom:15px;">🩺</div>
-            <div class="home-title">Evaluación de Riesgo Diabético</div>
-            <div class="home-subtitle">
-                Sistema de Soporte a la Decisión Clínica (CDSS).<br>
-                Por favor, introduzca los datos administrativos del paciente y configure las variables clínicas en el panel lateral.
-            </div>
-            
-            <div style="text-align: left; margin-top: 30px; margin-bottom: 30px;">
-                <p style="font-size: 0.8rem; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 10px;">Datos Administrativos</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Formulario de paciente integrado visualmente
-        with st.container():
-            c1, c2 = st.columns(2)
-            with c1:
-                st.session_state.patient_info['id'] = st.text_input("ID Paciente / Historia Clínica", value=st.session_state.patient_info.get('id', ''), placeholder="Ej: 8842-X")
-            with c2:
-                st.session_state.patient_info['name'] = st.text_input("Nombre / Iniciales (Opcional)", value=st.session_state.patient_info.get('name', ''))
-            
+    with st.container():
+        # Usamos columnas para el formulario simple
+        c_form1, c_form2, c_form3 = st.columns([1, 1, 1])
+        with c_form1:
+            st.session_state.patient_info['id'] = st.text_input("ID Paciente", value=st.session_state.patient_info.get('id', ''))
+        with c_form2:
+            st.session_state.patient_info['name'] = st.text_input("Nombre / Iniciales", value=st.session_state.patient_info.get('name', ''))
+        with c_form3:
             st.session_state.patient_info['date'] = st.date_input("Fecha de Consulta", value=st.session_state.patient_info.get('date', date.today()))
             
-        st.write("")
-        st.write("")
-        
-        # BOTÓN GRANDE Y CENTRADO DE PREDECIR
-        st.markdown('<div class="big-button-container">', unsafe_allow_html=True)
-        if st.button("PREDECIR RIESGO CLÍNICO  ➔"):
-            if not st.session_state.patient_info['id']:
-                st.warning("⚠️ Por favor, introduzca al menos un ID de paciente.")
-            else:
-                with st.spinner("Procesando biomarcadores y ejecutando modelo..."):
-                    time.sleep(1.5)
-                    st.session_state.prediction_done = True
-                    st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.write("")
+    st.write("")
+    
+    # --- AQUÍ ESTÁ EL CAMBIO PARA CENTRAR EL BOTÓN ---
+    # Usamos columnas laterales como espaciadores y dejamos el centro para el botón
+    # Ajustando la proporción [1, 0.8, 1] se hace más estrecho y centrado
+    _, col_btn, _ = st.columns([1, 0.8, 1])
+    with col_btn:
+        if st.button("PREDECIR RIESGO CLÍNICO ➔"):
+            st.session_state.prediction_done = True
+            st.rerun()
 
 # LÓGICA DE FLUJO: Si YA se ha predicho (Muestra el Dashboard)
 else:
-    # Header del Dashboard con botón volver
-    c_head, c_back = st.columns([4, 1])
-    with c_head:
-        st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 0px;'>Resultados del Análisis</h1>", unsafe_allow_html=True)
-    with c_back:
-        st.write("")
-        if st.button("⬅ Nueva Consulta"):
-            st.session_state.prediction_done = False
-            st.session_state.patient_info = {'name': '', 'id': '', 'date': date.today()}
-            st.rerun()
-            
-    st.write("")
-
     # --- PESTAÑAS ---
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 

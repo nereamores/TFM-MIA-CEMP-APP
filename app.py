@@ -55,7 +55,7 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        padding: 50px 40px 60px 40px; /* Reducido padding inferior del wrapper principal */
+        padding: 50px 40px 60px 40px;
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -113,22 +113,20 @@ st.markdown(f"""
         line-height: 1.4;
     }}
     
-    /* CAMBIO 1: Párrafo CENTRADO en lugar de justificado */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
         max-width: 700px;
         margin: 0 auto 35px auto;
-        text-align: center; /* <-- CAMBIADO A CENTER */
+        text-align: center;
     }}
 
-    /* CAMBIO 2: Estilo "Rectángulo Rosita Degradado" con espacio para el botón */
     .disclaimer-box {{
-        background: linear-gradient(180deg, #FDFBFB 0%, #FFE6E9 100%); /* Degradado rosita */
-        border: 1px solid #FADADD; /* Borde rosita suave */
+        background: linear-gradient(180deg, #FDFBFB 0%, #FFE6E9 100%);
+        border: 1px solid #FADADD;
         border-left: 4px solid {CEMP_PINK};
-        padding: 25px 25px 95px 25px; /* <-- Padding inferior aumentado para que quepa el botón */
+        padding: 25px 25px 95px 25px;
         margin: 0 auto 0 auto; 
         text-align: center;
         font-size: 0.85rem;
@@ -264,8 +262,6 @@ Este proyecto explora el potencial de integrar modelos predictivos avanzados en 
 </div>
 </div>""", unsafe_allow_html=True)
         
-        # --- CAMBIO 3: POSICIÓN DEL BOTÓN ---
-        # Se ajusta el margen negativo a -85px para que suba y quede dentro del padding inferior del .disclaimer-box
         st.markdown('<div style="display: flex; justify-content: center; margin-top: -85px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
@@ -295,7 +291,7 @@ if st.session_state.step > 1:
         st.markdown("---") 
         st.markdown("**3. Historia**")
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
-         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
+        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
         st.markdown("---") 
         st.markdown("**4. Genética**")
         dpf = input_biomarker("Antecedentes (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética.")

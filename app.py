@@ -21,21 +21,18 @@ OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
 
-# --- GRADIENTES SUAVES PERO CLÍNICOS ---
-# Ajustados para que la transición de color ocurra cerca de los puntos de corte
-
+# --- GRADIENTES SUAVES ---
 # BMI (Escala 10-50)
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 
 # GLUCOSA (Escala 50-350)
-# Cortes en 140 (30%) y 200 (50%)
-GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 25%, #FFF176 35%, #FFB74D 45%, #E97F87 55%, #880E4F 100%)"
+# Cortes visuales ajustados: Verde hasta 140, Amarillo 140-200, Rojo >200
+GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 
-# Genérico
+# Genérico (Riesgo)
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
-# IMPORTANTE: Usamos {{ y }} para escapar las llaves en el f-string
 st.markdown(f"""
     <style>
     #MainMenu {{visibility: hidden;}}
@@ -181,8 +178,7 @@ st.markdown(f"""
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }}
     
-    /* LEYENDA POSICIONADA ABSOLUTAMENTE PARA ALINEACIÓN PERFECTA */
-    /* He corregido el error de sintaxis aquí poniendo dobles llaves */
+    /* LEYENDA CENTRADA ABSOLUTA */
     .legend-container {{
         position: relative;
         width: 100%;
@@ -423,12 +419,16 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS
+    # ALERTAS (Lógica de Hallazgos)
     alerts = []
+    
+    # Glucosa 2h - TEXTO SIMPLIFICADO AQUI
     if glucose >= 200:
-        alerts.append("Posible Diabetes (>200 mg/dL)")
+        alerts.append("Posible Diabetes")
     elif glucose >= 140:
-        alerts.append("Intolerancia Glucosa / Prediabetes (140-199 mg/dL)")
+        alerts.append("Posible Prediabetes") # Sin "Intolerancia" ni rangos
+        
+    # BMI
     if bmi >= 40:
         alerts.append("Obesidad Mórbida (G3)")
     elif bmi >= 35:
@@ -439,6 +439,7 @@ with tab1:
         alerts.append("Sobrepeso")
     elif bmi < 18.5:
         alerts.append("Bajo Peso")
+        
     if proxy_index > 19769.5: 
         alerts.append("Resistencia Insulina")
     
@@ -487,7 +488,7 @@ with tab1:
                 </div>
                 <div class="legend-container">
                     <span class="legend-label" style="left: 15%;">Normal (&lt;140)</span>
-                    <span class="legend-label" style="left: 40%;">Prediabetes (140-199)</span>
+                    <span class="legend-label" style="left: 40%;">Intolerancia (140-199)</span>
                     <span class="legend-label" style="left: 75%;">Diabetes (&gt;200)</span>
                 </div>
             </div>

@@ -21,9 +21,14 @@ OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
 
-# Gradiente para BMI incluyendo Bajo Peso (Azul) hasta Obesidad III (Oscuro)
-BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 20%, #FFF176 40%, #FFB74D 60%, #E97F87 80%, #880E4F 100%)"
-# Gradiente original para riesgo
+# Gradiente específico para BMI (De azul desnutrición a rojo oscuro obesidad mórbida)
+BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 50%, #FFB74D 75%, #880E4F 100%)"
+
+# Gradiente específico para Glucosa (Verde normal -> Amarillo Prediabetes -> Rojo Diabetes)
+# Ajustado para que el amarillo caiga aprox en la zona de 100-125 del slider (50-300)
+GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 20%, #FFF176 30%, #FFB74D 45%, #E97F87 100%)"
+
+# Gradiente genérico para otras barras
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS (ESTILOS AVANZADOS) ---
@@ -156,11 +161,10 @@ st.markdown(f"""
     }}
     .bar-bg {{ background: #F0F2F5; height: 10px; border-radius: 5px; width: 100%; overflow: hidden; }}
     
-    /* Gradiente dinámico por defecto (Riesgo) */
+    /* Clases de Relleno para Barras */
     .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
-    
-    /* Gradiente específico para BMI */
     .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
+    .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 5px; opacity: 0.9; }}
 
     .bar-marker {{ 
         position: absolute; top: -5px; width: 4px; height: 20px; 
@@ -329,7 +333,6 @@ with tab1:
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
         with c_calib_1:
-            # TEXTO SIMPLIFICADO COMO INSTRUCCIÓN
             st.caption("Selecciona manualmente el umbral de decisión.")
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
@@ -401,11 +404,25 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS
+    # ALERTAS (Hallazgos Clave) - Lógica mejorada
     alerts = []
-    if glucose > 120: alerts.append("Hiperglucemia")
-    if bmi > 30: alerts.append("Obesidad")
-    if proxy_index > 19769.5: alerts.append("Posible Resistencia Insulina")
+    
+    # Alerta Glucosa (Prediabetes / Diabetes)
+    if glucose >= 126:
+        alerts.append("Posible Diabetes (>126 mg/dL)")
+    elif glucose >= 100:
+        alerts.append("Posible Prediabetes (100-125 mg/dL)")
+        
+    # Alerta BMI
+    if bmi >= 30:
+        alerts.append("Obesidad")
+    elif bmi >= 25:
+        alerts.append("Sobrepeso")
+    elif bmi < 18.5:
+        alerts.append("Bajo Peso")
+        
+    if proxy_index > 19769.5: 
+        alerts.append("Resistencia Insulina")
     
     if not alerts:
         insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
@@ -438,10 +455,7 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
 
-        g_pos = min(100, max(0, (glucose - 60) / 1.4))
-        
-        # CÁLCULO POSICIÓN BMI (Escala extendida 10-50 para incluir los nuevos rangos)
-        # Rango 10 a 50 = 40 unidades.
+        g_pos = min(100, max(0, (glucose - 50) / 2.5)) # Escalado simple para 50-300
         b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
         
         st.markdown(f"""<div class="card">
@@ -449,7 +463,7 @@ with tab1:
             <div style="margin-top:15px;">
                 <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA BASAL <span style="font-weight:normal">({glucose} mg/dL)</span></div>
                 <div class="bar-container">
-                    <div class="bar-bg"><div class="bar-fill"></div></div>
+                    <div class="bar-bg"><div class="bar-fill-glucose"></div></div>
                     <div class="bar-marker" style="left: {g_pos}%;"></div>
                     <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                 </div>

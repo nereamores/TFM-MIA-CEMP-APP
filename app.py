@@ -21,32 +21,15 @@ OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
 NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
 NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
 
-# --- GRADIENTES CLÍNICOS EXACTOS (HARD STOPS) ---
-# Usamos cortes duros para que se vea claramente dónde cambia el riesgo
+# --- GRADIENTES SUAVES PERO PRECISOS ---
+# Usamos un degradado fluido que transiciona en los puntos clínicos clave
 
-# BMI (Escala 10 - 50)
-# <18.5 (Bajo): Hasta 21.25%
-# 18.5-25 (Normal): 21.25% - 37.5%
-# 25-30 (Sobrepeso): 37.5% - 50%
-# 30-35 (Ob. G1): 50% - 62.5%
-# 35-40 (Ob. G2): 62.5% - 75%
-# >40 (Ob. G3): 75% - 100%
-BMI_GRADIENT = """linear-gradient(90deg, 
-    #81D4FA 0%, #81D4FA 21.25%, 
-    #4DB6AC 21.25%, #4DB6AC 37.5%, 
-    #FFF176 37.5%, #FFF176 50%, 
-    #FFB74D 50%, #FFB74D 62.5%, 
-    #E97F87 62.5%, #E97F87 75%, 
-    #880E4F 75%, #880E4F 100%)"""
+# BMI: Azul(bajo) -> Verde(normal) -> Amarillo(sobrepeso) -> Naranja(Ob1) -> Rojo(Ob2) -> Burdeos(Ob3)
+BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 
-# GLUCOSE (Escala 50 - 350) => Rango total 300 unidades
-# Normal <140 (90 uds desde 50): 90/300 = 30%
-# Prediabetes 140-199 (60 uds): 60/300 = 20% (Total 50%)
-# Diabetes >200 (150 uds): 150/300 = 50% (Total 100%)
-GLUCOSE_GRADIENT = """linear-gradient(90deg, 
-    #4DB6AC 0%, #4DB6AC 30%, 
-    #FFF176 30%, #FFF176 50%, 
-    #E97F87 50%, #E97F87 100%)"""
+# GLUCOSA: Verde(Normal) -> Amarillo(Prediabetes) -> Rojo(Diabetes)
+# Los cortes visuales están ajustados a la escala del slider (50-350)
+GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 25%, #FFF176 35%, #FFB74D 45%, #E97F87 55%, #880E4F 100%)"
 
 # Gradiente genérico
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -175,37 +158,45 @@ st.markdown(f"""
         align-items: center;
     }}
 
-    /* GRÁFICOS */
+    /* GRÁFICOS DE BARRAS */
     .bar-container {{
-        position: relative; width: 100%; margin-top: 15px; margin-bottom: 10px;
+        position: relative; width: 100%; margin-top: 20px; margin-bottom: 25px;
     }}
     .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
     
-    /* Clases de Relleno para Barras */
+    /* Clases de Relleno para Barras con gradientes suaves */
     .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
     .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
     .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
 
     .bar-marker {{ 
-        position: absolute; top: -4px; width: 4px; height: 20px; 
+        position: absolute; top: -6px; width: 4px; height: 24px; 
         background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10; transition: left 0.3s ease;
     }}
     .bar-txt {{ 
-        position: absolute; top: -25px; transform: translateX(-50%); 
-        font-size: 0.8rem; font-weight: bold; color: {CEMP_DARK}; 
-        background: white; padding: 2px 6px; border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: absolute; top: -30px; transform: translateX(-50%); 
+        font-size: 0.85rem; font-weight: bold; color: {CEMP_DARK}; 
+        background: white; padding: 2px 8px; border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }}
-    /* Etiquetas debajo de la barra más grandes y limpias */
-    .legend-row {{ 
-        display: flex; 
-        justify-content: space-between; 
-        font-size: 0.7rem; 
+    
+    /* LEYENDA POSICIONADA ABSOLUTAMENTE PARA ALINEACIÓN PERFECTA */
+    .legend-container {
+        position: relative;
+        width: 100%;
+        height: 20px;
+        margin-top: 5px;
+    }
+    .legend-label {
+        position: absolute;
+        transform: translateX(-50%); /* Esto centra el texto en su punto exacto */
+        font-size: 0.75rem; 
         color: #777; 
-        margin-top: 5px; 
         font-weight: 600;
-    }}
+        text-align: center;
+        white-space: nowrap;
+    }
     
     </style>
 """, unsafe_allow_html=True)
@@ -431,16 +422,12 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS (CORREGIDAS: CRITERIOS 2h PTOG y BMI COMPLETO)
+    # ALERTAS
     alerts = []
-    
-    # Glucosa 2h
     if glucose >= 200:
         alerts.append("Posible Diabetes (>200 mg/dL)")
     elif glucose >= 140:
         alerts.append("Intolerancia Glucosa / Prediabetes (140-199 mg/dL)")
-        
-    # BMI
     if bmi >= 40:
         alerts.append("Obesidad Mórbida (G3)")
     elif bmi >= 35:
@@ -451,7 +438,6 @@ with tab1:
         alerts.append("Sobrepeso")
     elif bmi < 18.5:
         alerts.append("Bajo Peso")
-        
     if proxy_index > 19769.5: 
         alerts.append("Resistencia Insulina")
     
@@ -486,10 +472,7 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
 
-        # CÁLCULO POSICIÓN GLUCOSA (Escala 50 a 350 = 300 uds)
         g_pos = min(100, max(0, (glucose - 50) / 3.0)) 
-        
-        # CÁLCULO POSICIÓN BMI (Escala 10 a 50 = 40 uds)
         b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
         
         st.markdown(f"""<div class="card">
@@ -501,8 +484,10 @@ with tab1:
                     <div class="bar-marker" style="left: {g_pos}%;"></div>
                     <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                 </div>
-                <div class="legend-row">
-                    <span>Normal (<140)</span><span>Prediabetes (140-199)</span><span>Diabetes (>200)</span>
+                <div class="legend-container">
+                    <span class="legend-label" style="left: 15%;">Normal (&lt;140)</span>
+                    <span class="legend-label" style="left: 40%;">Prediabetes (140-199)</span>
+                    <span class="legend-label" style="left: 75%;">Diabetes (&gt;200)</span>
                 </div>
             </div>
             <div style="margin-top:35px;">
@@ -512,8 +497,13 @@ with tab1:
                     <div class="bar-marker" style="left: {b_pos}%;"></div>
                     <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
                 </div>
-                <div class="legend-row" style="font-size:0.55rem;">
-                    <span>Bajo</span><span>Normal</span><span>Sobrepeso</span><span>Ob. G1</span><span>Ob. G2</span><span>Ob. G3</span>
+                <div class="legend-container">
+                    <span class="legend-label" style="left: 10%;">Bajo</span>
+                    <span class="legend-label" style="left: 29%;">Normal</span>
+                    <span class="legend-label" style="left: 43%;">Sobrepeso</span>
+                    <span class="legend-label" style="left: 56%;">Ob. G1</span>
+                    <span class="legend-label" style="left: 68%;">Ob. G2</span>
+                    <span class="legend-label" style="left: 87%;">Ob. G3</span>
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)

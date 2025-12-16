@@ -419,12 +419,16 @@ with tab1:
     risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
     risk_border = CEMP_PINK if is_high else GOOD_TEAL
     
-    # ALERTAS
+    # ALERTAS (Lógica de Hallazgos)
     alerts = []
+    
+    # Glucosa 2h - TEXTO SIMPLIFICADO
     if glucose >= 200:
         alerts.append("Posible Diabetes")
     elif glucose >= 140:
-        alerts.append("Posible Prediabetes") # Simplificado como pediste
+        alerts.append("Posible Prediabetes")
+        
+    # BMI
     if bmi >= 40:
         alerts.append("Obesidad Mórbida (G3)")
     elif bmi >= 35:
@@ -435,6 +439,7 @@ with tab1:
         alerts.append("Sobrepeso")
     elif bmi < 18.5:
         alerts.append("Bajo Peso")
+        
     if proxy_index > 19769.5: 
         alerts.append("Resistencia Insulina")
     
@@ -515,23 +520,19 @@ with tab1:
             </div>
         </div>""", unsafe_allow_html=True)
         
-        # FIGURA CON LÍNEA DE UMBRAL (DASHED LINE)
+        # FIGURA CON LÍNEA DE UMBRAL
         fig, ax = plt.subplots(figsize=(3.2, 3.2))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
         ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
         
-        # LÍNEA DEL UMBRAL: 0.27 es el valor, hay que mapearlo al círculo
-        # 0 -> 90 grados, 1 -> -270 grados
+        # LÍNEA DEL UMBRAL
         threshold_angle = 90 - (threshold * 360)
         theta_rad = np.deg2rad(threshold_angle)
-        
-        # Dibujar la línea desde dentro del donut hacia fuera
         x1 = 0.85 * np.cos(theta_rad)
         y1 = 0.85 * np.sin(theta_rad)
         x2 = 1.15 * np.cos(theta_rad)
         y2 = 1.15 * np.sin(theta_rad)
-        
         ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
         
         chart_html = fig_to_html(fig)
@@ -546,6 +547,10 @@ with tab1:
                 <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
                     {prob*100:.1f}%
                 </div>
+            </div>
+            <div style="margin-top: 8px; font-size: 0.65rem; color: #999; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
+                <span style="display: inline-block; width: 15px; border-top: 2px dashed {CEMP_DARK};"></span>
+                <span>Umbral de decisión</span>
             </div>
         </div>""", unsafe_allow_html=True)
 

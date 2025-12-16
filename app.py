@@ -52,15 +52,15 @@ st.markdown(f"""
     .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 900; color: {CEMP_DARK}; display: flex; align-items: center; }}
     .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-    /* === PORTADA (LANDING) - ESTILO "ROSITA" RESTAURADO === */
+    /* === PORTADA (LANDING) === */
     .landing-wrapper {{
-        background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%); /* Degradado sutil */
-        padding: 60px 50px;
-        border-radius: 24px;
+        background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
+        padding: 50px 40px;
+        border-radius: 20px;
         text-align: center;
-        border: 1px solid rgba(233, 127, 135, 0.15); /* Borde rosado */
-        box-shadow: 0 20px 40px rgba(233, 127, 135, 0.08); /* Sombra rosada */
-        margin-top: 40px;
+        border: 1px solid rgba(233, 127, 135, 0.15);
+        box-shadow: 0 20px 40px rgba(233, 127, 135, 0.08);
+        margin-top: 30px;
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
@@ -70,34 +70,35 @@ st.markdown(f"""
         display: inline-block;
         background-color: {CEMP_DARK};
         color: #FFF;
-        padding: 8px 20px;
+        padding: 6px 16px;
         border-radius: 30px;
         font-size: 0.7rem;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: 1px;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         text-transform: uppercase;
     }}
 
+    /* TÍTULOS AJUSTADOS DE TAMAÑO */
     .landing-institution {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 700;
-        font-size: 1.2rem;
+        font-size: 1rem; /* Reducido */
         color: {CEMP_DARK};
-        letter-spacing: 1.5px;
+        letter-spacing: 1.2px;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }}
 
     .landing-title-text {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 900;
-        font-size: 4.5rem;
+        font-size: 3.5rem; /* Reducido para que quepa mejor */
         color: {CEMP_DARK};
-        line-height: 1;
-        letter-spacing: -2px;
-        margin-bottom: 25px;
-        margin-top: 10px;
+        line-height: 1.1;
+        letter-spacing: -1.5px;
+        margin-bottom: 20px;
+        margin-top: 5px;
     }}
     
     .landing-pink {{ color: {CEMP_PINK}; }}
@@ -105,31 +106,31 @@ st.markdown(f"""
     
     .landing-hero-text {{
         font-family: 'Inter', sans-serif;
-        font-size: 1.6rem;
+        font-size: 1.3rem; /* Ajustado */
         font-weight: 700;
         color: {CEMP_DARK};
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         line-height: 1.4;
     }}
     
     .landing-description {{
-        font-size: 1.1rem;
+        font-size: 1rem;
         color: #666;
         line-height: 1.6;
-        max-width: 750px;
-        margin: 0 auto 40px auto;
+        max-width: 700px;
+        margin: 0 auto 35px auto;
     }}
 
     .disclaimer-box {{
         background-color: #F8F9FA;
-        border-left: 5px solid {CEMP_PINK};
+        border-left: 4px solid {CEMP_PINK};
         padding: 20px;
-        margin: 0 auto 40px auto;
+        margin: 0 auto 30px auto;
         text-align: left;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: #555;
         border-radius: 8px;
-        max-width: 800px;
+        max-width: 750px;
         line-height: 1.5;
     }}
     
@@ -246,21 +247,20 @@ if st.session_state.step == 1:
 D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
 </div>
 <div class="landing-hero-text">
-Prototipo de Inteligencia Artificial para el futuro de la prevención diabética.
+Prototipo de CDSS para el diagnóstico temprano de diabetes
 </div>
 <p class="landing-description">
 Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
 </p>
 <div class="disclaimer-box">
-<strong>🎓 CONTEXTO ACADÉMICO Y LIMITACIONES</strong><br><br>
-Aplicación desarrollada con fines exclusivamente educativos e investigativos como parte de un Trabajo de Fin de Máster.<br><br>
-<strong>⚠️ AVISO IMPORTANTE:</strong> Esta herramienta <strong>NO es un dispositivo médico certificado</strong>. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
+<strong>Aplicación desarrollada con fines exclusivamente educativos e investigativos como parte de un Trabajo de Fin de Máster.</strong><br><br>
+⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
 </div>
 </div>""", unsafe_allow_html=True)
         
         # --- BOTÓN CENTRADO ---
         st.markdown('<div style="display: flex; justify-content: center; margin-top: -30px; position: relative; z-index: 10;">', unsafe_allow_html=True)
-        if st.button("INICIAR SIMULACIÓN PROFESIONAL ➔", key="landing_btn"):
+        if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)

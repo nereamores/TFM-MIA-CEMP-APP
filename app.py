@@ -55,8 +55,8 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        /* Aumentado padding inferior para alojar el botón */
-        padding: 50px 40px 90px 40px;
+        /* Aumentado mucho el padding inferior para que el botón quepa dentro */
+        padding: 50px 40px 110px 40px; 
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -80,6 +80,7 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
+    /* TÍTULOS AJUSTADOS DE TAMAÑO */
     .landing-institution {{
         font-family: 'Helvetica', sans-serif;
         font-weight: 700;
@@ -113,14 +114,14 @@ st.markdown(f"""
         line-height: 1.4;
     }}
     
-    /* Párrafo justificado */
+    /* Párrafo CENTRADO (arreglado) */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
         max-width: 700px;
         margin: 0 auto 35px auto;
-        text-align: justify;
+        text-align: center; /* Cambiado de justify a center */
     }}
 
     /* Caja de disclaimer centrada */
@@ -129,7 +130,7 @@ st.markdown(f"""
         border-left: 4px solid {CEMP_PINK};
         padding: 20px;
         margin: 0 auto 30px auto;
-        text-align: center; /* Texto centrado */
+        text-align: center;
         font-size: 0.85rem;
         color: #555;
         border-radius: 8px;
@@ -262,8 +263,8 @@ Este proyecto explora el potencial de integrar modelos predictivos avanzados en 
 </div>""", unsafe_allow_html=True)
         
         # --- BOTÓN CENTRADO DENTRO DE LA CAJA (Visualmente) ---
-        # Se ha aumentado el margen negativo a -80px para subirlo más
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -80px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        # Se ha aumentado el margen negativo a -100px para subirlo bien dentro del nuevo padding
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -100px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()

@@ -171,7 +171,8 @@ st.markdown(f"""
 # --- 4. HELPERS ---
 def fig_to_html(fig):
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True)
+    # AÑADIDO dpi=300 PARA ALTA DEFINICIÓN
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
@@ -314,7 +315,7 @@ tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 with tab1:
     st.write("")
     
-    # --- UMBRAL CON GRÁFICA REALISTA CENTRADA Y CAJA GRIS ---
+    # --- UMBRAL CON GRÁFICA REALISTA (AJUSTE FINO: PIQUITO GRIS VISIBLE) ---
     with st.expander("⚙️ Ajuste de Sensibilidad Clínica"):
         c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
         
@@ -323,9 +324,9 @@ with tab1:
             # Slider por defecto en 0.27
             threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
             
-            # CAJA DE NOTA TÉCNICA (Gris y elegante)
+            # NOTA TÉCNICA PERSONALIZADA (Gris neutro) CON MARGEN DERECHO AÑADIDO
             st.markdown(f"""
-            <div style="background-color:{NOTE_GRAY_BG}; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
+            <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                 <span style="font-size:1.1rem;">ℹ️</span>
                 <div>
                     <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
@@ -368,6 +369,7 @@ with tab1:
             ax_calib.set_xlim(-0.2, 1.25)
             ax_calib.spines['top'].set_visible(False)
             ax_calib.spines['right'].set_visible(False)
+            ax_calib.spines['bottom'].set_visible(False)
             ax_calib.spines['left'].set_visible(False)
             ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
             

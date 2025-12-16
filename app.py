@@ -55,8 +55,7 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        /* Aumentamos mucho el padding inferior para "reservar sitio" al botón dentro de la caja */
-        padding: 50px 40px 140px 40px; 
+        padding: 50px 40px 60px 40px; /* Reducido padding inferior del wrapper principal */
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -65,7 +64,7 @@ st.markdown(f"""
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
-        position: relative; /* Importante para el posicionamiento */
+        position: relative;
     }}
     
     .cemp-badge {{
@@ -114,34 +113,36 @@ st.markdown(f"""
         line-height: 1.4;
     }}
     
-    /* Párrafo JUSTIFICADO y CENTRADO en bloque */
+    /* CAMBIO 1: Párrafo CENTRADO en lugar de justificado */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
-        max-width: 700px;       /* Ancho máximo para que no sea muy largo */
-        margin: 0 auto 35px auto; /* Centrado del bloque */
-        text-align: justify;    /* Texto justificado */
+        max-width: 700px;
+        margin: 0 auto 35px auto;
+        text-align: center; /* <-- CAMBIADO A CENTER */
     }}
 
+    /* CAMBIO 2: Estilo "Rectángulo Rosita Degradado" con espacio para el botón */
     .disclaimer-box {{
-        background-color: #F8F9FA;
+        background: linear-gradient(180deg, #FDFBFB 0%, #FFE6E9 100%); /* Degradado rosita */
+        border: 1px solid #FADADD; /* Borde rosita suave */
         border-left: 4px solid {CEMP_PINK};
-        padding: 20px;
-        margin: 0 auto 10px auto; /* Margen inferior reducido para acercar el botón */
+        padding: 25px 25px 95px 25px; /* <-- Padding inferior aumentado para que quepa el botón */
+        margin: 0 auto 0 auto; 
         text-align: center;
         font-size: 0.85rem;
         color: #555;
-        border-radius: 8px;
+        border-radius: 15px;
         max-width: 750px;
         line-height: 1.5;
+        box-shadow: inset 0 0 20px rgba(233, 127, 135, 0.05);
     }}
     
     /* BOTONES */
-    /* Estilos base del botón */
     div.stButton > button:first-child {{
         background-color: {CEMP_PINK}; color: white; font-weight: 800; font-size: 1.1rem;
-        padding: 1rem 3rem; border-radius: 50px; border: none; /* Border radius 50px para redondear */
+        padding: 1rem 3rem; border-radius: 50px; border: none;
         width: auto; min-width: 280px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease;
         box-shadow: 0 10px 25px rgba(233, 127, 135, 0.4);
     }}
@@ -263,9 +264,9 @@ Este proyecto explora el potencial de integrar modelos predictivos avanzados en 
 </div>
 </div>""", unsafe_allow_html=True)
         
-        # --- BOTÓN CENTRADO DENTRO DE LA CAJA (Visualmente) ---
-        # Margen negativo de -110px para asegurar que sube al espacio de padding-bottom (140px)
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -110px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        # --- CAMBIO 3: POSICIÓN DEL BOTÓN ---
+        # Se ajusta el margen negativo a -85px para que suba y quede dentro del padding inferior del .disclaimer-box
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -85px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()
@@ -294,7 +295,7 @@ if st.session_state.step > 1:
         st.markdown("---") 
         st.markdown("**3. Historia**")
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
-        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
+         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
         st.markdown("---") 
         st.markdown("**4. Genética**")
         dpf = input_biomarker("Antecedentes (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética.")

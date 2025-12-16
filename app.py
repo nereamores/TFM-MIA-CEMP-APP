@@ -21,6 +21,8 @@ CEMP_DARK = "#2C3E50"      # Azul noche
 CEMP_BG_LIGHT = "#F8F9FA"  # Gris muy suave para fondos
 GOOD_TEAL = "#4DB6AC"
 TEXT_GRAY = "#6C757D"
+NOTE_GRAY_BG = "#F8F9FA"
+NOTE_GRAY_TEXT = "#6C757D"
 
 # Gradientes
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
@@ -28,6 +30,7 @@ GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%,
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
 # --- 3. CSS PROFESIONAL ---
+# Nota: Usamos doble llave {{ }} para escapar en f-strings
 st.markdown(f"""
     <style>
     /* IMPORTAR FUENTE (Opcional, usa la del sistema por defecto para velocidad) */
@@ -115,11 +118,17 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(233, 127, 135, 0.3);
         transition: all 0.3s;
         width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }}
     div.stButton > button:first-child:hover {{
         background-color: #D66E76;
         box-shadow: 0 6px 15px rgba(233, 127, 135, 0.4);
         transform: translateY(-2px);
+        color: white;
+    }}
+    div.stButton > button:first-child:active {{
+        background-color: {CEMP_PINK};
         color: white;
     }}
 
@@ -172,6 +181,18 @@ st.markdown(f"""
         color: {NOTE_GRAY_TEXT};
     }}
     
+    /* CARD HEADER */
+    .card-header {{
+        color: #999;
+        font-size: 0.75rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }}
+    
     </style>
 """, unsafe_allow_html=True)
 
@@ -189,13 +210,32 @@ def get_help_icon(description):
 def generate_report(data, prob, risk, alerts):
     # Generador simple de reporte texto
     return f"""INFORME CLÍNICO - DIABETES.NME
-Fecha: {data['date']} | Paciente: {data['name']} (ID: {data['id']})
-------------------------------------------------
-RIESGO DETECTADO: {risk} (Probabilidad IA: {prob*100:.1f}%)
-HALLAZGOS: {', '.join(alerts) if alerts else 'Ninguno'}
-------------------------------------------------
-DATOS: Glucosa 2h: {data['glucose']}, BMI: {data['bmi']:.2f}, Edad: {data['age']}
-Este informe es una ayuda a la decisión clínica."""
+=========================================
+Fecha: {data['date']} 
+Paciente: {data['name']} (ID: {data['id']})
+
+RESULTADOS DEL ANÁLISIS
+-----------------------
+RIESGO DETECTADO: {risk}
+PROBABILIDAD IA: {prob*100:.1f}%
+
+HALLAZGOS CLAVE:
+{', '.join(alerts) if alerts else 'Ninguno'}
+
+DATOS CLÍNICOS REGISTRADOS
+--------------------------
+Glucosa 2h (PTOG): {data['glucose']} mg/dL
+Insulina: {data['insulin']} µU/ml
+Índice RI: {data['ri']:,.0f}
+BMI: {data['bmi']:.2f} kg/m²
+Edad: {data['age']} años
+Embarazos: {data['pregnancies']}
+Carga Genética (DPF): {data['dpf']}
+
+-----------------------------------------
+Este informe es una herramienta de apoyo a la decisión clínica.
+Generado por DIABETES.NME CDSS.
+"""
 
 # --- 5. LÓGICA DE ESTADO ---
 if 'model' not in st.session_state:
@@ -213,7 +253,8 @@ if 'page' not in st.session_state:
 if 'patient' not in st.session_state:
     st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
 
-# --- 6. SIDEBAR (CONFIGURACIÓN CLÍNICA) ---
+# --- 6. SIDEBAR (CONFIGURACIÓN CLÍNICA - SIEMPRE VISIBLE) ---
+# Esto permite al médico ir ajustando los valores antes de darle a predecir
 with st.sidebar:
     st.markdown(f'''
         <div class="cemp-logo">DIABETES<span>.NME</span></div>
@@ -224,7 +265,7 @@ with st.sidebar:
     
     # Inputs compactos
     c1, c2 = st.columns([2, 1])
-    with c1: st.markdown("**Glucosa 2h** (mg/dL)" + get_help_icon("Prueba de tolerancia"))
+    with c1: st.markdown("**Glucosa 2h** (mg/dL)" + get_help_icon("Prueba de tolerancia oral a la glucosa"))
     with c2: glucose = st.number_input("", 50, 350, 120, key="glu_in", label_visibility="collapsed")
     
     c1, c2 = st.columns([2, 1])
@@ -235,7 +276,7 @@ with st.sidebar:
     ri = glucose * insulin
     st.markdown(f"""
     <div style="background:#F0F4F8; padding:8px 12px; border-radius:6px; margin-top:5px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.75rem; font-weight:600; color:#666;">ÍNDICE RI</span>
+        <span style="font-size:0.75rem; font-weight:600; color:#666;">ÍNDICE RI (Glu x Ins)</span>
         <span style="font-size:0.9rem; font-weight:800; color:{CEMP_DARK};">{ri:,.0f}</span>
     </div>""", unsafe_allow_html=True)
 
@@ -253,8 +294,8 @@ with st.sidebar:
 
     st.markdown('<div class="sidebar-section">3. Historia</div>', unsafe_allow_html=True)
     age = st.slider("Edad", 18, 90, 45)
-    pregnancies = st.slider("Embarazos", 0, 15, 1)
-    dpf = st.slider("Carga Genética (DPF)", 0.0, 2.5, 0.5, step=0.01)
+    pregnancies = st.slider("Embarazos", 0, 15, 1, help="Nº veces embarazada (a término o no)")
+    dpf = st.slider("Carga Genética (DPF)", 0.0, 2.5, 0.5, step=0.01, help="Estimación predisposición genética")
 
 # --- 7. PÁGINA DE ADMISIÓN (HOME) ---
 if st.session_state.page == 'admission':
@@ -295,10 +336,10 @@ if st.session_state.page == 'admission':
         st.write("") 
         st.write("") 
         
-        # BOTÓN DE ACCIÓN PRINCIPAL
-        if st.button("ANALIZAR RIESGO CLÍNICO  ➔"):
+        # BOTÓN DE ACCIÓN PRINCIPAL (CORAL)
+        if st.button("PREDECIR RIESGO  ➔"):
             if not st.session_state.patient['id']:
-                st.warning("⚠️ Por favor, introduzca al menos un ID de paciente.")
+                st.warning("⚠️ Por favor, introduzca al menos un ID de paciente para continuar.")
             else:
                 with st.spinner("Procesando biomarcadores y ejecutando modelo predictivo..."):
                     time.sleep(1.5) # Simular carga para efecto "wow"
@@ -328,19 +369,19 @@ elif st.session_state.page == 'dashboard':
         st.write("")
         
         # 1. CONFIGURACIÓN DE UMBRAL (EXPANDIBLE MEJORADO)
-        with st.expander("⚙️ Calibración del Modelo (Umbral de Decisión)", expanded=False):
+        with st.expander("Ajuste de Sensibilidad Clínica", expanded=False):
             ce1, ce2 = st.columns([1, 2])
             with ce1:
-                st.caption("Ajuste manual de sensibilidad.")
+                st.caption("Selecciona manualmente el umbral de decisión.")
                 threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
                 st.markdown(f"""
                 <div class="highlight-box">
                     <div style="font-size:1.2rem;">💡</div>
-                    <div><strong>Criterio Técnico:</strong> Se recomienda <strong>0.27</strong> (F2-Score) para priorizar la detección de casos positivos y minimizar falsos negativos en cribado.</div>
+                    <div><strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos.</div>
                 </div>""", unsafe_allow_html=True)
             
             with ce2:
-                # GRÁFICA DE DENSIDADES
+                # GRÁFICA DE DENSIDADES (Estática para rendimiento)
                 x = np.linspace(-0.15, 1.25, 500)
                 y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + 0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
                 y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + 1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
@@ -401,10 +442,10 @@ elif st.session_state.page == 'dashboard':
                     <div class="bar-marker" style="left: {g_pos}%;"></div>
                     <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                 </div>
-                <div class="legend-container">
-                    <span class="legend-label" style="left: 15%;">Normal (&lt;140)</span>
-                    <span class="legend-label" style="left: 40%;">Intolerancia</span>
-                    <span class="legend-label" style="left: 75%;">Diabetes (&gt;200)</span>
+                <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#999; margin-top:-15px;">
+                    <span>Normal (&lt;140)</span>
+                    <span>Intolerancia (140-199)</span>
+                    <span>Diabetes (&gt;200)</span>
                 </div>
 
                 <div style="margin-top:40px;"></div>
@@ -417,13 +458,8 @@ elif st.session_state.page == 'dashboard':
                     <div class="bar-marker" style="left: {b_pos}%;"></div>
                     <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
                 </div>
-                <div class="legend-container">
-                    <span class="legend-label" style="left: 10%;">Bajo</span>
-                    <span class="legend-label" style="left: 29%;">Normal</span>
-                    <span class="legend-label" style="left: 43%;">Sobrepeso</span>
-                    <span class="legend-label" style="left: 56%;">Ob. G1</span>
-                    <span class="legend-label" style="left: 68%;">Ob. G2</span>
-                    <span class="legend-label" style="left: 87%;">Ob. G3</span>
+                <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#999; margin-top:-15px;">
+                    <span>Bajo</span><span>Normal</span><span>Sobrepeso</span><span>Ob. G1</span><span>Ob. G2</span><span>Ob. G3</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -448,7 +484,7 @@ elif st.session_state.page == 'dashboard':
             """, unsafe_allow_html=True)
 
             # Probabilidad IA
-            fig, ax = plt.subplots(figsize=(3, 3))
+            fig, ax = plt.subplots(figsize=(3.2, 3.2))
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
             ax.pie([prob, 1-prob], colors=[risk_color, '#F0F2F6'], startangle=90, counterclock=False, 
@@ -492,12 +528,12 @@ elif st.session_state.page == 'dashboard':
         
         # Datos para reporte
         report_data = st.session_state.patient.copy()
-        report_data.update({'glucose': glucose, 'bmi': bmi, 'age': age, 'proxy_index': ri, 'weight': weight, 'height': height, 'pregnancies': pregnancies, 'dpf': dpf, 'insulin': insulin})
+        report_data.update({'glucose': glucose, 'bmi': bmi, 'age': age, 'ri': ri, 'weight': weight, 'height': height, 'pregnancies': pregnancies, 'dpf': dpf, 'insulin': insulin})
         
         report_txt = generate_report(report_data, prob, risk_label, alerts)
         
         st.download_button(
-            label="📄 Descargar Informe Clínico (TXT)",
+            label="📄 DESCARGAR INFORME CLÍNICO (TXT)",
             data=report_txt,
             file_name=f"Informe_{st.session_state.patient['id']}.txt",
             mime="text/plain"

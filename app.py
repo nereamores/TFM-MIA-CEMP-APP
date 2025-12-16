@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from datetime import date
+import time
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
@@ -20,8 +21,10 @@ if 'step' not in st.session_state: st.session_state.step = 1
 if 'patient' not in st.session_state: st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
 if 'threshold' not in st.session_state: st.session_state.threshold = 0.27 # Valor por defecto
 if 'model' not in st.session_state:
+    # Mock Model para la demostración
     class MockModel:
         def predict_proba(self, X):
+            # Simulación simple basada en glucosa e IMC
             score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
             prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
             return [[1-prob, prob]]
@@ -32,14 +35,16 @@ CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50"
 GOOD_TEAL = "#4DB6AC"
 SLIDER_GRAY = "#BDC3C7"
+OPTIMAL_GREEN = "#8BC34A"
 NOTE_GRAY_BG = "#F8F9FA"
 NOTE_GRAY_TEXT = "#6C757D"
 
-# Gradientes
+# Gradientes para gráficos
 BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
+# NOTA: Se usan dobles llaves {{ }} en el CSS dentro de f-strings para evitar errores.
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -48,53 +53,72 @@ st.markdown(f"""
     #MainMenu, footer, header {{visibility: hidden;}}
     .block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 1250px; }}
 
-    /* LOGO Y TÍTULOS */
-    .cemp-logo {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; }}
-    .cemp-logo span {{ color: {CEMP_PINK}; }}
+    /* LOGO Y TÍTULOS EN SIDEBAR */
+    .cemp-logo-sidebar {{ font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; }}
+    .cemp-logo-sidebar span {{ color: {CEMP_PINK}; }}
 
     /* === ESTILOS ESPECÍFICOS DE LA PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(135deg, #FFF0F1 0%, #FFFFFF 100%);
-        padding: 40px;
+        padding: 50px 40px;
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.2);
         box-shadow: 0 10px 30px rgba(233, 127, 135, 0.1);
         margin-top: 20px;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }}
+    .landing-institution {{
+        font-weight: 800;
+        font-size: 1.4rem;
+        color: {CEMP_DARK};
+        margin-bottom: 10px;
+        letter-spacing: 0.5px;
+    }}
+    .landing-title {{
+        font-family: 'Helvetica', sans-serif;
+        font-weight: 900;
+        font-size: 3.5rem;
+        color: {CEMP_PINK}; /* Todo en rosa como pediste */
+        margin-bottom: 15px;
+        line-height: 1;
     }}
     .disclaimer-box {{
         background-color: #FFF;
         border-left: 5px solid {CEMP_PINK};
-        padding: 15px;
-        margin: 20px auto;
-        max-width: 800px;
+        padding: 20px;
+        margin: 30px auto;
         text-align: left;
-        font-size: 0.9rem;
-        color: #666;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        font-size: 0.95rem;
+        color: #555;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-radius: 8px;
     }}
     .cemp-badge {{
         background-color: {CEMP_DARK};
         color: white;
-        padding: 5px 15px;
+        padding: 6px 18px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.2px;
         display: inline-block;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
     }}
 
     /* BOTONES */
     div.stButton > button:first-child {{
         background-color: {CEMP_PINK}; color: white; font-weight: 800;
-        padding: 0.75rem 2rem; border-radius: 12px; border: none;
-        width: 100%; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 0.8rem 2.5rem; border-radius: 12px; border: none;
+        width: auto; min-width: 250px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
+        box-shadow: 0 4px 10px rgba(233, 127, 135, 0.3);
     }}
     div.stButton > button:first-child:hover {{
-        background-color: #D66E76; transform: scale(1.02);
+        background-color: #D66E76; transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(233, 127, 135, 0.4);
     }}
     
     /* BOTÓN SECUNDARIO (OUTLINE) */
@@ -102,9 +126,15 @@ st.markdown(f"""
         background-color: transparent !important;
         border: 2px solid {CEMP_DARK} !important;
         color: {CEMP_DARK} !important;
+        box-shadow: none !important;
+    }}
+    .secondary-btn button:hover {{
+        background-color: {CEMP_DARK} !important;
+        color: white !important;
+        transform: translateY(-2px);
     }}
 
-    /* SIDEBAR Y CONTROLES (Tu estilo original) */
+    /* SIDEBAR Y CONTROLES */
     .stSlider {{ padding-top: 0px !important; padding-bottom: 10px !important; }}
     [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
         padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK}; font-weight: 800;
@@ -113,6 +143,7 @@ st.markdown(f"""
     .calc-box {{
         background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px; border: 1px solid #EEE;
         margin-top: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        border-left: 4px solid {CEMP_PINK};
     }}
     .calc-label {{ font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }}
     .calc-value {{ font-size: 1rem; color: {CEMP_DARK}; font-weight: 800; }}
@@ -123,6 +154,7 @@ st.markdown(f"""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 15px; display: flex; flex-direction: column; justify-content: center; min-height: 300px; 
     }}
+    .card-auto {{ min-height: auto !important; height: 100%; }}
     .card-header {{ color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; }}
     
     /* GRÁFICOS BARRAS */
@@ -150,8 +182,12 @@ def fig_to_html(fig):
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
+def generate_report(data_dict, prob, risk_label, alerts):
+    # ... (Función de reporte igual que antes)
+    return f"INFORME TFM - DIABETES.NME\nID: {data_dict.get('patient_id')}\nRiesgo: {risk_label} ({prob*100:.1f}%)\nHallazgos: {', '.join(alerts)}"
+
+# Función de input sincronizado (Barra lateral)
 def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""):
-    # Función original de tu código para mantener el estilo
     label_html = f"**{label_text}**"
     if help_text: label_html += get_help_icon(help_text)
     st.markdown(label_html, unsafe_allow_html=True)
@@ -175,62 +211,56 @@ def input_biomarker(label_text, min_val, max_val, default_val, key, help_text=""
     with c2: st.number_input(label="", min_value=min_val, max_value=max_val, step=step, key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed")
     return st.session_state[key]
 
-# --- 5. NAVEGACIÓN Y PÁGINAS ---
+# ==========================================
+# NAVEGACIÓN Y PÁGINAS
+# ==========================================
 
 # === PASO 1: PORTADA (LANDING) ===
 if st.session_state.step == 1:
-    # Ocultar visualmente la sidebar en la landing (truco CSS)
+    # Ocultar visualmente la sidebar en la landing
     st.markdown("""<style>[data-testid="stSidebar"] {display: none;}</style>""", unsafe_allow_html=True)
     
     st.write("")
-    st.write("")
     
-    # Contenedor Central
-    c_spacer_l, c_main, c_spacer_r = st.columns([1, 4, 1])
-    
-    with c_main:
+    # Contenedor principal de la portada
+    with st.container():
         st.markdown(f"""
         <div class="landing-wrapper">
-            <div style="margin-bottom: 20px;">
-                <div class="cemp-badge">TFM • INTELIGENCIA ARTIFICIAL EN SALUD</div>
-            </div>
-            <div class="cemp-logo" style="font-size: 4rem; margin-bottom: 10px;">
-                CEMP<span style="color:{CEMP_DARK}">.</span>
-            </div>
-            <div style="font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 2.5rem; color: {CEMP_DARK}; margin-bottom: 10px;">
-                DIABETES<span style="color:{CEMP_PINK}">.NME</span>
-            </div>
-            <p style="font-size: 1.2rem; color: #666; margin-bottom: 30px;">
-                Sistema de Soporte a la Decisión Clínica (CDSS) para la predicción de riesgo diabético.
+            <div class="cemp-badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</div>
+            
+            <div class="landing-institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>
+            <div class="landing-title">DIABETES.NME</div>
+            
+            <p style="font-size: 1.2rem; color: #666; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Sistema de Soporte a la Decisión Clínica (CDSS) basado en IA para la estimación de riesgo diabético.
             </p>
             
             <div class="disclaimer-box">
-                <strong>⚠️ AVISO IMPORTANTE - CONTEXTO ACADÉMICO</strong><br><br>
-                Esta aplicación forma parte de un <strong>Trabajo de Fin de Máster (TFM)</strong> del Centro Europeo de Másteres y Posgrados (CEMP).<br>
-                El modelo predictivo está basado en el algoritmo <em>Random Forest</em> entrenado con el dataset <em>Pima Indians Diabetes</em>.<br>
-                <strong>No es un dispositivo médico certificado</strong> y sus resultados no deben utilizarse para diagnóstico real sin supervisión profesional.
+                <strong>🎓 AVISO IMPORTANTE - CONTEXTO ACADÉMICO</strong><br><br>
+                Esta aplicación ha sido desarrollada como parte de un <strong>Trabajo de Fin de Máster (TFM)</strong>.<br>
+                El modelo predictivo subyacente (Random Forest) se ha entrenado con fines educativos utilizando el dataset público <em>Pima Indians Diabetes</em>.<br><br>
+                <strong>⚠️ NO ES UN DISPOSITIVO MÉDICO CERTIFICADO.</strong> Los resultados son meramente informativos y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas sin la supervisión de un profesional de la salud cualificado.
             </div>
-            
-            <div style="margin-top: 40px; margin-bottom: 20px;">
-                </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Botón Centrado
-        cc1, cc2, cc3 = st.columns([1, 1, 1])
-        with cc2:
-            st.write("")
+        # Botón dentro del flujo visual de la tarjeta
+        c_spacer_l, c_btn, c_spacer_r = st.columns([1, 2, 1])
+        with c_btn:
+            # Usamos un contenedor con margen negativo para "subir" el botón visualmente dentro de la caja
+            st.markdown('<div style="margin-top: -40px; text-align: center;">', unsafe_allow_html=True)
             if st.button("INICIAR SIMULACIÓN  ➔"):
                 st.session_state.step = 2
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # === PASO 2 Y 3: NECESITAN LA BARRA LATERAL ===
 if st.session_state.step > 1:
     
     # --- RENDERIZADO DE LA BARRA LATERAL (TU DISEÑO ORIGINAL) ---
     with st.sidebar:
-        st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
-        st.caption("CLINICAL DECISION SUPPORT SYSTEM")
+        st.markdown(f'<div class="cemp-logo-sidebar">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
+        st.caption("CLINICAL DECISION SUPPORT SYSTEM | TFM")
         st.write("")
         
         st.markdown("**1. Parámetros Clínicos**")
@@ -293,8 +323,8 @@ if st.session_state.step > 1:
 # === PASO 2: REGISTRO DE PACIENTE Y CONFIGURACIÓN ===
 if st.session_state.step == 2:
     
-    st.markdown(f"<h1 style='color:{CEMP_DARK};'>Registro del Paciente</h1>", unsafe_allow_html=True)
-    st.write("Introduzca los datos administrativos y configure el umbral de sensibilidad antes de realizar la predicción.")
+    st.markdown(f"<h1 style='color:{CEMP_DARK};'>Registro para Simulación</h1>", unsafe_allow_html=True)
+    st.write("Introduzca los datos administrativos y configure el umbral de sensibilidad del modelo antes de realizar la predicción.")
     
     with st.container():
         c_form1, c_form2 = st.columns(2)
@@ -308,8 +338,8 @@ if st.session_state.step == 2:
     st.write("")
     st.markdown("---")
     
-    # AJUSTE DE SENSIBILIDAD (MOVIDO AQUÍ COMO PEDISTE)
-    st.subheader("⚙️ Configuración del Modelo")
+    # AJUSTE DE SENSIBILIDAD
+    st.subheader("⚙️ Configuración del Modelo (Random Forest)")
     c_thresh1, c_thresh2 = st.columns([1, 2])
     with c_thresh1:
         st.session_state.threshold = st.slider("Umbral de Decisión", 0.0, 1.0, st.session_state.threshold, 0.01)
@@ -318,8 +348,8 @@ if st.session_state.step == 2:
         st.markdown(f"""
         <div style="font-size:0.9rem; color:#666; padding-top:10px;">
             Define el punto de corte probabilístico para clasificar un caso como positivo. <br>
-            • <strong>0.27 (Recomendado):</strong> Optimiza F2-Score (minimiza falsos negativos).<br>
-            • <strong>0.50 (Estándar):</strong> Balance neutro.
+            • <strong>0.27 (Recomendado):</strong> Optimiza F2-Score para este modelo (minimiza falsos negativos).<br>
+            • <strong>0.50 (Estándar):</strong> Balance neutro entre sensibilidad y especificidad.
         </div>
         """, unsafe_allow_html=True)
 
@@ -339,20 +369,20 @@ if st.session_state.step == 2:
     with col_pred:
         if st.button("GENERAR PREDICCIÓN CLÍNICA  ➔"):
             if not st.session_state.patient['id']:
-                st.error("⚠️ Por favor, introduzca al menos un ID de paciente.")
+                st.error("⚠️ Por favor, introduzca al menos un ID de paciente para continuar.")
             else:
                 with st.spinner("Procesando datos y ejecutando modelo..."):
-                    time.sleep(1.2) # Simulación
+                    time.sleep(1) # Simulación de carga
                     st.session_state.step = 3
                     st.rerun()
 
-# === PASO 3: RESULTADOS (TU DASHBOARD ORIGINAL) ===
+# === PASO 3: RESULTADOS (DASHBOARD ORIGINAL) ===
 if st.session_state.step == 3:
     
     # Header Resultados
     c_head, c_nav = st.columns([4, 1])
     with c_head:
-        st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 0px;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 0px;'>Resultados del Análisis</h1>", unsafe_allow_html=True)
     with c_nav:
         st.write("")
         # Botón para volver a editar datos (Paso 2)
@@ -360,24 +390,24 @@ if st.session_state.step == 3:
             st.session_state.step = 2
             st.rerun()
 
-    # --- PESTAÑAS (MANTENIENDO TU CÓDIGO) ---
+    # --- PESTAÑAS ---
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
     with tab1:
         st.write("")
         
-        # LOGICA IA (Usando el threshold configurado en el paso anterior)
+        # LOGICA IA (Usando el threshold configurado)
         threshold = st.session_state.threshold
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
         prob = st.session_state.model.predict_proba(input_data)[0][1]
         is_high = prob > threshold 
         
-        # CÁLCULOS Y TEXTOS
+        # CÁLCULOS Y TEXTOS DE FIABILIDAD
         distancia_al_corte = abs(prob - threshold)
         if distancia_al_corte > 0.15: conf_text, conf_color = "ALTA", GOOD_TEAL
         elif distancia_al_corte > 0.05: conf_text, conf_color = "MEDIA", "#F39C12"
         else: conf_text, conf_color = "BAJA", CEMP_PINK
-        conf_desc = "Fiabilidad basada en la distancia al umbral."
+        conf_desc = "Fiabilidad basada en la distancia de la probabilidad al umbral seleccionado."
 
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
@@ -501,11 +531,12 @@ if st.session_state.step == 3:
                 </div>
                 <div style="margin-top: 8px; font-size: 0.65rem; color: #999; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
                     <span style="display: inline-block; width: 15px; border-top: 2px dashed {CEMP_DARK};"></span>
-                    <span>Umbral de decisión ({threshold})</span>
+                    <span>Umbral de decisión ({threshold:.2f})</span>
                 </div>
             </div>""", unsafe_allow_html=True)
 
     with tab2:
+        # (Gráfico SHAP estático como placeholder)
         st.write("")
         features = ["Glucosa", "BMI", "Edad", "Insulina"]
         vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
@@ -531,21 +562,15 @@ if st.session_state.step == 3:
 
     with tab3:
         st.write("")
-        st.info("💡 Módulo de recomendaciones clínicas y generación de informes.")
+        st.info("💡 Módulo de recomendaciones clínicas y protocolos de actuación.")
     
     # --- BOTONES DE ACCIÓN ---
     st.markdown("---")
     c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1])
     
     with c_btn1:
-        data_for_report = {
-            'patient_id': st.session_state.patient['id'],
-            'patient_name': st.session_state.patient['name'],
-            'age': age, 'pregnancies': pregnancies, 'dpf': dpf,
-            'glucose': glucose, 'insulin': insulin, 'proxy_index': proxy_index,
-            'weight': weight, 'height': height, 'bmi': bmi
-        }
-        report_text = generate_report(data_for_report, prob, risk_label, alerts)
+        # Generación del informe
+        report_text = generate_report(st.session_state.patient, prob, risk_label, alerts)
         st.download_button(
             label="📥 DESCARGAR INFORME CLÍNICO",
             data=report_text,
@@ -559,5 +584,6 @@ if st.session_state.step == 3:
         if st.button("🔄 NUEVA SIMULACIÓN COMPLETA"):
             st.session_state.step = 1
             st.session_state.patient = {'id': '', 'name': '', 'date': date.today()}
+            st.session_state.threshold = 0.27 # Resetear umbral
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)

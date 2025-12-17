@@ -275,58 +275,19 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === ESTILOS TARJETAS UNIFICADAS XAI (ESTRATEGIA SÁNDWICH MEJORADA) === */
-        /* Parte Superior (Título + Gráfico blanco) */
-        .card-top {{
-            background-color: white;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            padding: 25px 25px 0px 25px; /* Sin padding abajo para conectar con la imagen */
-            border-top: 1px solid #eee;
-            border-left: 1px solid #eee;
-            border-right: 1px solid #eee;
-            /* IMPORTANTE: Sin borde inferior para unir con la imagen */
-            text-align: center;
-            /* Truco para pegar el bloque siguiente */
-            margin-bottom: -16px; 
-            position: relative;
-            z-index: 10;
-        }}
-        
-        /* Parte Inferior (Texto explicativo) */
+        /* === ESTILOS TARJETAS EXPLICATIVAS (SOLO FOOTER) === */
+        /* Ahora son burbujas independientes debajo de los gráficos */
         .card-bottom {{
             background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK transparente */
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
+            border-radius: 15px; /* Bordes redondeados completos */
             padding: 20px 25px;
-            /* Borde superior rosa para separar la explicación */
-            border-top: 3px solid #E97F87;
+            border: 2px solid #E97F87; /* Borde rosa completo */
             color: #555;
             font-size: 0.9rem;
             line-height: 1.5;
             text-align: left;
-            border-left: 1px solid #eee;
-            border-right: 1px solid #eee;
-            border-bottom: 1px solid #eee;
+            margin-top: 15px; /* Separación del gráfico */
             margin-bottom: 20px;
-        }}
-        
-        .xai-title {{
-            color: #2C3E50;
-            font-weight: 800;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-            letter-spacing: -0.5px;
-        }}
-        
-        /* Ajuste CRÍTICO para que la imagen de Streamlit se una al bloque superior */
-        div[data-testid="stBlock"] > div[data-testid="stImage"] {{
-             background-color: white;
-             border-left: 1px solid #eee;
-             border-right: 1px solid #eee;
-             padding: 0px 20px;
-             /* Asegura que no haya margen superior que lo separe del título */
-             margin-top: 0px !important; 
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -707,11 +668,7 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO) - CON MARGEN NEGATIVO
-            st.markdown('<div class="card-top">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
+            # NOTA: Título integrado EN el gráfico, ya no usamos HTML top card
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
                     rf = st.session_state.model.named_steps['model']
@@ -721,9 +678,12 @@ elif st.session_state.page == "simulacion":
                     df_imp = pd.DataFrame({'Feature': feat_names_es, 'Importancia': importances})
                     df_imp = df_imp.sort_values(by='Importancia', ascending=True)
                     
-                    fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
+                    fig_imp, ax_imp = plt.subplots(figsize=(6, 5.5)) # Un poco más alto para el título
                     fig_imp.patch.set_facecolor('white') 
                     ax_imp.set_facecolor('white')
+                    
+                    # TÍTULO DENTRO DEL GRÁFICO
+                    ax_imp.set_title("Visión Global del Modelo", fontsize=16, fontweight='bold', color=CEMP_DARK, pad=25)
                     
                     bars = ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, alpha=0.8)
                     ax_imp.spines['top'].set_visible(False)
@@ -747,7 +707,7 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
             
-            # 3. PARTE INFERIOR (HTML ROSA EXPLICATIVO)
+            # 3. PARTE INFERIOR (HTML ROSA EXPLICATIVO - AHORA UNA BURBUJA INDEPENDIENTE)
             st.markdown("""
             <div class="card-bottom">
                 <strong>Interpretación de Relevancia Global:</strong><br>
@@ -757,11 +717,6 @@ elif st.session_state.page == "simulacion":
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO) - CON MARGEN NEGATIVO
-            st.markdown('<div class="card-top">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
                     pipeline = st.session_state.model
@@ -794,7 +749,11 @@ elif st.session_state.page == "simulacion":
                         feature_names=input_data.columns
                     )
                     
-                    fig_shap, ax_shap = plt.subplots(figsize=(6, 5))
+                    fig_shap, ax_shap = plt.subplots(figsize=(6, 5.5))
+                    
+                    # TÍTULO DENTRO DEL GRÁFICO
+                    ax_shap.set_title("Análisis Individual (SHAP)", fontsize=16, fontweight='bold', color=CEMP_DARK, pad=25)
+                    
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
@@ -807,7 +766,7 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Librería SHAP no disponible o modelo simulado.")
             
-            # 3. PARTE INFERIOR (HTML ROSA EXPLICATIVO)
+            # 3. PARTE INFERIOR (HTML ROSA EXPLICATIVO - AHORA UNA BURBUJA INDEPENDIENTE)
             st.markdown(f"""
             <div class="card-bottom">
                 <strong>Interpretación del Resultado:</strong><br>

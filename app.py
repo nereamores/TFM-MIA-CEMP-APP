@@ -8,11 +8,11 @@ import base64
 # =========================================================
 # 1. CONFIGURACIÓN GLOBAL
 # =========================================================
-# Usamos "wide" para que el dashboard complejo quepa bien.
-# En la portada usaremos columnas para centrarla visualmente.
+# Ponemos "wide" para que el Dashboard quepa bien. 
+# En la portada usaremos CSS para que parezca "centered".
 st.set_page_config(
-    page_title="DIABETES.NME", 
-    page_icon="🩺", 
+    page_title="Diabetes NME",
+    page_icon="🩸",
     layout="wide"
 )
 
@@ -29,17 +29,35 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA (Tu diseño original restaurado)
+# 3. PÁGINA DE INICIO (TU CÓDIGO EXACTO DE PORTADA)
 # =========================================================
 if st.session_state.page == "landing":
 
-    # CSS EXCLUSIVO DE LA PORTADA
+    # --- CSS EXACTO DE TU PORTADA ---
+    # Nota: He añadido 'margin: 0 auto;' al block-container para que
+    # se centre aunque estemos en modo 'wide'.
     st.markdown("""
     <style>
-        .stApp { background-color: #f0f2f6; }
-        #MainMenu, footer, header { visibility: hidden; }
-        
-        /* Estilos de textos y colores originales */
+        .stApp {
+            background-color: #f0f2f6;
+        }
+
+        #MainMenu, footer, header {
+            visibility: hidden;
+        }
+
+        /* Forzamos que el contenedor sea estrecho y centrado como querías */
+        .block-container {
+            background-color: white;
+            padding: 3rem !important;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 800px !important; 
+            margin-top: 2rem;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
         h1 {
             text-align: center;
             font-family: Arial, sans-serif;
@@ -49,104 +67,176 @@ if st.session_state.page == "landing":
             margin-bottom: 0 !important;
             line-height: 1.2 !important;
         }
+
         .landing-pink { color: #ef7d86; }
         .landing-gray { color: #bdc3c7; }
 
-        .badge-container { text-align: center; margin-bottom: 10px; }
+        .badge-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
         .badge {
-            background-color: #2c3e50; color: white; padding: 6px 15px;
-            border-radius: 50px; font-size: 11px; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;
+            background-color: #2c3e50;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
         }
+
         .institution {
-            text-align: center; color: #555; font-size: 13px; font-weight: 700;
-            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
         }
+
         .subtitle {
-            text-align: center; font-size: 1.1rem; font-weight: 700;
-            color: #34495e; margin-top: 5px; margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #34495e;
+            margin-top: 5px;
+            margin-bottom: 25px;
         }
+
         .description {
-            text-align: center; color: #666; line-height: 1.6;
-            font-size: 0.95rem; margin-bottom: 30px; padding: 0 20px;
+            text-align: center;
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            padding: 0 20px;
         }
+
         .warning-box {
-            background-color: #f9fafb; border-left: 4px solid #ef7d86;
-            padding: 20px; border-radius: 4px; font-size: 0.85rem;
-            color: #555; margin-bottom: 30px; text-align: center;
+            background-color: #f9fafb;
+            border-left: 4px solid #ef7d86;
+            padding: 20px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 30px;
+            text-align: center;
         }
-        
-        /* BOTÓN ORIGINAL */
+
+        .warning-box p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* -------------------------
+           BOTÓN: estructura principal
+           ------------------------- */
         div.stButton > button {
-            position: relative;
+            position: relative;             
             background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
-            color: white; border: none; padding: 14px 80px;
-            border-radius: 50px; font-weight: bold; font-size: 14px;
-            text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
-            box-shadow: 0 4px 15px rgba(239,112,122,0.3); cursor: pointer;
+            color: white;
+            border: none;
+            padding: 14px 80px;             
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(239,112,122,0.3);
+            cursor: pointer;
+            overflow: visible;              
         }
+
+        div.stButton > button > span {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) translateX(4px); 
+            display: inline-block;
+            pointer-events: none; 
+        }
+
+        div.stButton > button::after {
+            content: "➔";
+            position: absolute;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
         div.stButton > button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(239,112,122,0.5); color: white;
+            box-shadow: 0 6px 20px rgba(239,112,122,0.5);
+            color: white;
         }
-        div.stButton > button::after {
-            content: "➔"; position: absolute; right: 28px; top: 50%;
-            transform: translateY(-50%); font-size: 16px; pointer-events: none;
+
+        @media (max-width: 600px) {
+            div.stButton > button {
+                padding: 12px 40px;
+                font-size: 13px;
+            }
+            div.stButton > button::after {
+                right: 18px;
+            }
         }
     </style>
     """, unsafe_allow_html=True)
 
-    # TRUCO: Usamos columnas [1, 2, 1] para centrar la tarjeta
-    # y que se vea igual que tu captura original
-    col_izq, col_centro, col_der = st.columns([1, 2, 1])
-
-    with col_centro:
-        # IMPORTANTE: El HTML está pegado a la izquierda sin espacios
-        # para evitar el error de que se muestre como código.
-        st.markdown("""
-<div style="background-color: white; padding: 3rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+    # --- HTML EXACTO DE TU PORTADA ---
+    # Pegado al margen izquierdo para evitar errores de Streamlit
+    st.markdown("""
 <div class="badge-container">
 <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
 </div>
+
 <div class="institution">Centro Europeo de Másteres y Posgrados</div>
+
 <h1>
-D<span class="landing-pink">IA</span>BETES
-<span class="landing-gray">.</span>
-<span class="landing-pink">NME</span>
+    D<span class="landing-pink">IA</span>BETES
+    <span class="landing-gray">.</span>
+    <span class="landing-pink">NME</span>
 </h1>
+
 <div class="subtitle">
-Prototipo de CDSS para el diagnóstico temprano de diabetes
+    Prototipo de CDSS para el diagnóstico temprano de diabetes
 </div>
+
 <p class="description">
-Este proyecto explora el potencial de integrar modelos predictivos avanzados
-en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como
-un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
+    Este proyecto explora el potencial de integrar modelos predictivos avanzados
+    en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como
+    un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
 </p>
+
 <div class="warning-box">
-<p><strong>
-Aplicación desarrollada con fines exclusivamente educativos como parte de
-un Trabajo de Fin de Máster.
-</strong></p>
-<p style="margin-top:10px;">
-⚠️ Esta herramienta NO es un dispositivo médico certificado.
-Los resultados son una simulación académica y NO deben utilizarse para el
-diagnóstico real.
-</p>
-</div>
+    <p><strong>
+        Aplicación desarrollada con fines exclusivamente educativos como parte de
+        un Trabajo de Fin de Máster.
+    </strong></p>
+    <p style="margin-top:10px;">
+        ⚠️ Esta herramienta NO es un dispositivo médico certificado.
+        Los resultados son una simulación académica y NO deben utilizarse para el
+        diagnóstico real, tratamiento o toma de decisiones clínicas.
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
-        st.write("") 
-
-        # Botón Centrado
-        c1, c2, c3 = st.columns([1, 1, 1])
-        with c2:
-            if st.button("INICIAR          "):
-                ir_a_simulacion()
-                st.rerun()
+    # -------- BOTÓN CENTRADO --------
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        # Los espacios son importantes para tu diseño CSS
+        if st.button("INICIAR          "):
+            ir_a_simulacion()
+            st.rerun()
 
 # =========================================================
-# 4. PÁGINA: SIMULACIÓN (TU CÓDIGO COMPLETO)
+# 4. PÁGINA: SIMULACIÓN (EL DASHBOARD COMPLETO)
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -164,14 +254,17 @@ elif st.session_state.page == "simulacion":
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-    # --- 3. CSS DEL DASHBOARD ---
+    # --- CSS DASHBOARD ---
+    # Aquí cambiamos el max-width a 1250px para que el dashboard sea ancho
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         
         .block-container {{
-            max-width: 1250px; 
+            background-color: transparent !important; /* Quitamos fondo blanco del dashboard si quieres */
+            box-shadow: none !important; /* Quitamos sombra */
+            max-width: 1250px !important; 
             padding-top: 2rem;
             padding-bottom: 2rem;
             margin: 0 auto;
@@ -289,6 +382,7 @@ elif st.session_state.page == "simulacion":
         st.markdown(label_html, unsafe_allow_html=True)
         
         c1, c2 = st.columns([2.5, 1], gap="small")
+        
         input_type = type(default_val)
         min_val = input_type(min_val)
         max_val = input_type(max_val)
@@ -369,7 +463,7 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
-        # PACIENTE (INDENTACIÓN CORREGIDA)
+        # PACIENTE
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 

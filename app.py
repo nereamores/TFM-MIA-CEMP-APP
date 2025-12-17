@@ -26,6 +26,7 @@ st.set_page_config(
 
 class MockModel:
     def predict_proba(self, X):
+        # Simulación simple
         if isinstance(X, pd.DataFrame):
             score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
         else:
@@ -33,6 +34,7 @@ class MockModel:
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
+# --- FUNCIÓN DE CARGA DEL MODELO ---
 @st.cache_resource
 def load_model():
     model_path = "modelos/diabetes_rf_pipeline.pkl"
@@ -45,6 +47,7 @@ def load_model():
     else:
         return MockModel()
 
+# Inicialización segura
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
@@ -271,23 +274,22 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === NUEVO CSS: TARJETAS UNIFICADAS SIMPLES === */
-        .unified-card {
+        /* === NUEVO CSS: TARJETAS UNIFICADAS SIMPLES (CON DOBLES LLAVES) === */
+        .unified-card {{
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
-            overflow: hidden; /* Esto es clave para que los bordes no se escapen */
+            overflow: hidden; 
             border: 1px solid #eee;
-        }
+        }}
         
-        /* Parte de arriba: BLANCA, incluye Título + Gráfico */
-        .unified-top {
+        .unified-top {{
             background-color: white;
             padding: 25px;
-            text-align: center; /* Centra título e imagen */
-        }
+            text-align: center; 
+        }}
         
-        .unified-title {
+        .unified-title {{
             color: #2C3E50;
             font-family: 'Helvetica', sans-serif;
             font-weight: 800;
@@ -295,17 +297,16 @@ elif st.session_state.page == "simulacion":
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 10px;
-        }
+        }}
         
-        /* Parte de abajo: ROSA, texto explicativo */
-        .unified-bottom {
-            background-color: rgba(233, 127, 135, 0.15); /* CEMP Pink muy suave */
+        .unified-bottom {{
+            background-color: rgba(233, 127, 135, 0.15); 
             padding: 20px 25px;
             color: #555;
             font-size: 0.9rem;
             line-height: 1.5;
             border-top: 1px solid #eee;
-        }
+        }}
         </style>
     """, unsafe_allow_html=True)
 

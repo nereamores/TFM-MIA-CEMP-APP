@@ -29,8 +29,7 @@ class MockModel:
     def predict_proba(self, X):
         # Simulación simple
         if isinstance(X, pd.DataFrame):
-            # Usamos iloc para acceder por posición y evitar errores de índice
-            score = (X.iloc[0, 1]*0.5) + (X.iloc[0, 4]*0.4) + (X.iloc[0, 6]*0.1) 
+            score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
         else:
             score = 50
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
@@ -345,7 +344,6 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        # IMPORTANTE: Valor por defecto de Glucosa = 50 (para coincidir con el mínimo)
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
@@ -472,7 +470,7 @@ elif st.session_state.page == "simulacion":
         # PREPARAR DATOS PARA EL MODELO REAL
         is_prediabetes = 1 if glucose >= 140 else 0
         
-        # DATAFRAME CON NOMBRES DE COLUMNA EXACTOS
+        # DataFrame con los nombres de columna EXACTOS
         input_data = pd.DataFrame([[
             pregnancies,
             glucose,
@@ -640,62 +638,93 @@ elif st.session_state.page == "simulacion":
 
     with tab2:
         st.write("")
-        c_exp1, c_exp2 = st.columns(2)
+        st.markdown("""
+        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid #2C3E50; margin-bottom:20px;">
+            <h4 style="margin:0; color:#2C3E50;">🧠 Inteligencia Artificial Explicable (XAI)</h4>
+            <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
+                Este módulo desglosa las decisiones del modelo para brindar transparencia clínica. 
+                A la izquierda, la visión global del algoritmo. A la derecha, el caso específico de este paciente.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        c_exp1, c_exp2 = st.columns(2, gap="medium")
         
+        # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
+            st.markdown(f'<div class="card card-auto" style="height:100%;">', unsafe_allow_html=True)
+            st.markdown('<h4 style="text-align:center; color:#2C3E50;">🌎 Visión Global del Modelo</h4>', unsafe_allow_html=True)
+            
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
                     rf = st.session_state.model.named_steps['model']
                     importances = rf.feature_importances_
                     
-                    # Nombres en español para el gráfico
-                    feature_names_es = ['Embarazos', 'Glucosa', 'Presión Arterial', 'Insulina', 'BMI', 'Ant. Familiares', 'Edad', 'Índice Resistencia', 'BMI²', 'Prediabetes']
+                    # Nombres amigables
+                    feat_names_es = ['Embarazos', 'Glucosa', 'Presión Art.', 'Insulina', 'BMI', 'Ant. Familiares', 'Edad', 'Índice Resist.', 'BMI²', 'Prediabetes']
                     
-                    # Crear DataFrame para ordenar
-                    df_imp = pd.DataFrame({'Feature': feature_names_es, 'Importancia': importances})
-                    df_imp = df_imp.sort_values(by='Importancia', ascending=True) # Ascendente para barh
+                    # Crear DF y ordenar
+                    df_imp = pd.DataFrame({'Feature': feat_names_es, 'Importancia': importances})
+                    df_imp = df_imp.sort_values(by='Importancia', ascending=True)
                     
-                    fig_imp, ax_imp = plt.subplots(figsize=(6, 4))
+                    # Gráfico
+                    fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
                     fig_imp.patch.set_facecolor('none')
                     ax_imp.set_facecolor('none')
                     
-                    ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, align='center')
+                    bars = ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, alpha=0.8)
                     ax_imp.spines['top'].set_visible(False)
                     ax_imp.spines['right'].set_visible(False)
-                    ax_imp.tick_params(axis='y', colors=CEMP_DARK)
-                    ax_imp.tick_params(axis='x', colors='#999')
+                    ax_imp.spines['bottom'].set_visible(False)
+                    ax_imp.spines['left'].set_visible(False)
+                    ax_imp.tick_params(axis='y', colors=CEMP_DARK, labelsize=9)
+                    ax_imp.tick_params(axis='x', colors='#999', labelsize=8)
                     
+                    # Etiquetas de valor
+                    for bar in bars:
+                        width = bar.get_width()
+                        ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
+                                    f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
+
                     chart_html_imp = fig_to_html(fig_imp)
                     plt.close(fig_imp)
+                    st.write(chart_html_imp, unsafe_allow_html=True)
                     
-                    st.markdown(f"""<div class="card card-auto">
-                        <span class="card-header" style="margin-bottom:10px;">IMPORTANCIA GLOBAL</span>
-                        {chart_html_imp}
-                    </div>""", unsafe_allow_html=True)
-                except:
-                    st.markdown(f'<div class="card card-auto"><span class="card-header">IMPORTANCIA GLOBAL</span><p style="text-align:center;color:#999;">No disponible</p></div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="card card-auto"><span class="card-header">IMPORTANCIA GLOBAL</span><p style="text-align:center;color:#999;">Modelo simulado</p></div>', unsafe_allow_html=True)
+                    # --- CAJA DE EXPLICACIÓN ---
+                    st.info("""
+                    **¿Qué muestra este gráfico?**
+                    Indica qué variables tienen más peso *en general* para el algoritmo. 
+                    - Las barras más largas son los factores de riesgo más potentes en la población estudiada.
+                    - **Utilidad:** Ayuda a entender qué prioriza la IA (ej. Glucosa o Resistencia) al entrenarse.
+                    """)
 
+                except:
+                    st.warning("No se pudo extraer la importancia global del modelo cargado.")
+            else:
+                st.warning("Modelo simulado: No hay datos reales de importancia global.")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
+            st.markdown(f'<div class="card card-auto" style="height:100%;">', unsafe_allow_html=True)
+            st.markdown('<h4 style="text-align:center; color:#2C3E50;">👤 Análisis Individual (SHAP)</h4>', unsafe_allow_html=True)
+            
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
                     pipeline = st.session_state.model
                     
-                    # 1. Transformación manual
-                    imputer = pipeline.named_steps['imputer']
-                    scaler = pipeline.named_steps['scaler']
-                    model_step = pipeline.named_steps['model']
-                    
-                    step1 = imputer.transform(input_data)
-                    step2 = scaler.transform(step1)
+                    # Transformación manual para SHAP
+                    step1 = pipeline.named_steps['imputer'].transform(input_data)
+                    step2 = pipeline.named_steps['scaler'].transform(step1)
                     input_transformed = pd.DataFrame(step2, columns=input_data.columns)
                     
-                    # 2. Explainer
+                    # Explainer
+                    model_step = pipeline.named_steps['model']
                     explainer = shap.TreeExplainer(model_step)
                     shap_values = explainer.shap_values(input_transformed)
                     
-                    # 3. Manejo de estructura
+                    # Gestión de formato SHAP
                     if isinstance(shap_values, list):
                         shap_val_instance = shap_values[1][0]
                         base_value = explainer.expected_value[1]
@@ -710,7 +739,7 @@ elif st.session_state.page == "simulacion":
                         else:
                              base_value = explainer.expected_value
 
-                    # 4. Waterfall
+                    # Gráfico Waterfall
                     exp = shap.Explanation(
                         values=shap_val_instance,
                         base_values=base_value,
@@ -718,28 +747,28 @@ elif st.session_state.page == "simulacion":
                         feature_names=input_data.columns
                     )
                     
-                    fig_shap, ax_shap = plt.subplots(figsize=(6, 4))
-                    shap.plots.waterfall(exp, show=False)
+                    fig_shap, ax_shap = plt.subplots(figsize=(6, 5))
+                    shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
                     chart_html_shap = fig_to_html(fig_shap)
                     plt.close(fig_shap)
-                    
-                    st.markdown(f"""<div class="card card-auto">
-                        <span class="card-header" style="margin-bottom:10px;">ANÁLISIS DEL PACIENTE (SHAP)</span>
-                        {chart_html_shap}
-                    </div>""", unsafe_allow_html=True)
+                    st.write(chart_html_shap, unsafe_allow_html=True)
+
+                    # --- CAJA DE EXPLICACIÓN ---
+                    st.success(f"""
+                    **¿Por qué este resultado para {patient_name}?**
+                    Este gráfico desglosa la probabilidad calculada ({prob*100:.1f}%).
+                    - **Barras Rojas (+):** Factores que *aumentan* el riesgo en este paciente específico (ej. Glucosa alta).
+                    - **Barras Azules (-):** Factores que *protegen* o reducen el riesgo (ej. Edad joven o Insulina baja).
+                    """)
                     
                 except Exception as e:
-                    st.markdown(f"""<div class="card card-auto">
-                        <span class="card-header">ANÁLISIS DEL PACIENTE</span>
-                        <div style="padding:20px; text-align:center; color:#999;">
-                            No se pudo generar el gráfico SHAP.<br>
-                            <small>{str(e)}</small>
-                        </div>
-                    </div>""", unsafe_allow_html=True)
+                    st.error(f"Error generando SHAP: {e}")
             else:
-                st.markdown(f'<div class="card card-auto"><span class="card-header">ANÁLISIS DEL PACIENTE</span><p style="text-align:center;color:#999;">Requiere librería SHAP</p></div>', unsafe_allow_html=True)
+                st.warning("Librería SHAP no disponible o modelo simulado.")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
     with tab3:
         st.write("")

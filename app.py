@@ -55,8 +55,8 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        /* Aumentamos el padding inferior para que el botón quepa visualmente DENTRO de la caja blanca */
-        padding: 50px 40px 120px 40px; 
+        /* Aumentamos el padding inferior para acomodar el botón dentro */
+        padding: 50px 40px 160px 40px; 
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -114,27 +114,25 @@ st.markdown(f"""
         line-height: 1.4;
     }}
     
-    /* CAMBIO 1: Centrado del párrafo */
+    /* CAMBIO: Alineación CENTRADA en lugar de justificada */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
         max-width: 700px;
         margin: 0 auto 35px auto;
-        text-align: center; /* Centrado */
+        text-align: center; /* Centrado para corregir alineación */
     }}
 
-    /* Estilo del rectángulo rosita de disclaimer */
     .disclaimer-box {{
-        background: linear-gradient(180deg, #FDFBFB 0%, #FFE6E9 100%);
-        border: 1px solid #FADADD;
+        background-color: #F8F9FA;
         border-left: 4px solid {CEMP_PINK};
         padding: 20px;
-        margin: 0 auto 0 auto; 
+        margin: 0 auto 20px auto; /* Espacio debajo de la caja antes del botón */
         text-align: center;
         font-size: 0.85rem;
         color: #555;
-        border-radius: 12px;
+        border-radius: 8px;
         max-width: 750px;
         line-height: 1.5;
     }}
@@ -264,9 +262,10 @@ Este proyecto explora el potencial de integrar modelos predictivos avanzados en 
 </div>
 </div>""", unsafe_allow_html=True)
         
-        # CAMBIO 2: Botón posicionado visualmente DENTRO de la caja blanca (landing-wrapper) mediante margen negativo
-        # y asegurado con padding-bottom en la clase CSS
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -90px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        # --- BOTÓN CENTRADO DENTRO DE LA CAJA ---
+        # El padding-bottom del wrapper es 160px.
+        # El margin-top negativo de -130px sube el botón visualmente dentro del área de padding.
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -130px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()
@@ -295,7 +294,6 @@ if st.session_state.step > 1:
         st.markdown("---") 
         st.markdown("**3. Historia**")
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
-        # CAMBIO 3: Corrección de Indentación en la siguiente línea (eliminado el espacio extra al inicio)
         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
         st.markdown("---") 
         st.markdown("**4. Genética**")

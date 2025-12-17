@@ -29,7 +29,8 @@ class MockModel:
     def predict_proba(self, X):
         # Simulación simple
         if isinstance(X, pd.DataFrame):
-            score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
+            # Usamos iloc para acceder por posición y evitar errores de índice
+            score = (X.iloc[0, 1]*0.5) + (X.iloc[0, 4]*0.4) + (X.iloc[0, 6]*0.1) 
         else:
             score = 50
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
@@ -471,7 +472,7 @@ elif st.session_state.page == "simulacion":
         # PREPARAR DATOS PARA EL MODELO REAL
         is_prediabetes = 1 if glucose >= 140 else 0
         
-        # DataFrame con los nombres de columna EXACTOS
+        # DATAFRAME CON NOMBRES DE COLUMNA EXACTOS
         input_data = pd.DataFrame([[
             pregnancies,
             glucose,
@@ -646,19 +647,23 @@ elif st.session_state.page == "simulacion":
                 try:
                     rf = st.session_state.model.named_steps['model']
                     importances = rf.feature_importances_
-                    feat_names = ['Embarazos', 'Glucosa', 'Presión', 'Insulina', 'BMI', 'DPF', 'Edad', 'Índice R', 'BMI²', 'Prediabetes']
                     
-                    indices = np.argsort(importances)
+                    # Nombres en español para el gráfico
+                    feature_names_es = ['Embarazos', 'Glucosa', 'Presión Arterial', 'Insulina', 'BMI', 'Ant. Familiares', 'Edad', 'Índice Resistencia', 'BMI²', 'Prediabetes']
+                    
+                    # Crear DataFrame para ordenar
+                    df_imp = pd.DataFrame({'Feature': feature_names_es, 'Importancia': importances})
+                    df_imp = df_imp.sort_values(by='Importancia', ascending=True) # Ascendente para barh
                     
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 4))
                     fig_imp.patch.set_facecolor('none')
                     ax_imp.set_facecolor('none')
                     
-                    ax_imp.barh(range(len(indices)), importances[indices], color=CEMP_PINK, align='center')
-                    ax_imp.set_yticks(range(len(indices)))
-                    ax_imp.set_yticklabels([feat_names[i] for i in indices])
+                    ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, align='center')
                     ax_imp.spines['top'].set_visible(False)
                     ax_imp.spines['right'].set_visible(False)
+                    ax_imp.tick_params(axis='y', colors=CEMP_DARK)
+                    ax_imp.tick_params(axis='x', colors='#999')
                     
                     chart_html_imp = fig_to_html(fig_imp)
                     plt.close(fig_imp)
@@ -677,36 +682,25 @@ elif st.session_state.page == "simulacion":
                 try:
                     pipeline = st.session_state.model
                     
-                    # 1. Transformación para SHAP (Manual porque SHAP necesita los datos transformados pero el pipeline lo hace todo junto)
-                    # Pipeline tiene: Imputer -> Scaler -> Model
-                    
+                    # 1. Transformación manual
                     imputer = pipeline.named_steps['imputer']
                     scaler = pipeline.named_steps['scaler']
                     model_step = pipeline.named_steps['model']
                     
-                    # Transformamos input
                     step1 = imputer.transform(input_data)
                     step2 = scaler.transform(step1)
+                    input_transformed = pd.DataFrame(step2, columns=input_data.columns)
                     
-                    # Creamos DF con nombres para que SHAP los pinte bonitos
-                    input_transformed_df = pd.DataFrame(step2, columns=input_data.columns)
-                    
-                    # 2. Explainer (Método agnóstico que funciona mejor con pipelines)
-                    # Usamos una función lambda para decirle a SHAP cómo predecir
-                    # PERO para TreeExplainer es mejor pasar el modelo directamente si es un árbol
-                    
+                    # 2. Explainer
                     explainer = shap.TreeExplainer(model_step)
-                    shap_values = explainer.shap_values(input_transformed_df)
+                    shap_values = explainer.shap_values(input_transformed)
                     
-                    # 3. Manejo de la estructura de shap_values (puede variar según versión)
-                    # A veces es una lista [clase0, clase1], a veces es solo un array
+                    # 3. Manejo de estructura
                     if isinstance(shap_values, list):
-                        # Clasificación binaria, queremos la clase positiva (1)
                         shap_val_instance = shap_values[1][0]
                         base_value = explainer.expected_value[1]
                     else:
-                        # Si devuelve solo un array (raro en clasificación, común en regresión, pero posible)
-                        if len(shap_values.shape) == 3: # (1, features, classes)
+                        if len(shap_values.shape) == 3:
                              shap_val_instance = shap_values[0, :, 1]
                         else:
                              shap_val_instance = shap_values[0]
@@ -716,8 +710,7 @@ elif st.session_state.page == "simulacion":
                         else:
                              base_value = explainer.expected_value
 
-                    # 4. Generar Waterfall
-                    # Usamos los datos originales (input_data) para mostrar los valores reales en el gráfico
+                    # 4. Waterfall
                     exp = shap.Explanation(
                         values=shap_val_instance,
                         base_values=base_value,

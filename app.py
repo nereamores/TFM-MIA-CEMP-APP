@@ -15,15 +15,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase del modelo aquí arriba para que nunca se pierda
+# Definición del modelo al principio para evitar errores
 class MockModel:
     def predict_proba(self, X):
-        # Simulación matemática simple
+        # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
         score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicialización segura del estado
+# Inicialización segura
 if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
@@ -31,7 +31,7 @@ if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
 # =========================================================
-# 2. FUNCIONES AUXILIARES (SOLO GRÁFICOS)
+# 2. FUNCIONES AUXILIARES
 # =========================================================
 
 def fig_to_html(fig):
@@ -42,7 +42,6 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
-    # Para usar con st.image (más estable)
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -67,7 +66,6 @@ def volver_inicio():
 # 4. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
-    # CSS Portada
     st.markdown("""
     <style>
         .stApp { background-color: #f0f2f6; }
@@ -140,7 +138,6 @@ if st.session_state.page == "landing":
     </style>
     """, unsafe_allow_html=True)
 
-    # HTML Portada
     st.markdown("""
 <div class="badge-container">
 <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
@@ -256,7 +253,7 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- INPUT HELPER ---
+    # --- INPUTS ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -392,7 +389,7 @@ elif st.session_state.page == "simulacion":
         st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
-    # --- CONTENIDO PRINCIPAL ---
+    # --- MAIN ---
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])

@@ -347,8 +347,8 @@ elif st.session_state.page == "simulacion":
         # AQUÍ ESTÁN LAS CORRECCIONES DE LOS TEXTOS DE AYUDA (TOOLTIPS)
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
-        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
-
+        
+        # --- MOVIMIENTO DEL CÁLCULO Y VISUALIZACIÓN DEL ÍNDICE RI ---
         proxy_index = int(glucose * insulin)
         proxy_str = f"{proxy_index}" 
 
@@ -360,6 +360,9 @@ elif st.session_state.page == "simulacion":
             </div>
         </div>
         """, unsafe_allow_html=True)
+        # -------------------------------------------------------------
+
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
 
         st.markdown("---") 
 

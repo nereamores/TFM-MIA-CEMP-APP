@@ -40,7 +40,6 @@ st.markdown("""
     .description { text-align: center; color: #666; line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px; padding: 0 20px; }
     .warning-box { background-color: #f9fafb; border-left: 4px solid #ef7d86; padding: 20px; border-radius: 4px; font-size: 0.85rem; color: #555; margin-bottom: 30px; text-align: center; }
     .warning-box p { margin: 0; line-height: 1.5; }
-
     div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
@@ -87,16 +86,14 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # --- CENTRADO EXACTO DEL BOTÓN CON PEQUEÑO DESPLAZAMIENTO A LA DERECHA ---
-    st.markdown(
-        '<div style="text-align:center;">'
-        '<span style="display:inline-block; margin-left:15px;">'  # ajusta 15px para mover un poco a la derecha
-        f'{st.button("INICIAR SIMULACIÓN ➔") and ir_a_simulacion()}'
-        '</span>'
-        '</div>',
-        unsafe_allow_html=True
-    )
+    # --- CENTRADO DEL BOTÓN CON COLUMNAS (ESTABLE Y EXACTO) ---
+    col1, col2, col3 = st.columns([1, 2, 1])  # columna central el doble de ancho
+    with col2:
+        if st.button("INICIAR SIMULACIÓN ➔"):
+            ir_a_simulacion()
+            st.rerun()
 
+# Página simulación
 elif st.session_state.page == 'simulacion':
     if st.button("⬅ Volver"):
         volver_inicio()

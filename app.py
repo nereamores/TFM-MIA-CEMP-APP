@@ -195,7 +195,7 @@ elif st.session_state.page == "simulacion":
     OPTIMAL_GREEN = "#8BC34A"
     NOTE_GRAY_BG = "#F8F9FA"  
     NOTE_GRAY_TEXT = "#6C757D" 
-     
+      
     BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -204,7 +204,6 @@ elif st.session_state.page == "simulacion":
         <style>
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
-        .stApp {{ background-color: #f0f2f6; }}
         .block-container {{
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
@@ -275,54 +274,64 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === ESTILOS TARJETAS UNIFICADAS XAI (ESTRATEGIA SÁNDWICH MEJORADA) === */
-        /* Parte Superior (Título + Gráfico blanco) */
-        .white-card {{
+        /* === ESTILOS TARJETAS UNIFICADAS XAI (CENTRADOS) === */
+        .card-top {{
             background-color: white;
-            border-radius: 15px;
-            padding: 25px 25px 0px 25px; /* Sin padding abajo para conectar con la imagen */
-            border: 1px solid #eee;
-            text-align: center;
-            /* Truco para pegar el bloque siguiente */
-            margin-bottom: -16px; 
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 30px 25px 10px 25px; 
+            border-left: 1px solid #eee;
+            border-right: 1px solid #eee;
+            border-top: 1px solid #eee;
+            text-align: center; /* CENTRADO TOTAL */
             position: relative;
-            z-index: 10;
-        }}
-        
-        /* Parte Inferior (Texto explicativo) */
-        .pink-bubble {{
-            background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK transparente */
-            border-radius: 15px;
-            padding: 20px 25px;
-            border: 2px solid #E97F87;
-            color: #555;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            text-align: left;
-            margin-bottom: 20px;
-            margin-top: 20px;
         }}
         
         .xai-title {{
             color: #2C3E50;
+            font-family: 'Helvetica', sans-serif;
             font-weight: 800;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-            letter-spacing: -0.5px;
-            text-align: center;
-            background-color: transparent; /* Fondo transparente */
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+            background-color: transparent;
+            display: block;
+            width: 100%;
         }}
         
-        /* Ajuste CRÍTICO para que la imagen de Streamlit se una al bloque superior */
-        div[data-testid="stBlock"] > div[data-testid="stImage"] {{
-             background-color: white;
-             border-left: 1px solid #eee;
-             border-right: 1px solid #eee;
-             border-bottom: 1px solid #eee;
-             border-bottom-left-radius: 15px;
-             border-bottom-right-radius: 15px;
-             padding: 0px 20px 20px 20px;
-             margin-top: 0px !important; 
+        /* Línea decorativa debajo del título */
+        .xai-title::after {{
+            content: "";
+            display: block;
+            width: 40px;
+            height: 3px;
+            background-color: #E97F87; 
+            margin: 10px auto 0 auto; 
+            border-radius: 2px;
+        }}
+        
+        .card-bottom {{
+            background-color: rgba(233, 127, 135, 0.15); 
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            padding: 20px 25px;
+            border-top: none; 
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-align: left;
+            border-left: 1px solid #eee;
+            border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }}
+        
+        div[data-testid="stImage"] {{
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: transparent;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -669,7 +678,7 @@ elif st.session_state.page == "simulacion":
                 ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
                 center_text = "---"
 
-            chart_html = fig_to_html(fig)
+            chart_html = fig_to_html(fig) 
             plt.close(fig)
             
             prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
@@ -703,9 +712,8 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO)
-            st.markdown('<div class="white-card">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-top">', unsafe_allow_html=True)
+            st.markdown('<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
             
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
@@ -733,7 +741,6 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    # 2. EL GRÁFICO (STREAMLIT NATIVO PARA ZOOM)
                     st.image(fig_to_bytes(fig_imp), use_container_width=True)
                     plt.close(fig_imp)
 
@@ -742,11 +749,10 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
             
-            st.markdown('</div>', unsafe_allow_html=True) # FIN TARJETA BLANCA
-
-            # 3. PARTE INFERIOR (BURBUJA ROSA EXPLICATIVA)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             st.markdown("""
-            <div class="pink-bubble">
+            <div class="card-bottom">
                 <strong>Interpretación de Relevancia Global:</strong><br>
                 Este gráfico muestra qué datos son más importantes para la predicción del riesgo de padecer diabetes. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
             </div>
@@ -754,9 +760,8 @@ elif st.session_state.page == "simulacion":
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO)
-            st.markdown('<div class="white-card">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-top">', unsafe_allow_html=True)
+            st.markdown('<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
             
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
@@ -794,22 +799,20 @@ elif st.session_state.page == "simulacion":
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
-                    # 2. EL GRÁFICO (STREAMLIT NATIVO PARA ZOOM)
                     st.image(fig_to_bytes(fig_shap), use_container_width=True)
                     plt.close(fig_shap)
 
                 except Exception as e:
                     st.error(f"Error generando SHAP: {e}")
             else:
-                st.warning("Librería SHAP no disponible o modelo simulado.")
+                st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
             
-            st.markdown('</div>', unsafe_allow_html=True) # FIN TARJETA BLANCA
-
-            # 3. PARTE INFERIOR (BURBUJA ROSA EXPLICATIVA)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             st.markdown(f"""
-            <div class="pink-bubble">
+            <div class="card-bottom">
                 <strong>Interpretación del Resultado:</strong><br>
-                El análisis parte de una 'Línea Base' (probabilidad promedio de la población, aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final (86.3%) es la suma matemática de la línea base y estas contribuciones individuales.
+                El análisis parte de una 'Línea Base' (aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final ({prob*100:.1f}%) es la suma de estos factores.
             </div>
             """, unsafe_allow_html=True)
 

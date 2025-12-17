@@ -61,15 +61,17 @@ if 'predict_clicked' not in st.session_state:
 def fig_to_html(fig):
     """Convierte una figura de Matplotlib a string HTML base64 (Solo para visualizaciones pequeñas no ampliables)."""
     buf = io.BytesIO()
+    # Mantenemos transparente aquí porque se usa sobre fondos de color en las tarjetas pequeñas
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
-    """Convierte figura a bytes para st.image (Permite zoom)."""
+    """Convierte figura a bytes para st.image (Permite zoom con fondo BLANCO)."""
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
+    # CAMBIO CLAVE AQUÍ: transparent=False y facecolor='white'
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=False, facecolor='white', dpi=300)
     buf.seek(0)
     return buf
 
@@ -485,6 +487,7 @@ elif st.session_state.page == "simulacion":
                              1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
                 
                 fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
+                # Fondo transparente para este gráfico pequeño que va sobre el fondo de la app
                 fig_calib.patch.set_facecolor('none')
                 ax_calib.set_facecolor('none')
                 ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
@@ -502,8 +505,8 @@ elif st.session_state.page == "simulacion":
                 ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
                 ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
                 
-                img_bytes = fig_to_bytes(fig_calib)
-                st.image(img_bytes, use_container_width=True)
+                # Aquí seguimos usando fig_to_bytes pero este plot ya está configurado como transparente
+                st.image(fig_to_bytes(fig_calib), use_container_width=True)
                 plt.close(fig_calib)
 
         # PREPARAR DATOS PARA EL MODELO REAL
@@ -639,6 +642,7 @@ elif st.session_state.page == "simulacion":
                 st.rerun()
 
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
+            # Este gráfico circular lo mantenemos transparente para que se integre en la tarjeta
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
 
@@ -706,6 +710,7 @@ elif st.session_state.page == "simulacion":
                     df_imp = df_imp.sort_values(by='Importancia', ascending=True)
                     
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
+                    # FORZAMOS FONDO BLANCO
                     fig_imp.patch.set_facecolor('white') 
                     ax_imp.set_facecolor('white')
                     
@@ -722,7 +727,7 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    # Usamos st.image nativo para permitir zoom
+                    # Usamos st.image nativo para permitir zoom y la nueva función fig_to_bytes que guarda en BLANCO
                     st.image(fig_to_bytes(fig_imp), use_container_width=True)
                     plt.close(fig_imp)
 
@@ -779,10 +784,14 @@ elif st.session_state.page == "simulacion":
                     )
                     
                     fig_shap, ax_shap = plt.subplots(figsize=(6, 5))
+                    # FORZAMOS FONDO BLANCO TAMBIÉN AQUÍ
+                    fig_shap.patch.set_facecolor('white')
+                    ax_shap.set_facecolor('white')
+
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
-                    # Usamos st.image nativo para permitir zoom
+                    # Usamos st.image nativo y la nueva función fig_to_bytes que guarda en BLANCO
                     st.image(fig_to_bytes(fig_shap), use_container_width=True)
                     plt.close(fig_shap)
 

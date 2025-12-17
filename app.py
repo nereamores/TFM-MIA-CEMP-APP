@@ -8,7 +8,6 @@ import base64
 # =========================================================
 # 1. CONFIGURACIÓN INICIAL (GLOBAL)
 # =========================================================
-# Debe ser lo primero. Ponemos "wide" para que el dashboard se vea bien.
 st.set_page_config(
     page_title="DIABETES.NME", 
     page_icon="🩸", 
@@ -45,7 +44,6 @@ if st.session_state.page == "landing":
         .stApp { background-color: #f0f2f6; }
         #MainMenu, footer { visibility: hidden; }
         
-        /* Contenedor tipo tarjeta para la portada */
         .landing-container {
             background-color: white;
             padding: 3rem;
@@ -118,7 +116,6 @@ if st.session_state.page == "landing":
     </style>
     """, unsafe_allow_html=True)
 
-    # USAMOS COLUMNAS PARA CENTRAR EL CONTENIDO EN MODO WIDE
     col_izq, col_centro, col_der = st.columns([1, 2, 1])
 
     with col_centro:
@@ -162,9 +159,8 @@ if st.session_state.page == "landing":
             </div>
         """, unsafe_allow_html=True)
 
-        st.write("") # Espacio
+        st.write("") 
         
-        # Botón centrado usando columnas internas
         c1, c2, c3 = st.columns([1, 1, 1])
         with c2:
             if st.button("INICIAR SISTEMA"):
@@ -176,7 +172,7 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
-    # --- GRADIENTES SUAVES ---
+    # --- GRADIENTES ---
     BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -194,7 +190,6 @@ elif st.session_state.page == "simulacion":
             margin: 0 auto;
         }}
         
-        /* LOGO PERSONALIZADO */
         .cemp-logo {{ 
             font-family: 'Helvetica', sans-serif; 
             font-weight: 800; 
@@ -204,17 +199,14 @@ elif st.session_state.page == "simulacion":
         }}
         .cemp-logo span {{ color: {CEMP_PINK}; }}
 
-        /* === ESTILO SLIDER === */
         .stSlider {{ padding-top: 0px !important; padding-bottom: 10px !important; }}
 
-        /* === INPUTS BARRA LATERAL === */
         [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
             padding: 0px 5px; font-size: 0.9rem; text-align: center;
             color: {CEMP_DARK}; font-weight: 800; border-radius: 8px;
             background-color: white; border: 1px solid #ddd;
         }}
 
-        /* === CAJA DE CÁLCULOS (SIDEBAR) === */
         .calc-box {{
             background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px;
             border: 1px solid #EEE; margin-top: 5px; margin-bottom: 20px;
@@ -223,7 +215,6 @@ elif st.session_state.page == "simulacion":
         .calc-label {{ font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }}
         .calc-value {{ font-size: 1rem; color: {CEMP_DARK}; font-weight: 800; }}
         
-        /* === TARJETAS === */
         .card {{
             background-color: white; border-radius: 12px; padding: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
@@ -237,7 +228,6 @@ elif st.session_state.page == "simulacion":
             display: flex; align-items: center;
         }}
 
-        /* GRÁFICOS DE BARRAS HTML */
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
         .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; }}
@@ -258,13 +248,6 @@ elif st.session_state.page == "simulacion":
             position: absolute; transform: translateX(-50%); font-size: 0.7rem; 
             color: #888; font-weight: 600; white-space: nowrap;
         }}
-        
-        /* Botón de volver en sidebar */
-        .btn-volver {
-            background-color: transparent; border: 1px solid {CEMP_PINK}; color: {CEMP_PINK};
-            padding: 5px 15px; border-radius: 5px; text-align: center; cursor: pointer;
-            margin-bottom: 20px; display: block; text-decoration: none;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -376,10 +359,10 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
-        # 3. PACIENTE
+        # 3. PACIENTE (CORREGIDO)
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
-         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
+        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
         
         st.markdown("---") 
 
@@ -482,7 +465,7 @@ elif st.session_state.page == "simulacion":
         risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
         risk_border = CEMP_PINK if is_high else GOOD_TEAL
         
-        # ALERTAS (Lógica de Hallazgos)
+        # ALERTAS
         alerts = []
         if glucose >= 200: alerts.append("Posible Diabetes")
         elif glucose >= 140: alerts.append("Posible Prediabetes")

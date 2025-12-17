@@ -119,13 +119,11 @@ st.markdown("""
 
     /* BOTÓN */
     div.stButton > button {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        position: relative;
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
-        padding: 12px 50px;
+        padding: 12px 70px;
         border-radius: 50px;
         font-weight: bold;
         font-size: 14px;
@@ -134,6 +132,16 @@ st.markdown("""
         white-space: nowrap;
         box-shadow: 0 4px 15px rgba(239,112,122,0.3);
         cursor: pointer;
+    }
+
+    /* Flecha como elemento decorativo */
+    div.stButton > button::after {
+        content: "➔";
+        position: absolute;
+        right: 28px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 16px;
     }
 
     div.stButton > button:hover {
@@ -185,10 +193,9 @@ if st.session_state.page == "landing":
         </div>
     """, unsafe_allow_html=True)
 
-    # -------- BOTÓN CENTRADO (SIN DESCENTRAR TEXTO) --------
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("INICIAR SIMULACIÓN ➔"):
+        if st.button("INICIAR SIMULACIÓN"):
             ir_a_simulacion()
             st.rerun()
 

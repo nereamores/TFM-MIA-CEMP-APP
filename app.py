@@ -59,6 +59,14 @@ if 'predict_clicked' not in st.session_state:
 # 2. FUNCIONES AUXILIARES
 # =========================================================
 
+# --- RESTAURADA LA FUNCIÓN QUE FALTABA ---
+def fig_to_html(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
+    buf.seek(0)
+    img_str = base64.b64encode(buf.read()).decode()
+    return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
+
 def fig_to_bytes(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
@@ -305,13 +313,12 @@ elif st.session_state.page == "simulacion":
             letter-spacing: -0.5px;
         }}
         
-        /* Ajuste para la imagen de Streamlit (El relleno del sándwich) */
-        /* Esto intenta conectar visualmente la imagen con los divs, asumiendo fondo blanco */
+        /* Ajuste para que la imagen se vea "dentro" de la tarjeta blanca */
         div[data-testid="stImage"] {{
             background-color: white;
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
-            padding: 0px 20px; /* Padding lateral */
+            padding: 0px 20px;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -658,7 +665,7 @@ elif st.session_state.page == "simulacion":
                 ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
                 center_text = "---"
 
-            chart_html = fig_to_html(fig)
+            chart_html = fig_to_html(fig) # AQUÍ AHORA FUNCIONARÁ CORRECTAMENTE
             plt.close(fig)
             
             prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
@@ -692,7 +699,7 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # 1. PARTE SUPERIOR DE LA TARJETA (HTML BLANCO + TÍTULO)
+            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO)
             st.markdown('<div class="card-top">', unsafe_allow_html=True)
             st.markdown(f'<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -707,7 +714,7 @@ elif st.session_state.page == "simulacion":
                     df_imp = df_imp.sort_values(by='Importancia', ascending=True)
                     
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
-                    fig_imp.patch.set_facecolor('white') # Fondo blanco para integrarse
+                    fig_imp.patch.set_facecolor('white') 
                     ax_imp.set_facecolor('white')
                     
                     bars = ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, alpha=0.8)
@@ -732,7 +739,7 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
             
-            # 3. PARTE INFERIOR DE LA TARJETA (HTML ROSA EXPLICATIVO)
+            # 3. PARTE INFERIOR (HTML ROSA EXPLICATIVO)
             st.markdown("""
             <div class="card-bottom">
                 <strong>Interpretación de Relevancia Global:</strong><br>
@@ -796,7 +803,7 @@ elif st.session_state.page == "simulacion":
             st.markdown(f"""
             <div class="card-bottom">
                 <strong>Interpretación del Resultado:</strong><br>
-                El punto de partida es la "Línea Base" (E[f(x)]), que representa la probabilidad promedio de diabetes en la población. A partir de ahí, las <strong>barras rojas</strong> suman riesgo y las <strong>azules</strong> lo restan. El resultado final es simplemente la suma matemática de estos valores.
+                El análisis parte de una 'Línea Base' (probabilidad promedio de la población, aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final (86.3%) es la suma matemática de la línea base y estas contribuciones individuales.
             </div>
             """, unsafe_allow_html=True)
 

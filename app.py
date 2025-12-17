@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase del modelo AQUÍ ARRIBA para que nunca falle
+# Definimos la clase del modelo AQUÍ para que siempre esté disponible
 class MockModel:
     def predict_proba(self, X):
         # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
@@ -27,6 +27,7 @@ class MockModel:
 if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
+# Estado del botón
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
@@ -40,6 +41,12 @@ def fig_to_html(fig):
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
+
+def fig_to_bytes(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
+    buf.seek(0)
+    return buf
 
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
@@ -157,7 +164,6 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
-    # --- CONSTANTES ---
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50" 
     GOOD_TEAL = "#4DB6AC"
@@ -170,7 +176,6 @@ elif st.session_state.page == "simulacion":
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-    # --- CSS ---
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
@@ -247,7 +252,6 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- INPUTS ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -290,7 +294,6 @@ elif st.session_state.page == "simulacion":
             )
         return st.session_state[key]
 
-    # --- BARRA LATERAL ---
     with st.sidebar:
         if st.button("⬅ Volver"):
             volver_inicio()
@@ -300,7 +303,6 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- INPUTS PACIENTE (MODIFICADO) ---
         st.markdown("**Datos del paciente**")
         patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed")
         
@@ -383,7 +385,6 @@ elif st.session_state.page == "simulacion":
         st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
-    # --- MAIN ---
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
@@ -391,7 +392,6 @@ elif st.session_state.page == "simulacion":
     with tab1:
         st.write("")
         
-        # --- UMBRAL ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
             with c_calib_1:
@@ -406,7 +406,6 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
-                # GRÁFICO NORMAL (SIN CACHÉ)
                 x = np.linspace(-0.15, 1.25, 500)
                 y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                           0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
@@ -431,18 +430,13 @@ elif st.session_state.page == "simulacion":
                 ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
                 ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
                 
-                chart_html_calib = fig_to_html(fig_calib)
-                st.markdown(f"""
-                <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
-                    {chart_html_calib}
-                </div>
-                """, unsafe_allow_html=True)
+                img_bytes = fig_to_bytes(fig_calib)
+                st.image(img_bytes, use_container_width=True)
                 plt.close(fig_calib)
 
-        # --- LÓGICA IA ---
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
         
-        # Recuperación segura del modelo
+        # Recuperación SEGURA del modelo
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
             try:
                 prob = st.session_state.model.predict_proba(input_data)[0][1]
@@ -485,25 +479,17 @@ elif st.session_state.page == "simulacion":
         if not alerts: insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
         else: insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
 
-        # LAYOUT
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
-            # FICHA PACIENTE (LÓGICA SIMPLE)
+            # FICHA PACIENTE - HTML COMPACTADO PARA EVITAR BUGS
             if st.session_state.predict_clicked:
-                badges_html = f"""
-                    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
-                        {risk_icon} {risk_label}
-                    </div>
-                    <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
-                        <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
-                        <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
-                    </div>
-                """
+                badges_html = f"""<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">{risk_icon} {risk_label}</div><div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top:5px;" title="{conf_desc}"><span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span><span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span></div>"""
             else:
-                badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
+                badges_html = """<div style="color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;">Análisis pendiente...</div>"""
 
-            st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
+            st.markdown(f"""
+            <div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
                     <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
                     <div>
@@ -512,12 +498,11 @@ elif st.session_state.page == "simulacion":
                         <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{date_str}</b></div>
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
                     {badges_html}
                 </div>
             </div>""", unsafe_allow_html=True)
 
-            # GRÁFICOS DE BARRAS
             g_pos = min(100, max(0, (glucose - 50) / 3.0)) 
             b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
             
@@ -567,7 +552,6 @@ elif st.session_state.page == "simulacion":
                 st.session_state.predict_clicked = True
                 st.rerun()
 
-            # FIGURA DONUT
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')

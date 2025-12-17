@@ -59,7 +59,6 @@ if 'predict_clicked' not in st.session_state:
 # 2. FUNCIONES AUXILIARES
 # =========================================================
 
-# --- RESTAURADA LA FUNCIÓN QUE FALTABA ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
@@ -205,6 +204,7 @@ elif st.session_state.page == "simulacion":
         <style>
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
+        .stApp {{ background-color: #f0f2f6; }} /* Fondo gris claro para la app */
         .block-container {{
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
@@ -275,25 +275,31 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === ESTILOS TARJETAS UNIFICADAS XAI (ESTRATEGIA SÁNDWICH) === */
+        /* === ESTILOS TARJETAS UNIFICADAS XAI (ESTRATEGIA SÁNDWICH MEJORADA) === */
         /* Parte Superior (Título + Gráfico blanco) */
-        .card-top {{
+        .card-top {
             background-color: white;
             border-top-left-radius: 15px;
             border-top-right-radius: 15px;
-            padding: 25px 25px 5px 25px; /* Menos padding abajo para conectar con la imagen */
+            padding: 25px 25px 0px 25px; /* Sin padding abajo */
+            border-top: 1px solid #eee;
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
-            border-top: 1px solid #eee;
+            /* IMPORTANTE: Sin borde inferior para unir con la imagen */
             text-align: center;
-        }}
+            /* Truco para pegar el bloque siguiente */
+            margin-bottom: -16px; 
+            position: relative;
+            z-index: 10;
+        }
         
         /* Parte Inferior (Texto explicativo) */
-        .card-bottom {{
+        .card-bottom {
             background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK transparente */
             border-bottom-left-radius: 15px;
             border-bottom-right-radius: 15px;
             padding: 20px 25px;
+            /* Borde superior rosa para separar la explicación */
             border-top: 3px solid #E97F87;
             color: #555;
             font-size: 0.9rem;
@@ -303,23 +309,25 @@ elif st.session_state.page == "simulacion":
             border-right: 1px solid #eee;
             border-bottom: 1px solid #eee;
             margin-bottom: 20px;
-        }}
+        }
         
-        .xai-title {{
+        .xai-title {
             color: #2C3E50;
             font-weight: 800;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-size: 1.2rem;
             letter-spacing: -0.5px;
-        }}
+        }
         
-        /* Ajuste para que la imagen se vea "dentro" de la tarjeta blanca */
-        div[data-testid="stImage"] {{
-            background-color: white;
-            border-left: 1px solid #eee;
-            border-right: 1px solid #eee;
-            padding: 0px 20px;
-        }}
+        /* Ajuste CRÍTICO para que la imagen de Streamlit se una al bloque superior */
+        div[data-testid="stBlock"] > div[data-testid="stImage"] {
+             background-color: white;
+             border-left: 1px solid #eee;
+             border-right: 1px solid #eee;
+             padding: 0px 20px;
+             /* Asegura que no haya margen superior que lo separe del título */
+             margin-top: 0px !important; 
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -665,7 +673,7 @@ elif st.session_state.page == "simulacion":
                 ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
                 center_text = "---"
 
-            chart_html = fig_to_html(fig) # AQUÍ AHORA FUNCIONARÁ CORRECTAMENTE
+            chart_html = fig_to_html(fig)
             plt.close(fig)
             
             prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
@@ -699,7 +707,7 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO)
+            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO) - CON MARGEN NEGATIVO
             st.markdown('<div class="card-top">', unsafe_allow_html=True)
             st.markdown(f'<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -749,7 +757,7 @@ elif st.session_state.page == "simulacion":
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO)
+            # 1. PARTE SUPERIOR (HTML BLANCO + TÍTULO) - CON MARGEN NEGATIVO
             st.markdown('<div class="card-top">', unsafe_allow_html=True)
             st.markdown(f'<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)

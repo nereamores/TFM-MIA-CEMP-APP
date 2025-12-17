@@ -59,6 +59,7 @@ if 'predict_clicked' not in st.session_state:
 # 2. FUNCIONES AUXILIARES
 # =========================================================
 
+# --- RESTAURADA LA FUNCIÓN QUE FALTABA ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
@@ -204,7 +205,6 @@ elif st.session_state.page == "simulacion":
         <style>
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
-        .stApp {{ background-color: #f0f2f6; }} /* Fondo gris claro para la app */
         .block-container {{
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
@@ -673,7 +673,7 @@ elif st.session_state.page == "simulacion":
                 ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
                 center_text = "---"
 
-            chart_html = fig_to_html(fig)
+            chart_html = fig_to_html(fig) # AQUÍ AHORA FUNCIONARÁ CORRECTAMENTE
             plt.close(fig)
             
             prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")

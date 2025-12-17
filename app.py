@@ -39,18 +39,16 @@ def ejecutar_prediccion():
 # 3. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
+    # ... (CSS y HTML de la portada se mantienen igual que en la versión anterior)
     st.markdown("""
     <style>
         .stApp { background-color: #f0f2f6; }
         #MainMenu, footer, header { visibility: hidden; }
-        
         .block-container {
             background-color: white; padding: 3rem !important; border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 800px !important;
             margin-top: 2rem; margin-left: auto !important; margin-right: auto !important;
         }
-        
-        /* FUENTE HELVETICA BOLD PARA LOGO */
         h1 {
             text-align: center; font-family: 'Helvetica', sans-serif !important;
             font-weight: 800 !important; font-size: 3.5rem !important;
@@ -59,10 +57,8 @@ if st.session_state.page == "landing":
         }
         h1 a { display: none !important; pointer-events: none !important; }
         h1:hover { color: #2c3e50 !important; text-decoration: none !important; }
-        
         .landing-pink { color: #ef7d86; }
         .landing-gray { color: #bdc3c7; }
-        
         .badge-container { text-align: center; margin-bottom: 10px; }
         .badge {
             background-color: #2c3e50; color: white; padding: 6px 15px;
@@ -87,7 +83,6 @@ if st.session_state.page == "landing":
             color: #555; margin-bottom: 30px; text-align: center;
         }
         .warning-box p { margin: 0; line-height: 1.5; }
-        
         div.stButton > button {
             position: relative; background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
             color: white; border: none; padding: 14px 80px; border-radius: 50px;
@@ -109,7 +104,6 @@ if st.session_state.page == "landing":
     </style>
     """, unsafe_allow_html=True)
 
-    # HTML DE LA PORTADA SIN IDENTACIÓN PARA EVITAR ERRORES
     st.markdown("""
 <div class="badge-container">
 <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
@@ -195,7 +189,7 @@ elif st.session_state.page == "simulacion":
             text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
         }}
 
-        /* Barras */
+        /* Barras Gráficas */
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
         .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; }}
@@ -217,14 +211,15 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* Botón Predecir Redondo y Rosa */
+        /* Estilo específico para el botón PREDECIR redondo y rosa */
         div.stButton.predict-btn > button {{
             background: linear-gradient(90deg, #E97F87 0%, #ef707a 100%) !important;
             color: white !important;
             border-radius: 50px !important;
-            height: 50px !important;
+            height: 60px !important; /* Más alto para que sea más redondo */
             width: 100% !important;
-            font-weight: bold !important;
+            font-size: 1.1rem !important;
+            font-weight: 800 !important;
             border: none !important;
             box-shadow: 0 4px 15px rgba(233, 127, 135, 0.4) !important;
             text-transform: uppercase !important;
@@ -233,6 +228,10 @@ elif st.session_state.page == "simulacion":
         div.stButton.predict-btn > button:hover {{
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(233, 127, 135, 0.6) !important;
+        }}
+        div.stButton.predict-btn > button:active {{
+             transform: translateY(1px);
+             box-shadow: 0 2px 10px rgba(233, 127, 135, 0.4) !important;
         }}
 
         /* Sidebar Inputs */
@@ -303,11 +302,12 @@ elif st.session_state.page == "simulacion":
             st.number_input(
                 label="", min_value=min_val, max_value=max_val, step=step,
                 key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
-                # IMPORTANTE: Formato dinámico según tipo de dato
+                # FORZAMOS FORMATO: ENTEROS PARA GLUCOSA/INSULINA, DECIMALES PARA PESO/ALTURA
                 format="%.2f" if isinstance(default_val, float) else "%d"
             )
         return st.session_state[key]
 
+    # --- BARRA LATERAL (SIDEBAR) ---
     with st.sidebar:
         if st.button("⬅ Volver"):
             volver_inicio()
@@ -316,6 +316,12 @@ elif st.session_state.page == "simulacion":
         st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
+        
+        # --- NUEVOS INPUTS DE PACIENTE EN SIDEBAR ---
+        st.markdown("**Datos del Paciente**")
+        patient_name_input = st.text_input("Nombre / ID", value="Paciente #8842-X", label_visibility="collapsed")
+        patient_date_input = st.date_input("Fecha Revisión", datetime.date.today(), label_visibility="collapsed")
+        st.markdown("---")
         
         # 1. METABÓLICOS (ENTEROS)
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h.")
@@ -351,7 +357,7 @@ elif st.session_state.page == "simulacion":
         """, unsafe_allow_html=True)
         st.markdown("---") 
 
-        # 3. PACIENTE
+        # 3. PACIENTE DEMOGRÁFICO
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
@@ -384,7 +390,7 @@ elif st.session_state.page == "simulacion":
     with tab1:
         st.write("")
         
-        # LOGICA (Cálculo)
+        # CÁLCULO PREVIO (Necesario para lógica, aunque no se muestre todavía)
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
         prob = st.session_state.model.predict_proba(input_data)[0][1]
         
@@ -402,42 +408,34 @@ elif st.session_state.page == "simulacion":
         # --- LAYOUT DOS COLUMNAS ---
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
+        # --- COLUMNA IZQUIERDA ---
         with c_left:
-            # --- TARJETA EXPEDIENTE (Input de usuario incrustado) ---
-            with st.container():
-                st.markdown("""<div class="card-container">""", unsafe_allow_html=True)
-                
-                # Header Tarjeta
-                st.markdown(f"""
-                    <div style="display:flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px; width: 100%;">
-                            <div style="background:rgba(233, 127, 135, 0.1); width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:{CEMP_DARK}; flex-shrink: 0;">👤</div>
-                            <div style="width: 100%;">
-                                <span style="color:#999; font-size:0.75rem; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">EXPEDIENTE MÉDICO</span>
-                            </div>
-                        </div>
-                """, unsafe_allow_html=True)
-                
-                # Badge de Riesgo (SOLO SI PREDICT = TRUE)
-                if st.session_state.prediction_run:
-                    st.markdown(f"""
-                        <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.8rem; padding:5px 12px; border-radius:20px; white-space: nowrap;">
-                            {risk_icon} {risk_label}
-                        </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True) # Cierre flex header
+            # TARJETA EXPEDIENTE (Visualización limpia de los datos del sidebar)
+            # Preparamos el HTML del badge solo si ya se ha ejecutado la predicción
+            risk_badge_html = ""
+            if st.session_state.prediction_run:
+                risk_badge_html = f"""
+                <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+                    {risk_icon} {risk_label}
+                </div>
+                """
+            
+            # Usamos las variables del sidebar (patient_name_input, patient_date_input)
+            st.markdown(f"""<div class="card-container" style="flex-direction:row; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
+                    <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
+                    <div>
+                        <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
+                        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">{patient_name_input}</h2>
+                        <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{patient_date_input.strftime('%d %b %Y')}</b></div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    {risk_badge_html}
+                </div>
+            </div>""", unsafe_allow_html=True)
 
-                # INPUTS DE TEXTO Y FECHA
-                col_n, col_d = st.columns([2, 1])
-                with col_n:
-                    st.text_input("Nombre", value="Paciente #8842-X", label_visibility="collapsed", placeholder="Nombre del paciente")
-                with col_d:
-                    st.date_input("Fecha", datetime.date.today(), label_visibility="collapsed")
-                
-                st.markdown("</div>", unsafe_allow_html=True) # Cierre tarjeta
-
-            # --- CONTEXTO POBLACIONAL ---
+            # TARJETA CONTEXTO POBLACIONAL
             g_pos = min(100, max(0, (glucose - 50) / 3.0)) 
             b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
             st.markdown(f"""<div class="card-container">
@@ -473,10 +471,10 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
 
+        # --- COLUMNA DERECHA ---
         with c_right:
-            # --- HALLAZGOS CLAVE (Solo visible tras predecir) ---
+            # TARJETA HALLAZGOS CLAVE (Condicional)
             if st.session_state.prediction_run:
-                # Logica Alertas
                 alerts = []
                 if glucose >= 200: alerts.append("Posible Diabetes")
                 elif glucose >= 140: alerts.append("Posible Prediabetes")
@@ -484,12 +482,10 @@ elif st.session_state.page == "simulacion":
                 elif bmi >= 30: alerts.append("Obesidad")
                 if proxy_index > 19769.5: alerts.append("Resistencia Insulina")
                 
-                if not alerts:
-                    insight_txt, alert_icon = "Sin hallazgos significativos", "✅"
-                else:
-                    insight_txt, alert_icon = " • ".join(alerts), "⚠️"
+                if not alerts: insight_txt, alert_icon = "Sin hallazgos significativos", "✅"
+                else: insight_txt, alert_icon = " • ".join(alerts), "⚠️"
 
-                st.markdown(f"""<div class="card-container card-auto" style="border-left:5px solid {insight_bd if 'insight_bd' in locals() else CEMP_PINK}; justify-content:center;">
+                st.markdown(f"""<div class="card-container card-auto" style="border-left:5px solid {CEMP_PINK}; justify-content:center;">
                     <span class="card-header" style="color:{CEMP_PINK}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h3 style="margin:0; color:{CEMP_DARK}; font-size:1.1rem; line-height:1.4;">{insight_txt}</h3>
@@ -497,25 +493,25 @@ elif st.session_state.page == "simulacion":
                     </div>
                 </div>""", unsafe_allow_html=True)
             else:
-                # Espacio vacío para mantener estructura
-                st.markdown(f"""<div class="card-container card-auto" style="border:1px dashed #eee; justify-content:center; align-items:center;">
-                    <span style="color:#ccc;">Análisis pendiente...</span>
-                </div>""", unsafe_allow_html=True)
+                # Placeholder invisible para mantener la estructura
+                 st.markdown(f"""<div class="card-container card-auto" style="visibility: hidden; height: 100px;"></div>""", unsafe_allow_html=True)
 
-            # --- PROBABILIDAD IA (Con Botón o Gráfico) ---
+
+            # TARJETA PROBABILIDAD IA (Contiene el BOTÓN o el GRÁFICO)
             st.markdown(f"""<div class="card-container" style="text-align:center; justify-content: center;">
                 <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA</span>""", unsafe_allow_html=True)
             
             if not st.session_state.prediction_run:
-                # BOTÓN PREDECIR
-                st.markdown('<div style="margin: 20px 0;">', unsafe_allow_html=True)
-                # Clase CSS 'predict-btn' definida arriba para estilo rosa y redondo
-                if st.button("PREDECIR RIESGO", key="btn_predict", type="primary"):
+                # --- ESTADO INICIAL: MOSTRAR BOTÓN PREDECIR ---
+                st.markdown('<div style="margin: 30px 0;">', unsafe_allow_html=True)
+                # Usamos una clave única para el botón y la clase CSS personalizada 'predict-btn'
+                if st.button("PREDECIR RIESGO", key="btn_predict_main", type="primary"):
                     ejecutar_prediccion()
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
+                st.caption("Configure los parámetros en la barra lateral y pulse para analizar.")
             else:
-                # GRÁFICO
+                # --- ESTADO PREDICHO: MOSTRAR GRÁFICO ---
                 fig, ax = plt.subplots(figsize=(3.2, 3.2))
                 fig.patch.set_facecolor('none')
                 ax.set_facecolor('none')
@@ -543,7 +539,7 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True) # Cierre tarjeta Probabilidad
 
     with tab2:
         if st.session_state.prediction_run:

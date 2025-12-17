@@ -86,12 +86,14 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # --- CENTRADO DEL BOTÓN CON COLUMNAS (ESTABLE Y EXACTO) ---
-    col1, col2, col3 = st.columns([1, 2, 1])  # columna central el doble de ancho
+    # --- CENTRADO DEL BOTÓN CON PEQUEÑO DESPLAZAMIENTO A LA DERECHA ---
+    col1, col2, col3 = st.columns([1, 2, 1])  # columna central más ancha
     with col2:
+        st.markdown('<div style="display:flex; justify-content:flex-start; margin-left:20px;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN ➔"):
             ir_a_simulacion()
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # Página simulación
 elif st.session_state.page == 'simulacion':

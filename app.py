@@ -59,7 +59,6 @@ if 'predict_clicked' not in st.session_state:
 # 2. FUNCIONES AUXILIARES
 # =========================================================
 
-# --- RESTAURADA LA FUNCIÓN QUE FALTABA ---
 def fig_to_html(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
@@ -277,11 +276,11 @@ elif st.session_state.page == "simulacion":
         
         /* === ESTILOS TARJETAS UNIFICADAS XAI (ESTRATEGIA SÁNDWICH MEJORADA) === */
         /* Parte Superior (Título + Gráfico blanco) */
-        .card-top {
+        .card-top {{
             background-color: white;
             border-top-left-radius: 15px;
             border-top-right-radius: 15px;
-            padding: 25px 25px 0px 25px; /* Sin padding abajo */
+            padding: 25px 25px 0px 25px; /* Sin padding abajo para conectar con la imagen */
             border-top: 1px solid #eee;
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
@@ -291,10 +290,10 @@ elif st.session_state.page == "simulacion":
             margin-bottom: -16px; 
             position: relative;
             z-index: 10;
-        }
+        }}
         
         /* Parte Inferior (Texto explicativo) */
-        .card-bottom {
+        .card-bottom {{
             background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK transparente */
             border-bottom-left-radius: 15px;
             border-bottom-right-radius: 15px;
@@ -309,25 +308,25 @@ elif st.session_state.page == "simulacion":
             border-right: 1px solid #eee;
             border-bottom: 1px solid #eee;
             margin-bottom: 20px;
-        }
+        }}
         
-        .xai-title {
+        .xai-title {{
             color: #2C3E50;
             font-weight: 800;
             margin-bottom: 15px;
             font-size: 1.2rem;
             letter-spacing: -0.5px;
-        }
+        }}
         
         /* Ajuste CRÍTICO para que la imagen de Streamlit se una al bloque superior */
-        div[data-testid="stBlock"] > div[data-testid="stImage"] {
+        div[data-testid="stBlock"] > div[data-testid="stImage"] {{
              background-color: white;
              border-left: 1px solid #eee;
              border-right: 1px solid #eee;
              padding: 0px 20px;
              /* Asegura que no haya margen superior que lo separe del título */
              margin-top: 0px !important; 
-        }
+        }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -673,7 +672,7 @@ elif st.session_state.page == "simulacion":
                 ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
                 center_text = "---"
 
-            chart_html = fig_to_html(fig) # AQUÍ AHORA FUNCIONARÁ CORRECTAMENTE
+            chart_html = fig_to_html(fig) # USA LA FUNCIÓN QUE FALTABA
             plt.close(fig)
             
             prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")

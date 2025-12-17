@@ -60,6 +60,13 @@ if 'predict_clicked' not in st.session_state:
 # 2. FUNCIONES AUXILIARES
 # =========================================================
 
+def fig_to_html(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
+    buf.seek(0)
+    img_str = base64.b64encode(buf.read()).decode()
+    return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
+
 def fig_to_bytes(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
@@ -240,7 +247,7 @@ elif st.session_state.page == "simulacion":
             font-size: 1rem; color: {CEMP_DARK}; font-weight: 800;
         }}
         
-        /* ESTILOS DE TARJETAS */
+        /* ESTILOS DE TARJETAS (SIMULACIÓN Y GENERAL) */
         .card {{
             background-color: white; border-radius: 12px; padding: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
@@ -301,8 +308,12 @@ elif st.session_state.page == "simulacion":
         
         c1, c2 = st.columns([2.5, 1], gap="small")
         input_type = type(default_val)
-        min_val = input_type(min_val)
-        max_val = input_type(max_val)
+        
+        # AJUSTE PARA EVITAR ERROR 'ValueBelowMinError'
+        # Usamos 0 como mínimo técnico en el input para permitir inicialización
+        # aunque el slider tenga otro rango lógico.
+        tech_min = 0
+        
         step = 0.1 if input_type == float else 1
 
         if format_str is None:
@@ -331,7 +342,7 @@ elif st.session_state.page == "simulacion":
             )
         with c2:
             st.number_input(
-                label="", min_value=min_val, max_value=max_val, step=step,
+                label="", min_value=tech_min, max_value=max_val, step=step,
                 key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
                 format=format_str 
             )
@@ -362,6 +373,7 @@ elif st.session_state.page == "simulacion":
         st.markdown("---")
         
         # 1. GLUCOSA E INSULINA
+        # Inicializamos en 50 para Glucosa para cumplir con el mínimo lógico visual, pero el input técnico permite 0
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
@@ -378,8 +390,8 @@ elif st.session_state.page == "simulacion":
         </div>
         """, unsafe_allow_html=True)
 
-        # 3. PRESIÓN ARTERIAL (AHORA)
-        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
+        # 3. PRESIÓN ARTERIAL (AHORA DESPUÉS)
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica (mm Hg).", format_str="%d")
 
         st.markdown("---") 
 
@@ -409,11 +421,11 @@ elif st.session_state.page == "simulacion":
 
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 18, "age", format_str="%d")
-        pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
+        pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
         
         st.markdown("---") 
 
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Función de pedigrí de diabetes.")
+        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Estimación de predisposición genética por historial familiar.")
 
         if dpf <= 0.15:
             dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL

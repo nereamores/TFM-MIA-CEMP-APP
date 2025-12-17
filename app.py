@@ -1,29 +1,29 @@
 import streamlit as st
 
-# -----------------------------
+# =========================================================
 # Configuración de página
-# -----------------------------
+# =========================================================
 st.set_page_config(
     page_title="Diabetes NME",
     page_icon="🩸",
     layout="centered"
 )
 
-# -----------------------------
+# =========================================================
 # Estado de navegación
-# -----------------------------
-if 'page' not in st.session_state:
-    st.session_state.page = 'landing'
+# =========================================================
+if "page" not in st.session_state:
+    st.session_state.page = "landing"
 
 def ir_a_simulacion():
-    st.session_state.page = 'simulacion'
+    st.session_state.page = "simulacion"
 
 def volver_inicio():
-    st.session_state.page = 'landing'
+    st.session_state.page = "landing"
 
-# -----------------------------
-# CSS global
-# -----------------------------
+# =========================================================
+# CSS GLOBAL
+# =========================================================
 st.markdown("""
 <style>
     .stApp {
@@ -45,7 +45,7 @@ st.markdown("""
 
     h1 {
         text-align: center;
-        font-family: 'Arial', sans-serif;
+        font-family: Arial, sans-serif;
         font-weight: 900 !important;
         font-size: 3.5rem !important;
         color: #2c3e50;
@@ -117,7 +117,6 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* Estilo del botón */
     div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
@@ -138,19 +137,13 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(239,112,122,0.5);
         color: white;
     }
-
-    /* 🔥 Centrado real del botón */
-    div.stButton {
-        display: flex;
-        justify-content: center;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------
-# Landing page
-# -----------------------------
-if st.session_state.page == 'landing':
+# =========================================================
+# LANDING PAGE
+# =========================================================
+if st.session_state.page == "landing":
 
     st.markdown("""
         <div class="badge-container">
@@ -176,28 +169,31 @@ if st.session_state.page == 'landing':
         </p>
 
         <div class="warning-box">
-            <p>
-                <strong>
-                    Aplicación desarrollada con fines exclusivamente educativos como parte
-                    de un Trabajo de Fin de Máster.
-                </strong>
-            </p>
+            <p><strong>
+                Aplicación desarrollada con fines exclusivamente educativos como parte de
+                un Trabajo de Fin de Máster.
+            </strong></p>
             <p style="margin-top:10px;">
                 ⚠️ Esta herramienta NO es un dispositivo médico certificado.
-                Los resultados son una simulación académica y NO deben utilizarse para
-                el diagnóstico real, tratamiento o toma de decisiones clínicas.
+                Los resultados son una simulación académica y NO deben utilizarse para el
+                diagnóstico real, tratamiento o toma de decisiones clínicas.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-    if st.button("INICIAR SIMULACIÓN ➔"):
-        ir_a_simulacion()
-        st.rerun()
+    # -------- BOTÓN CENTRADO CON COLUMNAS --------
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
+        if st.button("INICIAR SIMULACIÓN ➔"):
+            ir_a_simulacion()
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-# -----------------------------
-# Página de simulación
-# -----------------------------
-elif st.session_state.page == 'simulacion':
+# =========================================================
+# PÁGINA DE SIMULACIÓN
+# =========================================================
+elif st.session_state.page == "simulacion":
 
     if st.button("⬅ Volver"):
         volver_inicio()
@@ -215,6 +211,5 @@ elif st.session_state.page == 'simulacion':
         c2.selectbox("Antecedentes", ["Sí", "No"])
 
         submitted = st.form_submit_button("Ejecutar Predicción")
-
         if submitted:
             st.success("Procesando...")

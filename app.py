@@ -7,7 +7,7 @@ import base64
 import datetime
 
 # =========================================================
-# 1. CONFIGURACIÓN GLOBAL Y CLASES (CRÍTICO: AL PRINCIPIO)
+# 1. CONFIGURACIÓN Y CLASES (GLOBAL)
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -15,24 +15,23 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase AQUÍ para evitar errores de Session State
+# Definimos la clase del modelo aquí arriba para que nunca se pierda
 class MockModel:
     def predict_proba(self, X):
-        # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
+        # Simulación matemática simple
         score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicialización segura del modelo
+# Inicialización segura del estado
 if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
-# Inicialización del estado del botón
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
 # =========================================================
-# 2. FUNCIONES HELPER (IMÁGENES Y HTML)
+# 2. FUNCIONES AUXILIARES (SOLO GRÁFICOS)
 # =========================================================
 
 def fig_to_html(fig):
@@ -43,6 +42,7 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
+    # Para usar con st.image (más estable)
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -50,41 +50,6 @@ def fig_to_bytes(fig):
 
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
-
-# --- GRÁFICO SENSIBILIDAD (USAMOS ST.IMAGE PARA ESTABILIDAD) ---
-@st.cache_data(show_spinner=False)
-def get_calibration_plot_image(threshold_val):
-    CEMP_PINK = "#E97F87"
-    CEMP_DARK = "#2C3E50"
-    OPTIMAL_GREEN = "#8BC34A"
-    
-    x = np.linspace(-0.15, 1.25, 500)
-    y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
-              0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-    y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
-                 1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
-    
-    fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
-    fig_calib.patch.set_facecolor('none')
-    ax_calib.set_facecolor('none')
-    ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
-    ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
-    ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
-    ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
-    ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
-    ax_calib.axvline(threshold_val, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
-    ax_calib.set_yticks([])
-    ax_calib.set_xlim(-0.2, 1.25)
-    ax_calib.spines['top'].set_visible(False)
-    ax_calib.spines['right'].set_visible(False)
-    ax_calib.spines['bottom'].set_visible(False)
-    ax_calib.spines['left'].set_visible(False)
-    ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
-    ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
-    
-    img_bytes = fig_to_bytes(fig_calib)
-    plt.close(fig_calib)
-    return img_bytes
 
 # =========================================================
 # 3. NAVEGACIÓN
@@ -102,6 +67,7 @@ def volver_inicio():
 # 4. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
+    # CSS Portada
     st.markdown("""
     <style>
         .stApp { background-color: #f0f2f6; }
@@ -174,6 +140,7 @@ if st.session_state.page == "landing":
     </style>
     """, unsafe_allow_html=True)
 
+    # HTML Portada
     st.markdown("""
 <div class="badge-container">
 <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
@@ -270,11 +237,7 @@ elif st.session_state.page == "simulacion":
         }}
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
-        
-        .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
-        .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
-        .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
-
+        .bar-fill {{ height: 100%; width: 100%; border-radius: 6px; opacity: 1; }}
         .bar-marker {{ 
             position: absolute; top: -6px; width: 4px; height: 24px; 
             background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
@@ -293,7 +256,7 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- INPUTS ---
+    # --- INPUT HELPER ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -346,12 +309,11 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- CAMBIOS SOLICITADOS EN TEXTOS ---
+        # --- INPUTS PACIENTE (MODIFICADO) ---
         st.markdown("**Datos del paciente**")
         patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed")
         
         default_date = datetime.date.today()
-        # Etiqueta modificada
         consult_date = st.date_input("Fecha Predicción", value=default_date, label_visibility="collapsed")
         
         meses_es = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 
@@ -430,7 +392,7 @@ elif st.session_state.page == "simulacion":
         st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
-    # --- MAIN ---
+    # --- CONTENIDO PRINCIPAL ---
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
@@ -438,6 +400,7 @@ elif st.session_state.page == "simulacion":
     with tab1:
         st.write("")
         
+        # --- UMBRAL ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
             with c_calib_1:
@@ -452,11 +415,37 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
-                # USO DE ST.IMAGE PARA EL GRÁFICO PESADO
-                img_bytes = get_calibration_plot_image(threshold)
+                # Generamos gráfico al vuelo (sin caché para evitar errores de contexto)
+                x = np.linspace(-0.15, 1.25, 500)
+                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
+                          0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
+                             1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
+                
+                fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
+                fig_calib.patch.set_facecolor('none')
+                ax_calib.set_facecolor('none')
+                ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
+                ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
+                ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
+                ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
+                ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
+                ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
+                ax_calib.set_yticks([])
+                ax_calib.set_xlim(-0.2, 1.25)
+                ax_calib.spines['top'].set_visible(False)
+                ax_calib.spines['right'].set_visible(False)
+                ax_calib.spines['bottom'].set_visible(False)
+                ax_calib.spines['left'].set_visible(False)
+                ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
+                ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
+                
+                # Usar st.image con bytes para mejor rendimiento visual que HTML
+                img_bytes = fig_to_bytes(fig_calib)
                 st.image(img_bytes, use_container_width=True)
+                plt.close(fig_calib)
 
-        # LÓGICA IA
+        # --- LÓGICA IA ---
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
         
         # Recuperación segura del modelo
@@ -506,7 +495,7 @@ elif st.session_state.page == "simulacion":
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
-            # FICHA PACIENTE (SIN CACHÉ PARA EVITAR BUGS DE HTML)
+            # FICHA PACIENTE (Construimos HTML aquí mismo para asegurar unsafe_allow_html)
             if st.session_state.predict_clicked:
                 badges_html = f"""
                     <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
@@ -543,7 +532,7 @@ elif st.session_state.page == "simulacion":
                 <div style="margin-top:15px;">
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA 2H (TEST TOLERANCIA) <span style="font-weight:normal">({glucose} mg/dL)</span></div>
                     <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill-glucose"></div></div>
+                        <div class="bar-bg"><div class="bar-fill" style="background: {GLUCOSE_GRADIENT};"></div></div>
                         <div class="bar-marker" style="left: {g_pos}%;"></div>
                         <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                     </div>
@@ -556,7 +545,7 @@ elif st.session_state.page == "simulacion":
                 <div style="margin-top:35px;">
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
                     <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill-bmi"></div></div>
+                        <div class="bar-bg"><div class="bar-fill" style="background: {BMI_GRADIENT};"></div></div>
                         <div class="bar-marker" style="left: {b_pos}%;"></div>
                         <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
                     </div>

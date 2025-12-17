@@ -222,7 +222,7 @@ if st.session_state.page == "landing":
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         # Observa: mantenemos st.button para que Streamlit maneje el estado correctamente
-        if st.button("INICIAR SIMULACIÓN"):
+        if st.button("INICIAR          "):
             ir_a_simulacion()
             st.rerun()
 

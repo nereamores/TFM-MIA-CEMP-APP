@@ -27,7 +27,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA (DISEÑO PERFECTO)
+# 3. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
 
@@ -53,7 +53,7 @@ if st.session_state.page == "landing":
             margin-right: auto !important;
         }
 
-        /* TÍTULO PRINCIPAL - HELVETICA BOLD (Punto Cuadrado) */
+        /* TÍTULO PRINCIPAL - HELVETICA BOLD */
         h1 {
             text-align: center;
             font-family: 'Helvetica', sans-serif !important;
@@ -66,7 +66,7 @@ if st.session_state.page == "landing":
             cursor: default;
         }
 
-        /* Ocultar enlace automático de Streamlit en el título */
+        /* Ocultar enlace automático */
         h1 a {
             display: none !important;
             pointer-events: none !important;
@@ -179,7 +179,7 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 4. PÁGINA: SIMULACIÓN (DASHBOARD COMPLETO)
+# 4. PÁGINA: SIMULACIÓN
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -346,6 +346,7 @@ elif st.session_state.page == "simulacion":
             st.number_input(
                 label="", min_value=min_val, max_value=max_val, step=step,
                 key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
+                # FORZAMOS FORMATO: ENTEROS PARA GLUCOSA/INSULINA, DECIMALES PARA PESO/ALTURA
                 format="%.2f" if isinstance(default_val, float) else "%d"
             )
         return st.session_state[key]
@@ -359,6 +360,7 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
+        # GLUCOSA E INSULINA AHORA SON ENTEROS (ints)
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h.")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.")
         
@@ -367,12 +369,13 @@ elif st.session_state.page == "simulacion":
         <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span class="calc-label">Índice RI (Glu x Ins)</span>
-                <span class="calc-value">{proxy_index:.2f}</span>
+                <span class="calc-value">{proxy_index:.0f}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
         st.markdown("---") 
 
+        # PESO Y ALTURA SIGUEN SIENDO FLOATS
         weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
         height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
         bmi = weight / (height * height)

@@ -17,7 +17,7 @@ def ir_a_simulacion():
 def volver_inicio():
     st.session_state.page = 'landing'
 
-# 3. CSS A MEDIDA (Actualizado para el título y centrado del botón)
+# 3. CSS A MEDIDA (Corregido para centrado absoluto y negritas)
 st.markdown("""
 <style>
     /* --- ESTRUCTURA GENERAL --- */
@@ -37,28 +37,23 @@ st.markdown("""
         margin-top: 2rem;
     }
 
-    /* --- TIPOGRAFÍA DEL TÍTULO (Branding específico) --- */
+    /* --- TIPOGRAFÍA DEL TÍTULO --- */
     h1 {
         text-align: center;
         font-family: 'Arial', sans-serif;
         font-weight: 900 !important;
         font-size: 3.5rem !important;
-        color: #2c3e50; /* Color gris oscuro base (D...BETES) */
+        color: #2c3e50;
         margin-bottom: 0 !important;
         padding: 0 !important;
         line-height: 1.2 !important;
     }
 
-    /* Clases para los colores intercalados */
-    .landing-pink {
-        color: #ef7d86; /* Rosa salmón */
-    }
-    
-    .landing-gray {
-        color: #bdc3c7; /* Gris suave para el punto, o usa #2c3e50 si lo quieres oscuro */
-    }
+    /* Colores específicos del logo */
+    .landing-pink { color: #ef7d86; }
+    .landing-gray { color: #bdc3c7; }
 
-    /* --- RESTO DE TEXTOS --- */
+    /* --- TEXTOS --- */
     .badge-container { text-align: center; margin-bottom: 10px; }
     
     .badge {
@@ -109,31 +104,33 @@ st.markdown("""
         border-radius: 4px;
         font-size: 0.85rem;
         color: #555;
-        margin-bottom: 35px; /* Separación con el botón */
+        margin-bottom: 35px;
         text-align: center;
     }
     
-    .warning-text-sm {
+    /* Clase específica para el texto que querías en negrita */
+    .warning-text-bold {
         display: block;
         margin-bottom: 10px;
-        color: #777;
+        color: #555; /* Un poco más oscuro para que resalte la negrita */
+        font-weight: 700; /* Negrita */
     }
 
-    /* --- BOTÓN CENTRADO (LA SOLUCIÓN DEFINITIVA) --- */
+    /* --- BOTÓN CENTRADO (CORRECCIÓN FINAL) --- */
     
-    /* 1. Forzamos al contenedor del botón a usar Flexbox para centrar su contenido */
-    div.stButton {
-        display: flex;
-        justify-content: center;
-        width: 100%;
+    /* 1. Apuntamos al contenedor DIV que Streamlit crea alrededor del botón */
+    .stButton {
+        display: flex; /* Usamos Flexbox */
+        justify-content: center; /* Alineación horizontal al centro */
+        width: 100%; /* Aseguramos que el contenedor ocupe todo el ancho disponible */
     }
 
-    /* 2. Estilo visual del botón */
-    div.stButton > button {
+    /* 2. Estilo del botón en sí */
+    .stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
-        padding: 12px 40px;
+        padding: 12px 50px; /* Un poco más ancho el padding */
         border-radius: 50px;
         font-weight: bold;
         font-size: 14px;
@@ -141,9 +138,13 @@ st.markdown("""
         letter-spacing: 1px;
         box-shadow: 0 4px 15px rgba(239, 112, 122, 0.3);
         transition: all 0.3s ease;
+        
+        /* IMPORTANTE: Evita que el botón se estire al 100% */
+        width: auto !important; 
+        display: inline-block;
     }
 
-    div.stButton > button:hover {
+    .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(239, 112, 122, 0.5);
         color: white;
@@ -175,13 +176,14 @@ if st.session_state.page == 'landing':
         </p>
 
         <div class="warning-box">
-            <span class="warning-text-sm">Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</span>
+            <span class="warning-text-bold">Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</span>
+            
             <strong>⚠️ Esta herramienta NO es un dispositivo médico certificado.</strong> Los resultados son una simulación académica y NO deben 
             utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN DE ACCIÓN (Ahora centrado gracias al CSS Flexbox)
+    # BOTÓN DE ACCIÓN (Ahora centrado perfectamente)
     if st.button("INICIAR SIMULACIÓN ➔"):
         ir_a_simulacion()
         st.rerun()

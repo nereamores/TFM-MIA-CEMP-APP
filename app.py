@@ -184,6 +184,10 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
+    # --- INICIALIZAR ESTADO DE PREDICCIÓN ---
+    if 'predict_clicked' not in st.session_state:
+        st.session_state.predict_clicked = False
+
     # --- 2. COLORES ---
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50" # Azul muy oscuro
@@ -198,7 +202,6 @@ elif st.session_state.page == "simulacion":
     BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
 
     # GLUCOSA (Escala 50-350)
-    # Cortes visuales ajustados: Verde hasta 140, Amarillo 140-200, Rojo >200
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 
     # Genérico (Riesgo)
@@ -404,16 +407,17 @@ elif st.session_state.page == "simulacion":
         max_val = input_type(max_val)
         step = 0.1 if input_type == float else 1
 
-        # Si no se especifica formato, determinamos por tipo de valor por defecto
         if format_str is None:
             format_str = "%.2f" if input_type == float else "%d"
 
         if key not in st.session_state:
             st.session_state[key] = default_val
 
+        # Modificado: Resetear predicción al cambiar valores
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
+            st.session_state.predict_clicked = False # Resetear estado
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
@@ -421,6 +425,7 @@ elif st.session_state.page == "simulacion":
             if val > max_val: val = max_val
             st.session_state[key] = val
             st.session_state[f"{key}_slider"] = val 
+            st.session_state.predict_clicked = False # Resetear estado
 
         with c1:
             st.slider(
@@ -431,7 +436,7 @@ elif st.session_state.page == "simulacion":
             st.number_input(
                 label="", min_value=min_val, max_value=max_val, step=step,
                 key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
-                format=format_str # FORMATO APLICADO AQUÍ
+                format=format_str 
             )
         return st.session_state[key]
 
@@ -449,11 +454,9 @@ elif st.session_state.page == "simulacion":
         st.markdown("**Datos del paciente**")
         patient_name = st.text_input("ID / Nombre", value="Paciente #8842-X", label_visibility="collapsed")
         
-        # Fecha por defecto: HOY
         default_date = datetime.date.today()
         consult_date = st.date_input("Fecha", value=default_date, label_visibility="collapsed")
         
-        # Formato para la tarjeta
         meses_es = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 
                     7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
         date_str = f"{consult_date.day} {meses_es[consult_date.month]} {consult_date.year}"
@@ -461,12 +464,10 @@ elif st.session_state.page == "simulacion":
         st.markdown("---")
         
         # 1. METABÓLICOS
-        # Format_str="%d" asegura que NO haya comas ni decimales
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
         proxy_index = int(glucose * insulin)
-        # Convertimos a string directamente para evitar el formateo automático de Streamlit con comas
         proxy_str = f"{proxy_index}" 
 
         st.markdown(f"""
@@ -481,7 +482,6 @@ elif st.session_state.page == "simulacion":
         st.markdown("---") 
 
         # 2. ANTROPOMÉTRICOS
-        # Estos usan float, por defecto usarán %.2f (con punto)
         weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
         height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
         
@@ -505,7 +505,6 @@ elif st.session_state.page == "simulacion":
 
         # 3. PACIENTE
         c_age, c_preg = st.columns(2)
-        # Format_str="%d" para enteros sin comas
         age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
         
@@ -655,6 +654,25 @@ elif st.session_state.page == "simulacion":
         
         # IZQUIERDA
         with c_left:
+            
+            # LÓGICA CONDICIONAL PARA MOSTRAR RIESGO/FIABILIDAD
+            if st.session_state.predict_clicked:
+                badges_html = f"""
+                    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+                        {risk_icon} {risk_label}
+                    </div>
+                    <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
+                        <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
+                        <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
+                    </div>
+                """
+            else:
+                badges_html = """
+                    <div style="color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;">
+                        Análisis pendiente...
+                    </div>
+                """
+
             # FICHA PACIENTE 
             st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
@@ -666,13 +684,7 @@ elif st.session_state.page == "simulacion":
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-                    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
-                        {risk_icon} {risk_label}
-                    </div>
-                    <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
-                        <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
-                        <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
-                    </div>
+                    {badges_html}
                 </div>
             </div>""", unsafe_allow_html=True)
 
@@ -722,21 +734,34 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            # FIGURA CON LÍNEA DE UMBRAL
+            # --- BOTÓN DE PREDICCIÓN ---
+            if st.button("✨ ANALIZAR RIESGO", use_container_width=True, type="primary"):
+                st.session_state.predict_clicked = True
+                st.rerun()
+
+            # FIGURA CON LÍNEA DE UMBRAL (CONDICIONAL)
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
-            ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
-            
-            # LÍNEA DEL UMBRAL
-            threshold_angle = 90 - (threshold * 360)
-            theta_rad = np.deg2rad(threshold_angle)
-            x1 = 0.85 * np.cos(theta_rad)
-            y1 = 0.85 * np.sin(theta_rad)
-            x2 = 1.15 * np.cos(theta_rad)
-            y2 = 1.15 * np.sin(theta_rad)
-            ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
-            
+
+            if st.session_state.predict_clicked:
+                # GRAFICO REAL
+                ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+                # LÍNEA DEL UMBRAL
+                threshold_angle = 90 - (threshold * 360)
+                theta_rad = np.deg2rad(threshold_angle)
+                x1 = 0.85 * np.cos(theta_rad)
+                y1 = 0.85 * np.sin(theta_rad)
+                x2 = 1.15 * np.cos(theta_rad)
+                y2 = 1.15 * np.sin(theta_rad)
+                ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
+                
+                center_text = f"{prob*100:.1f}%"
+            else:
+                # GRAFICO VACÍO (Placeholder)
+                ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+                center_text = "---"
+
             chart_html = fig_to_html(fig)
             plt.close(fig)
 
@@ -747,7 +772,7 @@ elif st.session_state.page == "simulacion":
                 <div style="position:relative; display:inline-block; margin: auto;">
                     {chart_html}
                     <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
-                        {prob*100:.1f}%
+                        {center_text}
                     </div>
                 </div>
                 <div style="margin-top: 8px; font-size: 0.65rem; color: #999; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">

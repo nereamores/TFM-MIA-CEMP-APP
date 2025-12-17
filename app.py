@@ -8,7 +8,7 @@ import datetime
 import joblib
 import os
 
-# Intentamos importar SHAP, si falla no romperemos la app
+# Intentamos importar SHAP de forma segura
 try:
     import shap
     SHAP_AVAILABLE = True
@@ -27,8 +27,8 @@ st.set_page_config(
 # Definimos la clase del modelo AQUÍ para evitar errores
 class MockModel:
     def predict_proba(self, X):
-        # Simulación simple por si falla la carga real
-        score = (X[0][1]*0.5) + (X[0][4]*0.4) + (X[0][6]*0.1) 
+        # Simulación simple
+        score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
@@ -341,6 +341,7 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
+        # AJUSTE VALORES POR DEFECTO PARA EVITAR ERROR (Min=50 -> Default=50)
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
@@ -467,7 +468,7 @@ elif st.session_state.page == "simulacion":
         # PREPARAR DATOS PARA EL MODELO REAL
         is_prediabetes = 1 if glucose >= 140 else 0
         
-        # DATAFRAME DE UNA SOLA FILA
+        # DataFrame con los nombres de columna EXACTOS
         input_data = pd.DataFrame([[
             pregnancies,
             glucose,
@@ -483,7 +484,6 @@ elif st.session_state.page == "simulacion":
         
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
             try:
-                # El pipeline ya incluye el scaler, pasamos el dataframe directo
                 prob = st.session_state.model.predict_proba(input_data)[0][1]
             except:
                 st.session_state.model = MockModel()
@@ -639,71 +639,142 @@ elif st.session_state.page == "simulacion":
         c_exp1, c_exp2 = st.columns(2)
         
         with c_exp1:
-            st.markdown(f'<div class="card card-auto"><span class="card-header">IMPORTANCIA GLOBAL</span><div id="global_shap_placeholder"></div></div>', unsafe_allow_html=True)
-            # Aquí iría el gráfico de barras global (si tuviéramos feature_importances_)
-            # Como usamos pipeline, accedemos así:
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
                     rf = st.session_state.model.named_steps['model']
                     importances = rf.feature_importances_
                     feat_names = ['Embarazos', 'Glucosa', 'Presión', 'Insulina', 'BMI', 'DPF', 'Edad', 'Índice R', 'BMI²', 'Prediabetes']
                     
+                    # Ordenar
+                    indices = np.argsort(importances)
+                    
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 4))
                     fig_imp.patch.set_facecolor('none')
                     ax_imp.set_facecolor('none')
-                    ax_imp.barh(feat_names, importances, color=CEMP_PINK)
+                    
+                    # Barras
+                    ax_imp.barh(range(len(indices)), importances[indices], color=CEMP_PINK, align='center')
+                    ax_imp.set_yticks(range(len(indices)))
+                    ax_imp.set_yticklabels([feat_names[i] for i in indices])
                     ax_imp.spines['top'].set_visible(False)
                     ax_imp.spines['right'].set_visible(False)
                     
-                    st.pyplot(fig_imp)
+                    chart_html_imp = fig_to_html(fig_imp)
+                    plt.close(fig_imp)
+                    
+                    st.markdown(f"""<div class="card card-auto">
+                        <span class="card-header" style="margin-bottom:10px;">IMPORTANCIA GLOBAL</span>
+                        {chart_html_imp}
+                    </div>""", unsafe_allow_html=True)
                 except:
-                    st.info("Modelo cargado no permite visualizar importancias.")
+                    st.markdown(f'<div class="card card-auto"><span class="card-header">IMPORTANCIA GLOBAL</span><p style="text-align:center;color:#999;">No disponible</p></div>', unsafe_allow_html=True)
             else:
-                st.info("Visualización disponible solo con modelo real.")
+                st.markdown(f'<div class="card card-auto"><span class="card-header">IMPORTANCIA GLOBAL</span><p style="text-align:center;color:#999;">Modelo simulado</p></div>', unsafe_allow_html=True)
 
         with c_exp2:
-            st.markdown(f'<div class="card card-auto"><span class="card-header">ANÁLISIS DEL PACIENTE (SHAP)</span></div>', unsafe_allow_html=True)
-            
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
-                    # PREPARACIÓN PARA SHAP (Local)
-                    # 1. Transformar input
                     pipeline = st.session_state.model
-                    imputer = pipeline.named_steps['imputer']
-                    scaler = pipeline.named_steps['scaler']
+                    
+                    # 1. Transformación de datos para que SHAP los entienda
+                    # Aplicamos pasos previos al modelo (imputer, scaler)
+                    # Pipeline: [('imputer', ...), ('scaler', ...), ('model', ...)]
+                    
+                    # Accedemos a los pasos previos
+                    # Nota: input_data es un DataFrame de una fila
+                    
+                    # Transformamos manualmente usando los pasos del pipeline
+                    step1 = pipeline.named_steps['imputer'].transform(input_data)
+                    step2 = pipeline.named_steps['scaler'].transform(step1)
+                    
+                    # Creamos dataframe transformado con nombres de columnas
+                    input_transformed = pd.DataFrame(step2, columns=input_data.columns)
+                    
+                    # 2. Explainer
                     model_step = pipeline.named_steps['model']
                     
-                    # Transformamos manualmente
-                    step1 = imputer.transform(input_data)
-                    step2 = scaler.transform(step1)
-                    
-                    # 2. Calcular SHAP values
+                    # Para RandomForest y clasificación binaria, TreeExplainer es ideal
                     explainer = shap.TreeExplainer(model_step)
-                    shap_values = explainer.shap_values(step2)
                     
-                    # 3. Visualizar (Waterfall)
-                    # Para clasificación binaria, shap_values es una lista [clase0, clase1]
-                    # Queremos explicar la clase 1 (Diabetes)
-                    shap_val_instance = shap_values[1][0] # Primera fila, clase 1
+                    # 3. Valores SHAP para esta instancia
+                    # shap_values será una lista de matrices [clase0, clase1]
+                    shap_values = explainer.shap_values(input_transformed)
+                    
+                    # Queremos explicar la clase 1 (Diabetes) -> índice 1
+                    # shap_values[1] es una matriz (1, n_features)
+                    shap_val_instance = shap_values[1][0] 
                     base_value = explainer.expected_value[1]
                     
-                    # Crear objeto Explanation para waterfall
-                    explanation = shap.Explanation(
+                    # 4. Objeto Explanation para waterfall
+                    # data=input_data.iloc[0].values muestra los valores originales en el gráfico (más fácil de leer)
+                    exp = shap.Explanation(
                         values=shap_val_instance,
                         base_values=base_value,
-                        data=input_data.iloc[0].values, # Mostrar valores originales
+                        data=input_data.iloc[0].values, 
                         feature_names=input_data.columns
                     )
                     
-                    fig_shap, ax_shap = plt.subplots()
-                    shap.plots.waterfall(explanation, show=False)
-                    st.pyplot(fig_shap)
+                    # 5. Gráfico Waterfall
+                    fig_shap, ax_shap = plt.subplots(figsize=(6, 4))
+                    shap.plots.waterfall(exp, show=False) # show=False para capturar en fig
+                    
+                    # Ajuste fino para Streamlit
+                    plt.tight_layout()
+                    
+                    chart_html_shap = fig_to_html(fig_shap)
+                    plt.close(fig_shap)
+                    
+                    st.markdown(f"""<div class="card card-auto">
+                        <span class="card-header" style="margin-bottom:10px;">ANÁLISIS DEL PACIENTE (SHAP)</span>
+                        {chart_html_shap}
+                    </div>""", unsafe_allow_html=True)
                     
                 except Exception as e:
-                    st.warning(f"No se pudo generar SHAP: {e}")
+                    # Fallback visual limpio
+                    st.markdown(f"""<div class="card card-auto">
+                        <span class="card-header">ANÁLISIS DEL PACIENTE</span>
+                        <div style="padding:20px; text-align:center; color:#999;">
+                            No se pudo generar el gráfico SHAP.<br>
+                            <small>{str(e)}</small>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
             else:
-                st.info("Instala 'shap' y carga el modelo real para ver este gráfico.")
+                st.markdown(f'<div class="card card-auto"><span class="card-header">ANÁLISIS DEL PACIENTE</span><p style="text-align:center;color:#999;">Requiere librería SHAP</p></div>', unsafe_allow_html=True)
 
     with tab3:
         st.write("")
-        st.info("💡 Módulo de recomendaciones clínicas y generación de informes.")
+        if is_high:
+            st.markdown(f"""
+            <div style="padding: 20px; background-color: #FFF5F5; border-left: 5px solid {CEMP_PINK}; border-radius: 5px; margin-bottom: 20px;">
+                <h3 style="color: {CEMP_PINK}; margin:0;">🚨 PROTOCOLO DE ALTO RIESGO DETECTADO</h3>
+                <p style="margin-top:10px; color: #555;">El paciente presenta una probabilidad elevada ({prob*100:.1f}%) de diabetes tipo 2.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                st.markdown("#### 1. Acción Inmediata")
+                st.warning("⚠️ **Derivación a Endocrinología** (Prioridad: ALTA)")
+                st.checkbox("Solicitar HbA1c confirmatoria")
+                st.checkbox("Perfil lipídico completo")
+            with c_p2:
+                st.markdown("#### 2. Intervención Terapéutica")
+                st.info("💊 Valorar inicio de Metformina")
+                st.write("- **Dieta:** Restricción calórica moderada.")
+        
+        else:
+            st.markdown(f"""
+            <div style="padding: 20px; background-color: #F0FDF4; border-left: 5px solid {GOOD_TEAL}; border-radius: 5px; margin-bottom: 20px;">
+                <h3 style="color: {GOOD_TEAL}; margin:0;">🛡️ PROTOCOLO PREVENTIVO (BAJO RIESGO)</h3>
+                <p style="margin-top:10px; color: #555;">El perfil actual ({prob*100:.1f}%) no sugiere riesgo inminente.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                st.markdown("#### 1. Seguimiento")
+                st.success("✅ **Control Rutinario**")
+                st.checkbox("Repetir test en 12 meses")
+            with c_p2:
+                st.markdown("#### 2. Educación Sanitaria")
+                st.write("- Mantener BMI < 25.")

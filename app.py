@@ -20,12 +20,8 @@ def volver_inicio():
 # CSS
 st.markdown("""
 <style>
-    .stApp {
-        background-color: #f0f2f6;
-    }
-
+    .stApp { background-color: #f0f2f6; }
     #MainMenu, footer, header {visibility: hidden;}
-
     .block-container {
         background-color: white;
         padding: 3rem !important;
@@ -34,7 +30,6 @@ st.markdown("""
         max-width: 800px;
         margin-top: 2rem;
     }
-
     h1 {
         text-align: center;
         font-family: 'Arial', sans-serif;
@@ -44,12 +39,9 @@ st.markdown("""
         margin-bottom: 0 !important;
         line-height: 1.2 !important;
     }
-
     .landing-pink { color: #ef7d86; }
     .landing-gray { color: #bdc3c7; }
-
     .badge-container { text-align: center; margin-bottom: 10px; }
-
     .badge {
         background-color: #2c3e50;
         color: white;
@@ -61,52 +53,22 @@ st.markdown("""
         letter-spacing: 0.5px;
         display: inline-block;
     }
+    .institution { text-align: center; color: #555; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+    .subtitle { text-align: center; font-size: 1.1rem; font-weight: 700; color: #34495e; margin-top: 5px; margin-bottom: 25px; }
+    .description { text-align: center; color: #666; line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px; padding: 0 20px; }
+    .warning-box { background-color: #f9fafb; border-left: 4px solid #ef7d86; padding: 20px; border-radius: 4px; font-size: 0.85rem; color: #555; margin-bottom: 35px; text-align: center; }
+    .warning-box p { margin: 0; line-height: 1.5; }
 
-    .institution {
-        text-align: center;
-        color: #555;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-bottom: 5px;
+    /* Contenedor flexible para centrar botón exactamente */
+    .center-button-container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
     }
 
-    .subtitle {
-        text-align: center;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #34495e;
-        margin-top: 5px;
-        margin-bottom: 25px;
-    }
-
-    .description {
-        text-align: center;
-        color: #666;
-        line-height: 1.6;
-        font-size: 0.95rem;
-        margin-bottom: 30px;
-        padding: 0 20px;
-    }
-
-    .warning-box {
-        background-color: #f9fafb;
-        border-left: 4px solid #ef7d86;
-        padding: 20px;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        color: #555;
-        margin-bottom: 35px;
-        text-align: center;
-    }
-
-    .warning-box p {
-        margin: 0;
-        line-height: 1.5;
-    }
-
+    /* Estilo del botón */
     div.stButton > button {
+        display: inline-block;
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
@@ -118,6 +80,7 @@ st.markdown("""
         letter-spacing: 1px;
         white-space: nowrap;
         box-shadow: 0 4px 15px rgba(239,112,122,0.3);
+        cursor: pointer;
     }
 
     div.stButton > button:hover {
@@ -128,26 +91,21 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Vistas
+# Vista Landing
 if st.session_state.page == 'landing':
 
     st.markdown("""
         <div class="badge-container">
             <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
         </div>
-
         <div class="institution">Centro Europeo de Másteres y Posgrados</div>
-
         <h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
-
         <div class="subtitle">Prototipo de CDSS para el diagnóstico temprano de diabetes</div>
-
         <p class="description">
             Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo 
             clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y 
             prevención de la diabetes tipo 2.
         </p>
-
         <div class="warning-box">
             <p><strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong></p>
             <p style="margin-top:10px;">
@@ -157,13 +115,14 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # CENTRAR BOTÓN EXACTAMENTE CON EL H1
-    col1, col2, col3 = st.columns([1, 2, 1])  # columna central 2x ancho
-    with col2:
-        if st.button("INICIAR SIMULACIÓN ➔"):
-            ir_a_simulacion()
-            st.rerun()
+    # BOTÓN centrado EXACTAMENTE con flex container
+    st.markdown('<div class="center-button-container">', unsafe_allow_html=True)
+    if st.button("INICIAR SIMULACIÓN ➔"):
+        ir_a_simulacion()
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
+# Vista simulación
 elif st.session_state.page == 'simulacion':
 
     if st.button("⬅ Volver"):
@@ -179,7 +138,6 @@ elif st.session_state.page == 'simulacion':
         c2.number_input("Glucosa (mg/dL)")
         c1.number_input("IMC")
         c2.selectbox("Antecedentes", ["Sí", "No"])
-
         submitted = st.form_submit_button("Ejecutar Predicción")
         if submitted:
             st.success("Procesando...")

@@ -104,33 +104,25 @@ st.markdown("""
         border-radius: 4px;
         font-size: 0.85rem;
         color: #555;
-        margin-bottom: 35px;
+        margin-bottom: 20px; /* Espacio antes del botón */
         text-align: center;
     }
     
-    /* Clase específica para el texto que querías en negrita */
-    .warning-text-bold {
-        display: block;
-        margin-bottom: 10px;
-        color: #555; /* Un poco más oscuro para que resalte la negrita */
-        font-weight: 700; /* Negrita */
-    }
-
-    /* --- BOTÓN CENTRADO (CORRECCIÓN FINAL) --- */
+    /* --- BOTÓN CENTRADO (SOLUCIÓN DEFINITIVA) --- */
     
-    /* 1. Apuntamos al contenedor DIV que Streamlit crea alrededor del botón */
-    .stButton {
-        display: flex; /* Usamos Flexbox */
-        justify-content: center; /* Alineación horizontal al centro */
-        width: 100%; /* Aseguramos que el contenedor ocupe todo el ancho disponible */
+    /* Esto apunta al contenedor que envuelve al botón en Streamlit */
+    div.stButton {
+        display: flex;
+        justify-content: center; /* Alineación horizontal CENTRADA */
+        width: 100%;
     }
 
-    /* 2. Estilo del botón en sí */
-    .stButton > button {
+    /* Estilo del botón visual */
+    div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
-        padding: 12px 50px; /* Un poco más ancho el padding */
+        padding: 12px 50px;
         border-radius: 50px;
         font-weight: bold;
         font-size: 14px;
@@ -138,17 +130,20 @@ st.markdown("""
         letter-spacing: 1px;
         box-shadow: 0 4px 15px rgba(239, 112, 122, 0.3);
         transition: all 0.3s ease;
-        
-        /* IMPORTANTE: Evita que el botón se estire al 100% */
-        width: auto !important; 
-        display: inline-block;
+        margin-top: 10px;
     }
 
-    .stButton > button:hover {
+    div.stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(239, 112, 122, 0.5);
         color: white;
         border-color: transparent;
+    }
+    
+    /* Eliminamos el borde rojo que Streamlit pone a veces al hacer click */
+    div.stButton > button:active {
+        border-color: transparent;
+        color: white;
     }
 
 </style>
@@ -176,14 +171,16 @@ if st.session_state.page == 'landing':
         </p>
 
         <div class="warning-box">
-            <span class="warning-text-bold">Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</span>
+            <p style="margin-bottom: 10px;">
+                <strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong>
+            </p>
             
-            <strong>⚠️ Esta herramienta NO es un dispositivo médico certificado.</strong> Los resultados son una simulación académica y NO deben 
-            utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
+            <span>⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben 
+            utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.</span>
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN DE ACCIÓN (Ahora centrado perfectamente)
+    # BOTÓN DE ACCIÓN (Ahora centrado gracias al CSS div.stButton)
     if st.button("INICIAR SIMULACIÓN ➔"):
         ir_a_simulacion()
         st.rerun()

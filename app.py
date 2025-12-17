@@ -274,35 +274,35 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* NUEVOS ESTILOS PARA LA PESTAÑA DE EXPLICABILIDAD */
-        .white-card-container {
+        /* ESTILOS XAI (CON DOBLE LLAVE PARA EVITAR ERROR DE F-STRING) */
+        .white-card-container {{
             background-color: white;
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             margin-bottom: 20px;
             height: 100%;
-        }
-        .pink-explanation-box {
-            background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK con transparencia */
+        }}
+        .pink-explanation-box {{
+            background-color: rgba(233, 127, 135, 0.15);
             border-radius: 10px;
             padding: 15px;
             margin-top: 15px;
             border-left: 4px solid #E97F87;
             color: #555;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.5;
-        }
-        .pink-explanation-box strong {
+        }}
+        .pink-explanation-box strong {{
             color: #C0392B;
-        }
-        .xai-title {
+        }}
+        .xai-title {{
             text-align: center;
             color: #2C3E50;
             font-weight: 700;
             margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
+            font-size: 1.1rem;
+        }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -717,11 +717,11 @@ elif st.session_state.page == "simulacion":
                     # Caja rosa explicativa - LENGUAJE TÉCNICO
                     st.markdown("""
                     <div class="pink-explanation-box">
-                        <strong>Interpretación de Variables Globales</strong><br>
-                        Este gráfico jerarquiza las variables según su peso relativo en la construcción del algoritmo.<br><br>
+                        <strong>Interpretación de Relevancia Global (Feature Importance)</strong><br>
+                        Jerarquización de variables según la ganancia de información (Gini importance) en la construcción del modelo.<br><br>
                         <ul>
-                            <li>Las barras de mayor longitud indican los <strong>biomarcadores de mayor sensibilidad</strong> a nivel poblacional.</li>
-                            <li>Permite validar que el modelo prioriza variables clínicamente relevantes (ej. Glucosa o Resistencia) frente a ruido estadístico.</li>
+                            <li><strong>Interpretación:</strong> Las barras de mayor longitud indican los biomarcadores con mayor sensibilidad y capacidad discriminante a nivel poblacional.</li>
+                            <li><strong>Validación:</strong> Confirma que el algoritmo prioriza factores clínicamente significativos (ej. hiperglucemia, resistencia a la insulina) frente a variables de confusión.</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
@@ -780,11 +780,11 @@ elif st.session_state.page == "simulacion":
                     # Caja rosa explicativa - LENGUAJE TÉCNICO
                     st.markdown(f"""
                     <div class="pink-explanation-box">
-                        <strong>Contribución de Variables (Valores SHAP)</strong><br>
-                        Desglose de la probabilidad calculada ({prob*100:.1f}%) para el paciente {patient_name}.<br><br>
+                        <strong>Análisis de Contribución Vectorial (Valores SHAP)</strong><br>
+                        Desglose aditivo de la probabilidad predicha ({prob*100:.1f}%) respecto a la tasa base del modelo.<br><br>
                         <ul>
-                            <li>🔴 <strong>Factores de Riesgo (+):</strong> Variables que contribuyen positivamente a la probabilidad del evento (diagnóstico positivo).</li>
-                            <li>🔵 <strong>Factores Protectores (-):</strong> Variables que mitigan el riesgo en este perfil clínico específico.</li>
+                            <li>🔴 <strong>Factores de Riesgo (+):</strong> Variables que incrementan la probabilidad del evento positivo (Diagnóstico DM2).</li>
+                            <li>🔵 <strong>Factores Protectores/Atenuantes (-):</strong> Variables que mitigan el riesgo en este perfil clínico específico, reduciendo la probabilidad final.</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)

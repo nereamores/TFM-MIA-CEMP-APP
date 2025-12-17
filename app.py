@@ -136,7 +136,7 @@ st.markdown("""
 
     /* Flecha como elemento decorativo */
     div.stButton > button::after {
-        content: "Iniciar simulación ➔";
+        content: "  Iniciar simulación ➔";
         position: absolute;
         right: 28px;
         top: 50%;

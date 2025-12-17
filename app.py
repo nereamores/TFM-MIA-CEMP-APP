@@ -16,7 +16,27 @@ st.set_page_config(
 )
 
 # =========================================================
-# 2. FUNCIONES DE CACHÉ (OPTIMIZACIÓN ANTI-PARPADEO)
+# 2. DEFINICIÓN DEL MODELO (GLOBAL PARA EVITAR ERRORES)
+# =========================================================
+# Definimos la clase AQUÍ, fuera de cualquier función, para que Streamlit
+# siempre la encuentre, pase lo que pase.
+class MockModel:
+    def predict_proba(self, X):
+        # Simulación de predicción basada en reglas simples + sigmoide
+        score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
+        prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
+        return [[1-prob, prob]]
+
+# Inicializamos el modelo en el estado si no existe
+if 'model' not in st.session_state:
+    st.session_state.model = MockModel()
+
+# Estado del botón de predicción
+if 'predict_clicked' not in st.session_state:
+    st.session_state.predict_clicked = False
+
+# =========================================================
+# 3. FUNCIONES DE CACHÉ (OPTIMIZACIÓN VISUAL)
 # =========================================================
 
 def fig_to_html(fig):
@@ -27,13 +47,12 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def get_help_icon(description):
+    # Tooltip limpio sin HTML complejo
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
-# --- CACHÉ 1: GRÁFICO DE CALIBRACIÓN (SENSIBILIDAD) ---
-# Al poner esto aquí, si mueves la barra lateral, este gráfico NO se recalcula.
+# --- GRÁFICO DE CALIBRACIÓN (Caché) ---
 @st.cache_data(show_spinner=False)
 def get_calibration_plot(threshold_val):
-    # Definimos colores aquí para que la función sea autónoma
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50"
     OPTIMAL_GREEN = "#8BC34A"
@@ -66,12 +85,13 @@ def get_calibration_plot(threshold_val):
     plt.close(fig_calib)
     return html
 
-# --- CACHÉ 2: FICHA DEL PACIENTE ---
+# --- FICHA PACIENTE (Caché) ---
 @st.cache_data(show_spinner=False)
 def get_patient_card_html(name, date_str, clicked, risk_label, risk_bg, risk_border, risk_icon, conf_desc, conf_color, conf_text):
     CEMP_DARK = "#2C3E50"
     
     if clicked:
+        # Solo construimos el HTML de las etiquetas si se ha hecho clic
         badges_html = f"""
             <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
                 {risk_icon} {risk_label}
@@ -98,7 +118,7 @@ def get_patient_card_html(name, date_str, clicked, risk_label, risk_bg, risk_bor
         </div>
     </div>"""
 
-# --- CACHÉ 3: BARRAS DE CONTEXTO ---
+# --- BARRAS CONTEXTO (Caché) ---
 @st.cache_data(show_spinner=False)
 def get_context_bars_html(glucose_val, bmi_val):
     CEMP_DARK = "#2C3E50"
@@ -141,7 +161,7 @@ def get_context_bars_html(glucose_val, bmi_val):
         </div>
     </div>"""
 
-# --- CACHÉ 4: DONUT CHART ---
+# --- DONUT CHART (Caché) ---
 @st.cache_data(show_spinner=False)
 def get_donut_chart_html(prob, threshold, clicked, risk_color):
     CEMP_DARK = "#2C3E50"
@@ -184,7 +204,7 @@ def get_donut_chart_html(prob, threshold, clicked, risk_color):
     </div>"""
 
 # =========================================================
-# 3. GESTIÓN DE NAVEGACIÓN
+# 4. GESTIÓN DE NAVEGACIÓN
 # =========================================================
 if "page" not in st.session_state:
     st.session_state.page = "landing"
@@ -196,7 +216,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 4. PÁGINA: PORTADA
+# 5. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
     st.markdown("""
@@ -292,12 +312,9 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 5. PÁGINA: SIMULACIÓN
+# 6. PÁGINA: SIMULACIÓN
 # =========================================================
 elif st.session_state.page == "simulacion":
-
-    if 'predict_clicked' not in st.session_state:
-        st.session_state.predict_clicked = False
 
     # --- COLORES ---
     CEMP_PINK = "#E97F87"
@@ -542,16 +559,24 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
-                # LLAMADA A FUNCIÓN CACHEADA DEL GRÁFICO DE CALIBRACIÓN
+                # GRÁFICO CACHEADO (NO SE RECALCULA SI NO MUEVES EL UMBRAL)
                 st.markdown(f"""
                 <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
                     {get_calibration_plot(threshold)}
                 </div>
                 """, unsafe_allow_html=True)
 
-        # LÓGICA IA
+        # LÓGICA IA (SE CALCULA SIEMPRE PARA TENER LOS DATOS DISPONIBLES)
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
-        prob = st.session_state.model.predict_proba(input_data)[0][1]
+        
+        # --- PROTECCIÓN CONTRA ERRORES DE MODELO ---
+        if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
+            prob = st.session_state.model.predict_proba(input_data)[0][1]
+        else:
+            # Fallback de seguridad (reinicializar si se perdió)
+            st.session_state.model = MockModel()
+            prob = st.session_state.model.predict_proba(input_data)[0][1]
+
         is_high = prob > threshold 
         
         distancia_al_corte = abs(prob - threshold)
@@ -587,14 +612,14 @@ elif st.session_state.page == "simulacion":
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
-            # LLAMADA A FUNCIÓN CACHEADA DE FICHA PACIENTE
+            # FICHA PACIENTE (CACHEADA)
             st.markdown(get_patient_card_html(
                 patient_name, date_str, st.session_state.predict_clicked,
                 risk_label, risk_bg, risk_border, risk_icon,
                 conf_desc, conf_color, conf_text
             ), unsafe_allow_html=True)
 
-            # LLAMADA A FUNCIÓN CACHEADA DE BARRAS
+            # GRÁFICOS DE BARRAS (CACHEADOS)
             st.markdown(get_context_bars_html(glucose, bmi), unsafe_allow_html=True)
 
         with c_right:
@@ -610,7 +635,7 @@ elif st.session_state.page == "simulacion":
                 st.session_state.predict_clicked = True
                 st.rerun()
 
-            # LLAMADA A FUNCIÓN CACHEADA DE DONUT
+            # DONUT CHART (CACHEADO)
             st.markdown(get_donut_chart_html(
                 prob, threshold, st.session_state.predict_clicked, risk_color
             ), unsafe_allow_html=True)

@@ -64,7 +64,7 @@ def fig_to_html(fig):
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
-    return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
+    return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain; display:block; margin: 0 auto;">'
 
 def fig_to_bytes(fig):
     buf = io.BytesIO()
@@ -274,18 +274,19 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === NUEVOS ESTILOS UNIFICADOS PARA XAI === */
+        /* === ESTILOS TARJETAS UNIFICADAS XAI === */
         .unified-xai-card {{
             background-color: white;
             border-radius: 15px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             margin-bottom: 20px;
-            overflow: hidden; /* Para que el footer rosa respete los bordes redondeados */
+            overflow: hidden;
             border: 1px solid #eee;
         }}
         .xai-chart-section {{
-            padding: 25px 25px 10px 25px; /* Menos padding abajo para acercar al footer */
+            padding: 25px;
             background-color: white;
+            text-align: center;
         }}
         .xai-explanation-footer {{
             background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK transparente */
@@ -294,18 +295,19 @@ elif st.session_state.page == "simulacion":
             color: #555;
             font-size: 0.9rem;
             line-height: 1.5;
+            text-align: left;
         }}
         .xai-explanation-footer strong {{
-            color: #000000; /* Negrita en NEGRO PURO */
+            color: #000;
             font-weight: 800;
         }}
         .xai-title {{
-            text-align: center;
             color: #2C3E50;
             font-weight: 800;
             margin-bottom: 20px;
             font-size: 1.2rem;
             letter-spacing: -0.5px;
+            text-align: center;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -686,13 +688,6 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # INICIO TARJETA UNIFICADA
-            st.markdown('<div class="unified-xai-card">', unsafe_allow_html=True)
-            
-            # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
-            st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
-            
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
                     rf = st.session_state.model.named_steps['model']
@@ -719,39 +714,30 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    st.image(fig_to_bytes(fig_imp), use_container_width=True)
+                    chart_img_html = fig_to_html(fig_imp)
                     plt.close(fig_imp)
+                    
+                    # Generamos TODA la tarjeta (Título + Gráfico + Footer) en UN SOLO bloque Markdown
+                    st.markdown(f"""
+                    <div class="unified-xai-card">
+                        <div class="xai-chart-section">
+                            <div class="xai-title">Visión Global del Modelo</div>
+                            {chart_img_html}
+                        </div>
+                        <div class="xai-explanation-footer">
+                            <strong>Interpretación de Relevancia Global:</strong><br>
+                            Este gráfico muestra qué datos son más importantes para la IA. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 except:
                     st.warning("No se pudo extraer la importancia global del modelo cargado.")
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
-            
-            st.markdown('</div>', unsafe_allow_html=True) # FIN SECCIÓN BLANCA
-
-            # SECCIÓN INFERIOR ROSA (EXPLICACIÓN) - INTEGRADA EN LA MISMA TARJETA
-            st.markdown("""
-            <div class="xai-explanation-footer">
-                <strong>Interpretación de Relevancia Global (Feature Importance)</strong><br>
-                Jerarquización de variables según la ganancia de información (Gini importance) en la construcción del modelo.<br><br>
-                <ul>
-                    <li><strong>Interpretación:</strong> Las barras de mayor longitud indican los biomarcadores con mayor sensibilidad y capacidad discriminante a nivel poblacional.</li>
-                    <li><strong>Validación:</strong> Confirma que el algoritmo prioriza factores clínicamente significativos (ej. hiperglucemia, resistencia a la insulina) frente a variables de confusión.</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True) # FIN TARJETA UNIFICADA
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            # INICIO TARJETA UNIFICADA
-            st.markdown('<div class="unified-xai-card">', unsafe_allow_html=True)
-            
-            # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
-            st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
-            
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
                     pipeline = st.session_state.model
@@ -788,32 +774,27 @@ elif st.session_state.page == "simulacion":
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
-                    st.image(fig_to_bytes(fig_shap), use_container_width=True)
+                    chart_img_html_shap = fig_to_html(fig_shap)
                     plt.close(fig_shap)
+                    
+                    # Generamos TODA la tarjeta en UN SOLO bloque Markdown
+                    st.markdown(f"""
+                    <div class="unified-xai-card">
+                        <div class="xai-chart-section">
+                            <div class="xai-title">Análisis Individual (SHAP)</div>
+                            {chart_img_html_shap}
+                        </div>
+                        <div class="xai-explanation-footer">
+                            <strong>Interpretación del Resultado:</strong><br>
+                            Empezamos desde la "Línea Base" (E[f(x)]), que es la probabilidad promedio de tener diabetes en la población general (aprox. 50% en este modelo). A partir de ahí, cada dato del paciente actúa como una pesa: las <strong>barras rojas</strong> empujan el riesgo hacia arriba y las <strong>azules</strong> lo bajan.
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 except Exception as e:
                     st.error(f"Error generando SHAP: {e}")
             else:
                 st.warning("Librería SHAP no disponible o modelo simulado.")
-            
-            st.markdown('</div>', unsafe_allow_html=True) # FIN SECCIÓN BLANCA
-
-            # SECCIÓN INFERIOR ROSA (EXPLICACIÓN) - INTEGRADA EN LA MISMA TARJETA
-            # NUEVA EXPLICACIÓN MÁS ACCESIBLE PERO TÉCNICA
-            st.markdown(f"""
-            <div class="xai-explanation-footer">
-                <strong>Interpretación del Gráfico (Valores SHAP)</strong><br>
-                Este gráfico muestra cómo se llega a la probabilidad final para este paciente concreto, partiendo de la media de la población.<br><br>
-                <ul>
-                    <li><strong>Línea Base (E[f(X)]):</strong> Es el punto de partida. Representa la probabilidad promedio de diabetes en toda la población estudiada.</li>
-                    <li>🔴 <strong>Barras Rojas (+):</strong> Indican características de este paciente que <strong>aumentan</strong> su riesgo en comparación con el promedio.</li>
-                    <li>🔵 <strong>Barras Azules (-):</strong> Indican características que <strong>disminuyen</strong> su riesgo en comparación con el promedio.</li>
-                </ul>
-                <strong>Resultado:</strong> La probabilidad final es la suma de la línea base más todos los valores de las barras.
-            </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown('</div>', unsafe_allow_html=True) # FIN TARJETA UNIFICADA
 
     with tab3:
         st.write("")

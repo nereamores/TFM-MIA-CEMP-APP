@@ -201,7 +201,7 @@ if st.session_state.page == "landing":
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button(" "):
+        if st.button("                 "):
             ir_a_simulacion()
             st.rerun()
 

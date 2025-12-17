@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. Gestión de navegación (Estado)
+# 2. Gestión de navegación
 if 'page' not in st.session_state:
     st.session_state.page = 'landing'
 
@@ -17,7 +17,7 @@ def ir_a_simulacion():
 def volver_inicio():
     st.session_state.page = 'landing'
 
-# 3. CSS A MEDIDA
+# 3. CSS personalizado
 st.markdown("""
 <style>
     .stApp {
@@ -97,17 +97,16 @@ st.markdown("""
         border-radius: 4px;
         font-size: 0.85rem;
         color: #555;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
         text-align: center;
     }
 
-    /* BOTÓN CENTRADO */
-    div.stButton {
-        display: flex;
-        justify-content: center;
-        width: 100%;
+    .warning-box p {
+        margin: 0;
+        line-height: 1.5;
     }
 
+    /* Botón */
     div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
@@ -125,12 +124,11 @@ st.markdown("""
     div.stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(239, 112, 122, 0.5);
-        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 4. Renderizado de Vistas
+# 4. Vistas
 if st.session_state.page == 'landing':
 
     st.markdown("""
@@ -151,17 +149,17 @@ if st.session_state.page == 'landing':
         </p>
 
         <div class="warning-box">
-            <p style="margin-bottom: 10px;">
-                <strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong>
+            <p><strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong></p>
+            <p style="margin-top:10px;">
+                ⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben 
+                utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.
             </p>
-
-            <span>⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben 
-            utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.</span>
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN CENTRADO DEBAJO DE LA ADVERTENCIA
-    with st.container():
+    # BOTÓN PERFECTAMENTE CENTRADO EN EL CUADRADO BLANCO
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
         if st.button("INICIAR SIMULACIÓN ➔"):
             ir_a_simulacion()
             st.rerun()

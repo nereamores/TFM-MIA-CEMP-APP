@@ -16,7 +16,7 @@ except ImportError:
     SHAP_AVAILABLE = False
 
 # =========================================================
-# 1. CONFIGURACIÓN Y CONSTANTES (GLOBAL)
+# 1. CONFIGURACIÓN Y CONSTANTES GLOBALES (CRÍTICO)
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -24,8 +24,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- COLORES Y ESTILOS GLOBALES ---
-# Definimos esto AQUÍ para que esté disponible en toda la app
+# --- DEFINICIÓN DE COLORES Y ESTILOS (GLOBAL) ---
+# Se definen aquí para evitar NameError en cualquier parte del código
 CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50" 
 GOOD_TEAL = "#4DB6AC"
@@ -43,7 +43,7 @@ class MockModel:
     def predict_proba(self, X):
         # Simulación simple
         if isinstance(X, pd.DataFrame):
-            score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
+            score = (X.iloc[0, 1]*0.5) + (X.iloc[0, 4]*0.4) + (X.iloc[0, 6]*0.1) 
         else:
             score = 50
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
@@ -73,6 +73,7 @@ if 'predict_clicked' not in st.session_state:
 # =========================================================
 
 def fig_to_html(fig):
+    """Para gráficos estáticos dentro de HTML (Tab 1)"""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -80,6 +81,7 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
+    """Para gráficos ampliables con st.image (Tab 2)"""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -169,7 +171,7 @@ if st.session_state.page == "landing":
 <p class="description">Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.</p>
 <div class="warning-box">
     <p><strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong></p>
-    <p style="margin-top:10px;">⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real.</p>
+    <p style="margin-top:10px;">⚠️ Esta herramienta NO es un dispositivo médico certificado.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -222,6 +224,7 @@ elif st.session_state.page == "simulacion":
             padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK};
             font-weight: 800; border-radius: 8px; background-color: white; border: 1px solid #ddd;
         }}
+        [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{ vertical-align: middle; }}
         .calc-box {{
             background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px;
             border: 1px solid #EEE; margin-top: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -263,8 +266,6 @@ elif st.session_state.page == "simulacion":
             color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
             text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
         }}
-        
-        /* BARRAS DE CONTEXTO */
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
         .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
@@ -371,10 +372,11 @@ elif st.session_state.page == "simulacion":
         st.markdown("---")
         
         # 1. GLUCOSA E INSULINA
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
-        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
+        # Inicializamos en 50 para Glucosa para cumplir con el mínimo lógico
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
+        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
-        # 2. CÁLCULO RI
+        # 2. CÁLCULO ÍNDICE (ANTES DE PRESIÓN)
         proxy_index = int(glucose * insulin)
         proxy_str = f"{proxy_index}" 
 
@@ -387,8 +389,8 @@ elif st.session_state.page == "simulacion":
         </div>
         """, unsafe_allow_html=True)
 
-        # 3. PRESIÓN ARTERIAL
-        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 70, "bp", "Presión arterial diastólica.", format_str="%d")
+        # 3. PRESIÓN ARTERIAL (AHORA DESPUÉS)
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 70, "bp", "Presión arterial diastólica (mm Hg).", format_str="%d")
 
         st.markdown("---") 
 
@@ -676,9 +678,9 @@ elif st.session_state.page == "simulacion":
 
     with tab2:
         st.write("")
-        st.markdown("""
-        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid #2C3E50; margin-bottom:20px;">
-            <h4 style="margin:0; color:#2C3E50;">Inteligencia Artificial Explicable (XAI)</h4>
+        st.markdown(f"""
+        <div style="background-color:{NOTE_GRAY_BG}; padding:15px; border-radius:10px; border-left:5px solid {CEMP_DARK}; margin-bottom:20px;">
+            <h4 style="margin:0; color:{CEMP_DARK};">Inteligencia Artificial Explicable (XAI)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
                 Este módulo desglosa las decisiones del modelo para brindar transparencia clínica. 
                 A la izquierda, la visión global del algoritmo. A la derecha, el caso específico de este paciente.
@@ -690,7 +692,7 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            st.markdown('<div class="card-top"><h4 style="text-align:center; color:#2C3E50; margin:0;">Visión Global del Modelo</h4></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="card-top"><h4 style="text-align:center; color:{CEMP_DARK}; margin:0;">Visión Global del Modelo</h4></div>', unsafe_allow_html=True)
             st.markdown('<div class="card-mid">', unsafe_allow_html=True)
             
             if hasattr(st.session_state.model, 'named_steps'):
@@ -744,7 +746,7 @@ elif st.session_state.page == "simulacion":
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            st.markdown('<div class="card-top"><h4 style="text-align:center; color:#2C3E50; margin:0;">Análisis Individual (SHAP)</h4></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="card-top"><h4 style="text-align:center; color:{CEMP_DARK}; margin:0;">Análisis Individual (SHAP)</h4></div>', unsafe_allow_html=True)
             st.markdown('<div class="card-mid">', unsafe_allow_html=True)
             
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):

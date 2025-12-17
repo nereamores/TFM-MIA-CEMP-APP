@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase del modelo
+# Definimos la clase del modelo AQUÍ para que siempre esté disponible
 class MockModel:
     def predict_proba(self, X):
         # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
@@ -23,15 +23,12 @@ class MockModel:
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicialización segura
+# Inicialización segura del modelo
 if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
+# Estado del botón
 if 'predict_clicked' not in st.session_state:
-    st.session_state.predict_clicked = False
-
-# Función para resetear la predicción (se llama al cambiar inputs)
-def reset_prediction():
     st.session_state.predict_clicked = False
 
 # =========================================================
@@ -167,7 +164,6 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
-    # --- CONSTANTES ---
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50" 
     GOOD_TEAL = "#4DB6AC"
@@ -180,7 +176,6 @@ elif st.session_state.page == "simulacion":
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-    # --- CSS ---
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
@@ -257,7 +252,6 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- INPUT HELPER ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -276,7 +270,6 @@ elif st.session_state.page == "simulacion":
         if key not in st.session_state:
             st.session_state[key] = default_val
 
-        # AQUÍ ESTÁ EL TRUCO: Resetear la predicción al cambiar valores
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
@@ -312,12 +305,16 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- INPUTS PACIENTE (CON RESET) ---
         st.markdown("**Datos del paciente**")
-        patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_prediction)
+        
+        # Reset al cambiar nombre o fecha
+        def reset_on_change():
+            st.session_state.predict_clicked = False
+
+        patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_on_change)
         
         default_date = datetime.date.today()
-        consult_date = st.date_input("Fecha Predicción", value=default_date, label_visibility="collapsed", on_change=reset_prediction)
+        consult_date = st.date_input("Fecha Predicción", value=default_date, label_visibility="collapsed", on_change=reset_on_change)
         
         meses_es = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 
                     7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
@@ -395,7 +392,6 @@ elif st.session_state.page == "simulacion":
         st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
-    # --- MAIN ---
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
@@ -412,7 +408,7 @@ elif st.session_state.page == "simulacion":
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                     <span style="font-size:1.1rem;">💡</span> 
                     <div>
-                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
+                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos.
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -447,7 +443,6 @@ elif st.session_state.page == "simulacion":
 
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
         
-        # Recuperación SEGURA del modelo
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
             try:
                 prob = st.session_state.model.predict_proba(input_data)[0][1]
@@ -493,7 +488,6 @@ elif st.session_state.page == "simulacion":
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
-            # FICHA PACIENTE
             if st.session_state.predict_clicked:
                 badges_html = f"""<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">{risk_icon} {risk_label}</div><div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top:5px;" title="{conf_desc}"><span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span><span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span></div>"""
             else:

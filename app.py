@@ -165,15 +165,15 @@ if st.session_state.page == "landing":
 
     st.markdown("""
 <div class="badge-container">
-<span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
+<span class="badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</span>
 </div>
-<div class="institution">Centro Europeo de Másteres y Posgrados</div>
+<div class="institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>
 <h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
 <div class="subtitle">Prototipo de CDSS para el diagnóstico temprano de diabetes</div>
 <p class="description">Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.</p>
 <div class="warning-box">
     <p><strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong></p>
-    <p style="margin-top:10px;">⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real.</p>
+    <p style="margin-top:10px;">⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -195,7 +195,7 @@ elif st.session_state.page == "simulacion":
     OPTIMAL_GREEN = "#8BC34A"
     NOTE_GRAY_BG = "#F8F9FA"  
     NOTE_GRAY_TEXT = "#6C757D" 
-    
+     
     BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
@@ -321,22 +321,28 @@ elif st.session_state.page == "simulacion":
         return st.session_state[key]
 
     with st.sidebar:
-        if st.button("⬅ Volver"):
+        if st.button("⬅ VOLVER A PORTADA"):
             volver_inicio()
             st.rerun()
 
         st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
-        st.caption("CLINICAL DECISION SUPPORT SYSTEM")
+        st.caption("CLINICAL DECISION SUPPORT SYSTEM | TFM")
         st.write("")
         
-        st.markdown("**Datos del paciente**")
+        st.markdown("**Registro para Simulación**")
+        st.caption("Introduzca los datos administrativos.")
         
         def reset_on_change():
             st.session_state.predict_clicked = False
 
-        patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_on_change)
+        patient_name = st.text_input("ID Paciente / Historia Clínica", value="8842-X", label_visibility="visible", on_change=reset_on_change, help="Ej: 8842-X")
+        patient_full_name = st.text_input("Nombre Completo (Opcional)", value="", label_visibility="visible")
+        
+        # Si hay nombre completo, lo usamos para mostrar, si no, el ID
+        display_name = patient_full_name if patient_full_name else patient_name
+        
         default_date = datetime.date.today()
-        consult_date = st.date_input("Fecha Predicción", value=default_date, label_visibility="collapsed", on_change=reset_on_change)
+        consult_date = st.date_input("Fecha de Consulta", value=default_date, label_visibility="visible", on_change=reset_on_change)
         
         meses_es = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 
                     7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
@@ -344,8 +350,14 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
+        # --- SECCIÓN 1: PARÁMETROS CLÍNICOS ---
+        st.markdown("### 1. Parámetros Clínicos")
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
+        
+        # Aunque el texto nuevo no menciona explícitamente el input de presión arterial en la lista de "Parámetros Clínicos" del texto 1,
+        # estaba en el código original y es necesario para el modelo. Lo mantengo pero podría moverse a historia u otra sección si se prefiere.
+        # Lo dejaré aquí para no romper el modelo.
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
 
         proxy_index = int(glucose * insulin)
@@ -362,6 +374,8 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---") 
 
+        # --- SECCIÓN 2: ANTROPOMETRÍA ---
+        st.markdown("### 2. Antropometría")
         weight = input_biomarker("Peso (kg)", 30.0, 250.0, 30.0, "weight", "Peso corporal actual.")
         height = input_biomarker("Altura (m)", 1.00, 2.20, 1.00, "height", "Altura en metros.")
         
@@ -386,13 +400,17 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
+        # --- SECCIÓN 3: HISTORIA ---
+        st.markdown("### 3. Historia")
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 18, "age", format_str="%d")
         pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
         
         st.markdown("---") 
 
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Función de pedigrí de diabetes.")
+        # --- SECCIÓN 4: GENÉTICA ---
+        st.markdown("### 4. Genética")
+        dpf = input_biomarker("Antecedentes (DPF)", 0.0, 2.5, 0.0, "dpf", "Estimación de predisposición genética.")
 
         if dpf <= 0.15:
             dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
@@ -418,23 +436,27 @@ elif st.session_state.page == "simulacion":
         st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
-    st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Resultados del Análisis</h1>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Panel General", "Explicabilidad", "Protocolo"])
+    tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
 
     with tab1:
         st.write("")
         
-        with st.expander("Ajuste de Sensibilidad Clínica"):
+        # --- CONFIGURACIÓN DEL MODELO (PASO 2) ---
+        with st.expander("⚙️ Configuración del Modelo (Random Forest)"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
             with c_calib_1:
-                st.caption("Selecciona manualmente el umbral de decisión.")
-                threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
+                st.markdown("**Umbral de Decisión**")
+                st.caption("Define el punto de corte probabilístico para clasificar un caso como positivo.")
+                threshold = st.slider("Umbral seleccionado", 0.0, 1.0, 0.27, 0.01, label_visibility="visible")
                 st.markdown(f"""
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                     <span style="font-size:1.1rem;">💡</span> 
                     <div>
-                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos.
+                        <strong>Explicación de umbrales:</strong><br>
+                        • <strong>0.27 (Recomendado):</strong> Optimiza F2-Score para este modelo (minimiza falsos negativos).<br>
+                        • <strong>0.50 (Estándar):</strong> Balance neutro entre sensibilidad y especificidad.
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -505,7 +527,7 @@ elif st.session_state.page == "simulacion":
             conf_desc = "Probabilidad relativamente cerca del umbral."
         else:
             conf_text, conf_color = "BAJA", CEMP_PINK
-            conf_desc = "Zona de incertidumbre clínica."
+            conf_desc = "Fiabilidad basada en la distancia de la probabilidad al umbral seleccionado."
 
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
@@ -541,8 +563,8 @@ elif st.session_state.page == "simulacion":
                     <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
                     <div>
                         <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
-                        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">{patient_name}</h2>
-                        <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{date_str}</b></div>
+                        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">{display_name}</h2>
+                        <div style="font-size:0.85rem; color:#666; margin-top:5px;">ID: <b>{patient_name}</b> | Fecha: <b>{date_str}</b></div>
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
@@ -595,9 +617,13 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
-                st.session_state.predict_clicked = True
-                st.rerun()
+            if st.button("GENERAR PREDICCIÓN CLÍNICA ➔", use_container_width=True, type="primary"):
+                if not patient_name:
+                    st.error("⚠️ Por favor, introduzca al menos un ID de paciente para continuar.")
+                else:
+                    with st.spinner("Procesando datos y ejecutando modelo..."):
+                        st.session_state.predict_clicked = True
+                        st.rerun()
 
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
             fig.patch.set_facecolor('none')
@@ -708,7 +734,8 @@ elif st.session_state.page == "simulacion":
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
             st.markdown(f'<div class="card card-auto" style="height:100%;">', unsafe_allow_html=True)
-            st.markdown('<h4 style="text-align:center; color:#2C3E50;">👤 Análisis Individual (SHAP)</h4>', unsafe_allow_html=True)
+            st.markdown('<h4 style="text-align:center; color:#2C3E50;">👤 Factores de Riesgo (SHAP)</h4>', unsafe_allow_html=True)
+            st.caption("EXPLICABILIDAD DEL MODELO")
             
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
@@ -757,7 +784,7 @@ elif st.session_state.page == "simulacion":
 
                     # --- CAJA DE EXPLICACIÓN ---
                     st.success(f"""
-                    **¿Por qué este resultado para {patient_name}?**
+                    **¿Por qué este resultado para {display_name}?**
                     Este gráfico desglosa la probabilidad calculada ({prob*100:.1f}%).
                     - **Barras Rojas (+):** Factores que *aumentan* el riesgo en este paciente específico (ej. Glucosa alta).
                     - **Barras Azules (-):** Factores que *protegen* o reducen el riesgo (ej. Edad joven o Insulina baja).
@@ -772,6 +799,7 @@ elif st.session_state.page == "simulacion":
 
     with tab3:
         st.write("")
+        st.info("💡 Módulo de recomendaciones clínicas y protocolos de actuación.")
         if is_high:
             st.markdown(f"""
             <div style="padding: 20px; background-color: #FFF5F5; border-left: 5px solid {CEMP_PINK}; border-radius: 5px; margin-bottom: 20px;">

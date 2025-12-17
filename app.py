@@ -16,10 +16,8 @@ st.set_page_config(
 )
 
 # =========================================================
-# 2. FUNCIONES DE CACHÉ (ESTO EVITA EL PARPADEO)
+# 2. FUNCIONES DE CACHÉ (OPTIMIZACIÓN ANTI-PARPADEO)
 # =========================================================
-# Estas funciones solo se ejecutan si sus datos de entrada cambian.
-# Si cambias el nombre, los gráficos de glucosa no se recalculan.
 
 def fig_to_html(fig):
     buf = io.BytesIO()
@@ -31,10 +29,11 @@ def fig_to_html(fig):
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
-# --- CACHÉ 1: GRÁFICO DE CALIBRACIÓN (PESADO) ---
+# --- CACHÉ 1: GRÁFICO DE CALIBRACIÓN (SENSIBILIDAD) ---
+# Al poner esto aquí, si mueves la barra lateral, este gráfico NO se recalcula.
 @st.cache_data(show_spinner=False)
 def get_calibration_plot(threshold_val):
-    # Colores
+    # Definimos colores aquí para que la función sea autónoma
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50"
     OPTIMAL_GREEN = "#8BC34A"
@@ -102,7 +101,6 @@ def get_patient_card_html(name, date_str, clicked, risk_label, risk_bg, risk_bor
 # --- CACHÉ 3: BARRAS DE CONTEXTO ---
 @st.cache_data(show_spinner=False)
 def get_context_bars_html(glucose_val, bmi_val):
-    # Constantes y colores
     CEMP_DARK = "#2C3E50"
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
@@ -143,7 +141,7 @@ def get_context_bars_html(glucose_val, bmi_val):
         </div>
     </div>"""
 
-# --- CACHÉ 4: DONUT CHART (PESADO) ---
+# --- CACHÉ 4: DONUT CHART ---
 @st.cache_data(show_spinner=False)
 def get_donut_chart_html(prob, threshold, clicked, risk_color):
     CEMP_DARK = "#2C3E50"
@@ -153,9 +151,7 @@ def get_donut_chart_html(prob, threshold, clicked, risk_color):
     ax.set_facecolor('none')
 
     if clicked:
-        # GRAFICO REAL
         ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
-        # LÍNEA DEL UMBRAL
         threshold_angle = 90 - (threshold * 360)
         theta_rad = np.deg2rad(threshold_angle)
         x1 = 0.85 * np.cos(theta_rad)
@@ -163,10 +159,8 @@ def get_donut_chart_html(prob, threshold, clicked, risk_color):
         x2 = 1.15 * np.cos(theta_rad)
         y2 = 1.15 * np.sin(theta_rad)
         ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
-        
         center_text = f"{prob*100:.1f}%"
     else:
-        # GRAFICO VACÍO
         ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
         center_text = "---"
 
@@ -189,7 +183,6 @@ def get_donut_chart_html(prob, threshold, clicked, risk_color):
         </div>
     </div>"""
 
-
 # =========================================================
 # 3. GESTIÓN DE NAVEGACIÓN
 # =========================================================
@@ -206,85 +199,50 @@ def volver_inicio():
 # 4. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
-
-    # --- CSS DE LA PORTADA ---
     st.markdown("""
     <style>
-        .stApp {
-            background-color: #f0f2f6;
-        }
-        #MainMenu, footer, header {
-            visibility: hidden;
-        }
-
-        /* Contenedor estrecho y centrado */
+        .stApp { background-color: #f0f2f6; }
+        #MainMenu, footer, header { visibility: hidden; }
         .block-container {
-            background-color: white;
-            padding: 3rem !important;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            max-width: 800px !important;
-            margin-top: 2rem;
-            margin-left: auto !important;
-            margin-right: auto !important;
+            background-color: white; padding: 3rem !important;
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 800px !important; margin-top: 2rem;
+            margin-left: auto !important; margin-right: auto !important;
         }
-
-        /* TÍTULO PRINCIPAL - HELVETICA BOLD */
         h1 {
-            text-align: center;
-            font-family: 'Helvetica', sans-serif !important;
-            font-weight: 800 !important;
-            font-size: 3.5rem !important;
-            color: #2c3e50;
-            margin-bottom: 0 !important;
-            line-height: 1.2 !important;
-            letter-spacing: -1px;
-            cursor: default;
+            text-align: center; font-family: 'Helvetica', sans-serif !important;
+            font-weight: 800 !important; font-size: 3.5rem !important;
+            color: #2c3e50; margin-bottom: 0 !important;
+            line-height: 1.2 !important; letter-spacing: -1px; cursor: default;
         }
-
-        /* Ocultar enlace automático */
-        h1 a {
-            display: none !important;
-            pointer-events: none !important;
-        }
-        h1:hover {
-            color: #2c3e50 !important;
-            text-decoration: none !important;
-        }
-
+        h1 a { display: none !important; pointer-events: none !important; }
+        h1:hover { color: #2c3e50 !important; text-decoration: none !important; }
         .landing-pink { color: #ef7d86; }
         .landing-gray { color: #bdc3c7; }
-
         .badge-container { text-align: center; margin-bottom: 10px; }
         .badge {
             background-color: #2c3e50; color: white; padding: 6px 15px;
             border-radius: 50px; font-size: 11px; font-weight: bold;
             text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;
         }
-
         .institution {
             text-align: center; color: #555; font-size: 13px; font-weight: 700;
             letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;
         }
-
         .subtitle {
             text-align: center; font-size: 1.1rem; font-weight: 700;
             color: #34495e; margin-top: 5px; margin-bottom: 25px;
         }
-
         .description {
             text-align: center; color: #666; line-height: 1.6;
             font-size: 0.95rem; margin-bottom: 30px; padding: 0 20px;
         }
-
         .warning-box {
             background-color: #f9fafb; border-left: 4px solid #ef7d86;
             padding: 20px; border-radius: 4px; font-size: 0.85rem;
             color: #555; margin-bottom: 30px; text-align: center;
         }
         .warning-box p { margin: 0; line-height: 1.5; }
-
-        /* BOTÓN */
         div.stButton > button {
             position: relative;
             background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
@@ -313,38 +271,17 @@ if st.session_state.page == "landing":
     </style>
     """, unsafe_allow_html=True)
 
-    # HTML DE LA PORTADA
     st.markdown("""
 <div class="badge-container">
 <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
 </div>
-
 <div class="institution">Centro Europeo de Másteres y Posgrados</div>
-
-<h1>
-    D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
-</h1>
-
-<div class="subtitle">
-    Prototipo de CDSS para el diagnóstico temprano de diabetes
-</div>
-
-<p class="description">
-    Este proyecto explora el potencial de integrar modelos predictivos avanzados
-    en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como
-    un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
-</p>
-
+<h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
+<div class="subtitle">Prototipo de CDSS para el diagnóstico temprano de diabetes</div>
+<p class="description">Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.</p>
 <div class="warning-box">
-    <p><strong>
-        Aplicación desarrollada con fines exclusivamente educativos como parte de
-        un Trabajo de Fin de Máster.
-    </strong></p>
-    <p style="margin-top:10px;">
-        ⚠️ Esta herramienta NO es un dispositivo médico certificado.
-        Los resultados son una simulación académica y NO deben utilizarse para el
-        diagnóstico real.
-    </p>
+    <p><strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong></p>
+    <p style="margin-top:10px;">⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben utilizarse para el diagnóstico real.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -359,11 +296,10 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
-    # --- INICIALIZAR ESTADO DE PREDICCIÓN ---
     if 'predict_clicked' not in st.session_state:
         st.session_state.predict_clicked = False
 
-    # --- 2. COLORES ---
+    # --- COLORES ---
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50" 
     GOOD_TEAL = "#4DB6AC"
@@ -372,138 +308,65 @@ elif st.session_state.page == "simulacion":
     NOTE_GRAY_BG = "#F8F9FA"  
     NOTE_GRAY_TEXT = "#6C757D" 
 
-    # --- 3. CSS (ESTILOS AVANZADOS) ---
+    # --- CSS ---
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
-        
         .block-container {{
-            max-width: 1250px; 
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-            margin: 0 auto;
+            max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
-        
-        /* LOGO PERSONALIZADO */
         .cemp-logo {{ 
-            font-family: 'Helvetica', sans-serif; 
-            font-weight: 800; 
-            font-size: 1.8rem; 
-            color: {CEMP_DARK}; 
-            margin: 0; 
+            font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin: 0; 
         }}
         .cemp-logo span {{ color: {CEMP_PINK}; }}
-
-        /* === ESTILO SLIDER GENERAL === */
-        .stSlider {{
-            padding-top: 0px !important;
-            padding-bottom: 10px !important;
-        }}
-
-        /* === ESTILO DEL DESPLEGABLE (EXPANDER) === */
+        .stSlider {{ padding-top: 0px !important; padding-bottom: 10px !important; }}
         div[data-testid="stExpander"] details > summary {{
             background-color: rgba(233, 127, 135, 0.1) !important;
             border: 1px solid rgba(233, 127, 135, 0.2) !important;
             border-radius: 8px !important;
-            color: {CEMP_DARK} !important;
-            font-weight: 700 !important;
-            transition: background-color 0.3s;
+            color: {CEMP_DARK} !important; font-weight: 700 !important; transition: background-color 0.3s;
         }}
-        
         div[data-testid="stExpander"] details > summary:hover {{
-            background-color: rgba(233, 127, 135, 0.2) !important;
-            color: {CEMP_DARK} !important;
+            background-color: rgba(233, 127, 135, 0.2) !important; color: {CEMP_DARK} !important;
         }}
-
         div[data-testid="stExpander"] details > summary svg {{
-            fill: {CEMP_DARK} !important;
-            color: {CEMP_DARK} !important;
+            fill: {CEMP_DARK} !important; color: {CEMP_DARK} !important;
         }}
-        
         div[data-testid="stExpander"] details[open] > div {{
             border-left: 1px solid rgba(233, 127, 135, 0.2);
             border-right: 1px solid rgba(233, 127, 135, 0.2);
             border-bottom: 1px solid rgba(233, 127, 135, 0.2);
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
         }}
-
-        /* === INPUTS BARRA LATERAL === */
         [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
-            padding: 0px 5px;
-            font-size: 0.9rem;
-            text-align: center;
-            color: {CEMP_DARK};
-            font-weight: 800;
-            border-radius: 8px;
-            background-color: white;
-            border: 1px solid #ddd;
+            padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK};
+            font-weight: 800; border-radius: 8px; background-color: white; border: 1px solid #ddd;
         }}
-        [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{
-            vertical-align: middle;
-        }}
-
-        /* === CAJA DE CÁLCULOS (SIDEBAR) === */
+        [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{ vertical-align: middle; }}
         .calc-box {{
-            background-color: #F8F9FA;
-            border-radius: 8px;
-            padding: 12px 15px;
-            border: 1px solid #EEE;
-            margin-top: 5px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px;
+            border: 1px solid #EEE; margin-top: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }}
         .calc-label {{
-            font-size: 0.75rem; 
-            color: #888; 
-            font-weight: 600; 
-            text-transform: uppercase;
+            font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase;
         }}
         .calc-value {{
-            font-size: 1rem; 
-            color: {CEMP_DARK}; 
-            font-weight: 800;
+            font-size: 1rem; color: {CEMP_DARK}; font-weight: 800;
         }}
-        
-        /* === TARJETAS === */
         .card {{
-            background-color: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.04);
-            margin-bottom: 15px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            min-height: 300px; 
+            background-color: white; border-radius: 12px; padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 15px; display: flex; flex-direction: column; justify-content: center; min-height: 300px; 
         }}
-        
-        .card-auto {{
-            min-height: auto !important;
-            height: 100%;
-        }}
-        
+        .card-auto {{ min-height: auto !important; height: 100%; }}
         .card-header {{
-            color: #999;
-            font-size: 0.75rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
+            color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
         }}
-
-        /* GRÁFICOS DE BARRAS */
-        .bar-container {{
-            position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px;
-        }}
+        .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
-        
         .bar-fill {{ height: 100%; width: 100%; border-radius: 6px; opacity: 1; }}
-
         .bar-marker {{ 
             position: absolute; top: -6px; width: 4px; height: 24px; 
             background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
@@ -512,40 +375,17 @@ elif st.session_state.page == "simulacion":
         .bar-txt {{ 
             position: absolute; top: -30px; transform: translateX(-50%); 
             font-size: 0.85rem; font-weight: bold; color: {CEMP_DARK}; 
-            background: white; padding: 2px 8px; border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: white; padding: 2px 8px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }}
-        
-        /* LEYENDA CENTRADA ABSOLUTA */
-        .legend-container {{
-            position: relative;
-            width: 100%;
-            height: 20px;
-            margin-top: 8px;
-        }}
+        .legend-container {{ position: relative; width: 100%; height: 20px; margin-top: 8px; }}
         .legend-label {{
-            position: absolute;
-            transform: translateX(-50%);
-            font-size: 0.7rem; 
-            color: #888; 
-            font-weight: 600;
-            text-align: center;
-            white-space: nowrap;
+            position: absolute; transform: translateX(-50%); font-size: 0.7rem; 
+            color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
-        
         </style>
     """, unsafe_allow_html=True)
 
-    # --- 5. MODELO MOCK ---
-    if 'model' not in st.session_state:
-        class MockModel:
-            def predict_proba(self, X):
-                score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
-                prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
-                return [[1-prob, prob]]
-        st.session_state.model = MockModel()
-
-    # --- 6. INPUTS SINCRONIZADOS ---
+    # --- INPUTS ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -553,7 +393,6 @@ elif st.session_state.page == "simulacion":
         st.markdown(label_html, unsafe_allow_html=True)
         
         c1, c2 = st.columns([2.5, 1], gap="small")
-        
         input_type = type(default_val)
         min_val = input_type(min_val)
         max_val = input_type(max_val)
@@ -589,7 +428,7 @@ elif st.session_state.page == "simulacion":
             )
         return st.session_state[key]
 
-    # --- 7. BARRA LATERAL ---
+    # --- BARRA LATERAL ---
     with st.sidebar:
         if st.button("⬅ Volver"):
             volver_inicio()
@@ -599,7 +438,6 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- SECCIÓN NUEVA: DATOS DEL PACIENTE ---
         st.markdown("**Datos del paciente**")
         patient_name = st.text_input("ID / Nombre", value="Paciente #8842-X", label_visibility="collapsed")
         
@@ -612,7 +450,6 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        # 1. METABÓLICOS
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
@@ -630,7 +467,6 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---") 
 
-        # 2. ANTROPOMÉTRICOS
         weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
         height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
         
@@ -652,14 +488,12 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
-        # 3. PACIENTE
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
         
         st.markdown("---") 
 
-        # 4. DPF
         dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
 
         if dpf <= 0.15:
@@ -686,7 +520,7 @@ elif st.session_state.page == "simulacion":
         st.caption("Valores basados en el estudio Pima Indians Diabetes.")
 
 
-    # --- 8. MAIN ---
+    # --- MAIN ---
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
@@ -694,14 +528,11 @@ elif st.session_state.page == "simulacion":
     with tab1:
         st.write("")
         
-        # --- UMBRAL (CACHÉ APLICADO AQUÍ PARA GRÁFICO PESADO) ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
-            
             with c_calib_1:
                 st.caption("Selecciona manualmente el umbral de decisión.")
                 threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
-                
                 st.markdown(f"""
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                     <span style="font-size:1.1rem;">💡</span> 
@@ -710,9 +541,8 @@ elif st.session_state.page == "simulacion":
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-
             with c_calib_2:
-                # Usamos la función cacheada
+                # LLAMADA A FUNCIÓN CACHEADA DEL GRÁFICO DE CALIBRACIÓN
                 st.markdown(f"""
                 <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
                     {get_calibration_plot(threshold)}
@@ -724,7 +554,6 @@ elif st.session_state.page == "simulacion":
         prob = st.session_state.model.predict_proba(input_data)[0][1]
         is_high = prob > threshold 
         
-        # CÁLCULO FIABILIDAD
         distancia_al_corte = abs(prob - threshold)
         if distancia_al_corte > 0.15:
             conf_text, conf_color = "ALTA", GOOD_TEAL
@@ -736,58 +565,38 @@ elif st.session_state.page == "simulacion":
             conf_text, conf_color = "BAJA", CEMP_PINK
             conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
-        # ESTILOS
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
         risk_icon = "🔴" if is_high else "🟢"
         risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
         risk_border = CEMP_PINK if is_high else GOOD_TEAL
         
-        # ALERTAS (Lógica de Hallazgos)
         alerts = []
+        if glucose >= 200: alerts.append("Posible Diabetes")
+        elif glucose >= 140: alerts.append("Posible Prediabetes")
+        if bmi >= 40: alerts.append("Obesidad Mórbida (G3)")
+        elif bmi >= 35: alerts.append("Obesidad G2")
+        elif bmi >= 30: alerts.append("Obesidad G1")
+        elif bmi >= 25: alerts.append("Sobrepeso")
+        elif bmi < 18.5: alerts.append("Bajo Peso")
+        if proxy_index > 19769.5: alerts.append("Resistencia Insulina")
         
-        # Glucosa 2h - TEXTO SIMPLIFICADO
-        if glucose >= 200:
-            alerts.append("Posible Diabetes")
-        elif glucose >= 140:
-            alerts.append("Posible Prediabetes")
-            
-        # BMI
-        if bmi >= 40:
-            alerts.append("Obesidad Mórbida (G3)")
-        elif bmi >= 35:
-            alerts.append("Obesidad G2")
-        elif bmi >= 30:
-            alerts.append("Obesidad G1")
-        elif bmi >= 25:
-            alerts.append("Sobrepeso")
-        elif bmi < 18.5:
-            alerts.append("Bajo Peso")
-            
-        if proxy_index > 19769.5: 
-            alerts.append("Resistencia Insulina")
-        
-        if not alerts:
-            insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
-        else:
-            insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
+        if not alerts: insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
+        else: insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
 
-        # LAYOUT
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
-        # IZQUIERDA
         with c_left:
-            # FICHA PACIENTE (CACHÉ)
+            # LLAMADA A FUNCIÓN CACHEADA DE FICHA PACIENTE
             st.markdown(get_patient_card_html(
                 patient_name, date_str, st.session_state.predict_clicked,
                 risk_label, risk_bg, risk_border, risk_icon,
                 conf_desc, conf_color, conf_text
             ), unsafe_allow_html=True)
 
-            # GRÁFICOS DE BARRAS (CACHÉ)
+            # LLAMADA A FUNCIÓN CACHEADA DE BARRAS
             st.markdown(get_context_bars_html(glucose, bmi), unsafe_allow_html=True)
 
-        # DERECHA
         with c_right:
             st.markdown(f"""<div class="card card-auto" style="border-left:5px solid {insight_bd}; justify-content:center;">
                 <span class="card-header" style="color:{insight_bd}; margin-bottom:10px;">HALLAZGOS CLAVE</span>
@@ -797,12 +606,11 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            # --- BOTÓN DE PREDICCIÓN ---
             if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
                 st.session_state.predict_clicked = True
                 st.rerun()
 
-            # FIGURA CON DONUT CHART (CACHÉ)
+            # LLAMADA A FUNCIÓN CACHEADA DE DONUT
             st.markdown(get_donut_chart_html(
                 prob, threshold, st.session_state.predict_clicked, risk_color
             ), unsafe_allow_html=True)

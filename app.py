@@ -750,7 +750,8 @@ elif st.session_state.page == "simulacion":
             
             # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
             st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">👤 Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
+            # SE QUITA EL EMOJI DEL TÍTULO
+            st.markdown(f'<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
             
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
@@ -799,14 +800,17 @@ elif st.session_state.page == "simulacion":
             st.markdown('</div>', unsafe_allow_html=True) # FIN SECCIÓN BLANCA
 
             # SECCIÓN INFERIOR ROSA (EXPLICACIÓN) - INTEGRADA EN LA MISMA TARJETA
+            # NUEVA EXPLICACIÓN MÁS ACCESIBLE PERO TÉCNICA
             st.markdown(f"""
             <div class="xai-explanation-footer">
-                <strong>Análisis de Contribución Vectorial (Valores SHAP)</strong><br>
-                Desglose aditivo de la probabilidad predicha ({prob*100:.1f}%) respecto a la tasa base del modelo.<br><br>
+                <strong>Interpretación del Gráfico (Valores SHAP)</strong><br>
+                Este gráfico muestra cómo se llega a la probabilidad final para este paciente concreto, partiendo de la media de la población.<br><br>
                 <ul>
-                    <li>🔴 <strong>Factores de Riesgo (+):</strong> Variables que incrementan la probabilidad del evento positivo (Diagnóstico DM2).</li>
-                    <li>🔵 <strong>Factores Protectores/Atenuantes (-):</strong> Variables que mitigan el riesgo en este perfil clínico específico, reduciendo la probabilidad final.</li>
+                    <li><strong>Línea Base (E[f(X)]):</strong> Es el punto de partida. Representa la probabilidad promedio de diabetes en toda la población estudiada.</li>
+                    <li>🔴 <strong>Barras Rojas (+):</strong> Indican características de este paciente que <strong>aumentan</strong> su riesgo en comparación con el promedio.</li>
+                    <li>🔵 <strong>Barras Azules (-):</strong> Indican características que <strong>disminuyen</strong> su riesgo en comparación con el promedio.</li>
                 </ul>
+                <strong>Resultado:</strong> La probabilidad final es la suma de la línea base más todos los valores de las barras.
             </div>
             """, unsafe_allow_html=True)
 

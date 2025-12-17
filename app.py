@@ -88,7 +88,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 4. PÁGINA: PORTADA (TEXTO ACTUALIZADO)
+# 4. PÁGINA: PORTADA (TEXTOS ACTUALIZADOS)
 # =========================================================
 if st.session_state.page == "landing":
     st.markdown("""
@@ -165,9 +165,9 @@ if st.session_state.page == "landing":
 
     st.markdown("""
 <div class="badge-container">
-<span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
+<span class="badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</span>
 </div>
-<div class="institution">Centro Europeo de Másteres y Posgrados</div>
+<div class="institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>
 <h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
 <div class="subtitle">Prototipo de CDSS para el diagnóstico temprano de diabetes</div>
 <p class="description">Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y prevención de la diabetes tipo 2.</p>
@@ -184,7 +184,7 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 5. PÁGINA: SIMULACIÓN (CÓDIGO ORIGINAL SIN CAMBIOS)
+# 5. PÁGINA: SIMULACIÓN
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -344,7 +344,8 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
+        # AQUÍ ESTÁN LAS CORRECCIONES DE LOS TEXTOS DE AYUDA (TOOLTIPS)
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
 
@@ -392,7 +393,7 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Función de pedigrí de diabetes.")
+        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Estimación de predisposición genética.")
 
         if dpf <= 0.15:
             dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL

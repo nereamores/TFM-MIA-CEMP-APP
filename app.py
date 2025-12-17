@@ -142,7 +142,7 @@ st.markdown("""
 
     /* Flecha decorativa */
     div.stButton > button::after {
-        content: "Iniciar simulación ➔";
+        content: "➔";
         position: absolute;
         right: 28px;
         top: 50%;
@@ -201,7 +201,7 @@ if st.session_state.page == "landing":
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("                 "):
+        if st.button("INICIAR SIMULACIÓN"):
             ir_a_simulacion()
             st.rerun()
 

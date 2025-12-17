@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import datetime
+import joblib
+import os
 
 # =========================================================
 # 1. CONFIGURACIÓN Y CLASES (GLOBAL)
@@ -15,19 +17,32 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase del modelo AQUÍ para que siempre esté disponible
+# CLASE MOCK (Respaldo por si falla la carga del modelo real)
 class MockModel:
     def predict_proba(self, X):
-        # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
-        score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
+        # Simulación simple
+        score = (X[0][1]*0.5) + (X[0][4]*0.4) + (X[0][6]*0.1) # Glucosa, BMI, Edad aprox
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicialización segura del modelo
-if 'model' not in st.session_state:
-    st.session_state.model = MockModel()
+# --- FUNCIÓN DE CARGA DEL MODELO ---
+@st.cache_resource
+def load_model():
+    model_path = "modelos/diabetes_rf_pipeline.pkl"
+    if os.path.exists(model_path):
+        try:
+            return joblib.load(model_path)
+        except Exception as e:
+            st.error(f"Error cargando modelo: {e}")
+            return MockModel()
+    else:
+        # Si no está el archivo, usamos el Mock silenciosamente para que la app funcione
+        return MockModel()
 
-# Estado del botón
+# Inicialización del modelo
+if 'model' not in st.session_state:
+    st.session_state.model = load_model()
+
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
@@ -305,14 +320,12 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
+        # --- INPUTS PACIENTE ---
         st.markdown("**Datos del paciente**")
-        
-        # Reset al cambiar nombre o fecha
         def reset_on_change():
             st.session_state.predict_clicked = False
 
         patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_on_change)
-        
         default_date = datetime.date.today()
         consult_date = st.date_input("Fecha Predicción", value=default_date, label_visibility="collapsed", on_change=reset_on_change)
         
@@ -322,9 +335,13 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
-        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
+        # METABÓLICOS
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 0, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
+        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
+        # NUEVO INPUT: PRESIÓN ARTERIAL
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
+
         proxy_index = int(glucose * insulin)
         proxy_str = f"{proxy_index}" 
 
@@ -339,10 +356,15 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---") 
 
-        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
+        # ANTROPOMÉTRICOS
+        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 0.0, "weight", "Peso corporal actual.")
         height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
         
-        bmi = weight / (height * height)
+        # Cálculo BMI seguro (evitar división por cero)
+        if height > 0:
+            bmi = weight / (height * height)
+        else:
+            bmi = 0
         bmi_sq = bmi ** 2
         
         st.markdown(f"""
@@ -360,13 +382,14 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
+        # PACIENTE
         c_age, c_preg = st.columns(2)
-        age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
-        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
+        age = input_biomarker("Edad (años)", 18, 90, 0, "age", format_str="%d")
+        pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
         
         st.markdown("---") 
 
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
+        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Función de pedigrí de diabetes.")
 
         if dpf <= 0.15:
             dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
@@ -441,30 +464,49 @@ elif st.session_state.page == "simulacion":
                 st.image(img_bytes, use_container_width=True)
                 plt.close(fig_calib)
 
-        input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
+        # PREPARAR DATOS PARA EL MODELO REAL
+        # Orden exacto: ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DPF', 'Age', 'Indice_resistencia', 'BMI_square', 'Is_prediabetes']
         
+        # Calcular variable is_prediabetes (1 si glucosa >= 140, else 0)
+        is_prediabetes = 1 if glucose >= 140 else 0
+        
+        input_data = np.array([[
+            pregnancies,
+            glucose,
+            blood_pressure, # Ahora lo tenemos
+            insulin,
+            bmi,
+            dpf,
+            age,
+            proxy_index, # Indice_resistencia
+            bmi_sq,      # BMI_square
+            is_prediabetes
+        ]])
+        
+        # PREDICCIÓN SEGURA
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
             try:
                 prob = st.session_state.model.predict_proba(input_data)[0][1]
             except:
+                # Si falla por forma, usamos simulado
                 st.session_state.model = MockModel()
-                prob = st.session_state.model.predict_proba(input_data)[0][1]
+                prob = 0.5
         else:
             st.session_state.model = MockModel()
-            prob = st.session_state.model.predict_proba(input_data)[0][1]
+            prob = 0.5
 
         is_high = prob > threshold 
         
         distancia_al_corte = abs(prob - threshold)
         if distancia_al_corte > 0.15:
             conf_text, conf_color = "ALTA", GOOD_TEAL
-            conf_desc = "Probabilidad claramente alejada del umbral. Clasificación robusta."
+            conf_desc = "Probabilidad claramente alejada del umbral."
         elif distancia_al_corte > 0.05:
             conf_text, conf_color = "MEDIA", "#F39C12"
-            conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
+            conf_desc = "Probabilidad relativamente cerca del umbral."
         else:
             conf_text, conf_color = "BAJA", CEMP_PINK
-            conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
+            conf_desc = "Zona de incertidumbre clínica."
 
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
@@ -479,8 +521,9 @@ elif st.session_state.page == "simulacion":
         elif bmi >= 35: alerts.append("Obesidad G2")
         elif bmi >= 30: alerts.append("Obesidad G1")
         elif bmi >= 25: alerts.append("Sobrepeso")
-        elif bmi < 18.5: alerts.append("Bajo Peso")
+        elif bmi < 18.5 and bmi > 0: alerts.append("Bajo Peso")
         if proxy_index > 19769.5: alerts.append("Resistencia Insulina")
+        if blood_pressure > 90: alerts.append("Hipertensión Diastólica")
         
         if not alerts: insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
         else: insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
@@ -488,6 +531,7 @@ elif st.session_state.page == "simulacion":
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
+            # HTML DIRECTO Y LIMPIO (SIN CACHÉ)
             if st.session_state.predict_clicked:
                 badges_html = f"""<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">{risk_icon} {risk_label}</div><div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top:5px;" title="{conf_desc}"><span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span><span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span></div>"""
             else:

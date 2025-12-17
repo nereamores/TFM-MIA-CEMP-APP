@@ -29,7 +29,8 @@ class MockModel:
     def predict_proba(self, X):
         # Simulación simple
         if isinstance(X, pd.DataFrame):
-            score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
+            # Usamos iloc para acceder por posición y evitar errores de índice
+            score = (X.iloc[0, 1]*0.5) + (X.iloc[0, 4]*0.4) + (X.iloc[0, 6]*0.1) 
         else:
             score = 50
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
@@ -58,13 +59,6 @@ if 'predict_clicked' not in st.session_state:
 # =========================================================
 # 2. FUNCIONES AUXILIARES
 # =========================================================
-
-def fig_to_html(fig):
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
-    buf.seek(0)
-    img_str = base64.b64encode(buf.read()).decode()
-    return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
     buf = io.BytesIO()
@@ -212,40 +206,24 @@ elif st.session_state.page == "simulacion":
         }}
         .cemp-logo span {{ color: {CEMP_PINK}; }}
         .stSlider {{ padding-top: 0px !important; padding-bottom: 10px !important; }}
-        
-        /* Estilos generales de tarjetas */
-        .card {{
-            background-color: white; border-radius: 12px; padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
-            margin-bottom: 15px; display: flex; flex-direction: column; justify-content: center; min-height: 300px; 
+        div[data-testid="stExpander"] details > summary {{
+            background-color: rgba(233, 127, 135, 0.1) !important;
+            border: 1px solid rgba(233, 127, 135, 0.2) !important;
+            border-radius: 8px !important;
+            color: {CEMP_DARK} !important; font-weight: 700 !important; transition: background-color 0.3s;
         }}
-        .card-auto {{ min-height: auto !important; height: 100%; }}
-        
-        /* Estilos para "pseudo-tarjetas" en explicabilidad */
-        .card-top {{
-            background-color: white; border-top-left-radius: 12px; border-top-right-radius: 12px;
-            padding: 20px 20px 5px 20px; /* Menos padding abajo */
-            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-top: 1px solid rgba(0,0,0,0.04);
+        div[data-testid="stExpander"] details > summary:hover {{
+            background-color: rgba(233, 127, 135, 0.2) !important; color: {CEMP_DARK} !important;
         }}
-        .card-mid {{
-            background-color: white;
-            padding: 0px 20px;
-            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04);
+        div[data-testid="stExpander"] details > summary svg {{
+            fill: {CEMP_DARK} !important; color: {CEMP_DARK} !important;
         }}
-        .card-bottom {{
-            background-color: white; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
-            padding: 10px 20px 20px 20px;
-            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-bottom: 1px solid rgba(0,0,0,0.04);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            margin-bottom: 15px;
+        div[data-testid="stExpander"] details[open] > div {{
+            border-left: 1px solid rgba(233, 127, 135, 0.2);
+            border-right: 1px solid rgba(233, 127, 135, 0.2);
+            border-bottom: 1px solid rgba(233, 127, 135, 0.2);
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
         }}
-
-        .card-header {{
-            color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
-            text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
-        }}
-        
-        /* Sidebar Styling */
         [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
             padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK};
             font-weight: 800; border-radius: 8px; background-color: white; border: 1px solid #ddd;
@@ -261,11 +239,42 @@ elif st.session_state.page == "simulacion":
         .calc-value {{
             font-size: 1rem; color: {CEMP_DARK}; font-weight: 800;
         }}
+        
+        /* ESTILOS DE TARJETAS */
+        .card {{
+            background-color: white; border-radius: 12px; padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 15px; display: flex; flex-direction: column; justify-content: center; min-height: 300px; 
+        }}
+        .card-auto {{ min-height: auto !important; height: 100%; }}
+        
+        /* ESTILOS PARA "TARJETA DIVIDIDA" EN EXPLICABILIDAD */
+        .card-top {{
+            background-color: white; border-top-left-radius: 12px; border-top-right-radius: 12px;
+            padding: 20px 20px 0px 20px;
+            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-top: 1px solid rgba(0,0,0,0.04);
+        }}
+        .card-mid {{
+            background-color: white; padding: 0px 20px;
+            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04);
+            display: flex; justify-content: center;
+        }}
+        .card-bottom {{
+            background-color: white; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+            padding: 10px 20px 20px 20px;
+            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-bottom: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px;
+        }}
 
-        /* Barras Contexto */
+        .card-header {{
+            color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
+        }}
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
-        .bar-fill {{ height: 100%; width: 100%; border-radius: 6px; opacity: 1; }}
+        .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
+        .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
+        .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
         .bar-marker {{ 
             position: absolute; top: -6px; width: 4px; height: 24px; 
             background: {CEMP_DARK}; border: 1px solid white; border-radius: 2px;
@@ -352,11 +361,11 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        # 1. Glucosa e Insulina
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
+        # 1. GLUCOSA E INSULINA
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
-        # 2. Cálculo Índice RI (ANTES DE PRESIÓN)
+        # 2. CÁLCULO ÍNDICE (ANTES DE PRESIÓN)
         proxy_index = int(glucose * insulin)
         proxy_str = f"{proxy_index}" 
 
@@ -369,7 +378,7 @@ elif st.session_state.page == "simulacion":
         </div>
         """, unsafe_allow_html=True)
 
-        # 3. Presión Arterial (AHORA VA DESPUÉS)
+        # 3. PRESIÓN ARTERIAL (AHORA)
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
 
         st.markdown("---") 
@@ -482,7 +491,6 @@ elif st.session_state.page == "simulacion":
         # PREPARAR DATOS PARA EL MODELO REAL
         is_prediabetes = 1 if glucose >= 140 else 0
         
-        # DataFrame con los nombres de columna EXACTOS
         input_data = pd.DataFrame([[
             pregnancies,
             glucose,
@@ -517,7 +525,7 @@ elif st.session_state.page == "simulacion":
             conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
         else:
             conf_text, conf_color = "BAJA", CEMP_PINK
-            conf_desc = "Zona de incertidumbre clínica."
+            conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
 
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
@@ -543,12 +551,19 @@ elif st.session_state.page == "simulacion":
         
         with c_left:
             if st.session_state.predict_clicked:
-                badges_html = f"""<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">{risk_icon} {risk_label}</div><div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top:5px;" title="{conf_desc}"><span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span><span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span></div>"""
+                badges_html = f"""
+                    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+                        {risk_icon} {risk_label}
+                    </div>
+                    <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top: 5px;" title="{conf_desc}">
+                        <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
+                        <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
+                    </div>
+                """
             else:
-                badges_html = """<div style="color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;">Análisis pendiente...</div>"""
+                badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
 
-            st.markdown(f"""
-            <div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
+            st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
                     <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
                     <div>
@@ -557,7 +572,7 @@ elif st.session_state.page == "simulacion":
                         <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{date_str}</b></div>
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
                     {badges_html}
                 </div>
             </div>""", unsafe_allow_html=True)
@@ -570,7 +585,7 @@ elif st.session_state.page == "simulacion":
                 <div style="margin-top:15px;">
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA 2H (TEST TOLERANCIA) <span style="font-weight:normal">({glucose} mg/dL)</span></div>
                     <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill" style="background: {GLUCOSE_GRADIENT};"></div></div>
+                        <div class="bar-bg"><div class="bar-fill-glucose"></div></div>
                         <div class="bar-marker" style="left: {g_pos}%;"></div>
                         <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                     </div>
@@ -583,7 +598,7 @@ elif st.session_state.page == "simulacion":
                 <div style="margin-top:35px;">
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
                     <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill" style="background: {BMI_GRADIENT};"></div></div>
+                        <div class="bar-bg"><div class="bar-fill-bmi"></div></div>
                         <div class="bar-marker" style="left: {b_pos}%;"></div>
                         <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
                     </div>
@@ -666,7 +681,6 @@ elif st.session_state.page == "simulacion":
         with c_exp1:
             st.markdown('<div class="card-top"><h4 style="text-align:center; color:#2C3E50; margin:0;">Visión Global del Modelo</h4></div>', unsafe_allow_html=True)
             
-            # Contenedor blanco simulado para la imagen
             st.markdown('<div class="card-mid">', unsafe_allow_html=True)
             
             if hasattr(st.session_state.model, 'named_steps'):
@@ -778,7 +792,7 @@ elif st.session_state.page == "simulacion":
             <div class="card-bottom">
                 <div style="background-color: rgba(233, 127, 135, 0.15); padding:15px; border-radius:8px; border-left:4px solid {CEMP_PINK}; color:#555; font-size:0.9rem;">
                     <strong style="color:{CEMP_DARK};">¿Cómo se lee esto?</strong>
-                    <br>Partimos de una <strong>Probabilidad Base</strong> (el riesgo promedio de la población antes de ver al paciente).
+                    <br>Partimos de una <strong>Probabilidad Base</strong> del azar (0.5).
                     <ul style="margin-top:5px; padding-left:20px; margin-bottom:0;">
                         <li><strong style="color:#E97F87;">Barras Rojas (+):</strong> Factores que <em>aumentan</em> el riesgo en este paciente.</li>
                         <li><strong style="color:#4DB6AC;">Barras Azules (-):</strong> Factores que <em>disminuyen</em> el riesgo.</li>

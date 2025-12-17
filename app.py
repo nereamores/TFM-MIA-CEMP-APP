@@ -22,7 +22,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# CSS GLOBAL
+# CSS GLOBAL (incluye centrado óptico del texto del botón)
 # =========================================================
 st.markdown("""
 <style>
@@ -117,13 +117,15 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* BOTÓN */
+    /* -------------------------
+       BOTÓN: estructura principal
+       ------------------------- */
     div.stButton > button {
-        position: relative;
+        position: relative;              /* para posicionar el span y la flecha */
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
-        padding: 12px 72px;
+        padding: 14px 80px;              /* padding lateral amplio para que la caja tenga forma redondeada */
         border-radius: 50px;
         font-weight: bold;
         font-size: 14px;
@@ -132,15 +134,20 @@ st.markdown("""
         white-space: nowrap;
         box-shadow: 0 4px 15px rgba(239,112,122,0.3);
         cursor: pointer;
+        overflow: visible;               /* que no corte el pseudo elemento */
     }
 
-    /* CENTRADO ÓPTICO DEL TEXTO */
-    div.stButton > button span {
-        position: relative;
-        left: 6px;
+    /* Hacemos el texto del botón un elemento posicionado para centrarlo ópticamente */
+    div.stButton > button > span {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) translateX(4px); /* <-- ajuste óptico: 4px a la derecha */
+        display: inline-block;
+        pointer-events: none; /* que el click vaya al botón */
     }
 
-    /* Flecha decorativa */
+    /* Flecha decorativa en el lado derecho */
     div.stButton > button::after {
         content: "➔";
         position: absolute;
@@ -148,12 +155,24 @@ st.markdown("""
         top: 50%;
         transform: translateY(-50%);
         font-size: 16px;
+        pointer-events: none;
     }
 
     div.stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(239,112,122,0.5);
         color: white;
+    }
+
+    /* Pequeña mejora responsiva: reducir padding en pantallas estrechas */
+    @media (max-width: 600px) {
+        div.stButton > button {
+            padding: 12px 40px;
+            font-size: 13px;
+        }
+        div.stButton > button::after {
+            right: 18px;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -199,8 +218,10 @@ if st.session_state.page == "landing":
         </div>
     """, unsafe_allow_html=True)
 
+    # -------- BOTÓN CENTRADO (COLUMNAS) --------
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
+        # Observa: mantenemos st.button para que Streamlit maneje el estado correctamente
         if st.button("INICIAR SIMULACIÓN"):
             ir_a_simulacion()
             st.rerun()

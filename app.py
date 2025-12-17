@@ -1,39 +1,30 @@
 import streamlit as st
 
-# --------------------------------------------------
-# 1. Configuración de página (DEBE IR LO PRIMERO)
-# --------------------------------------------------
+# 1. Configuración de página
 st.set_page_config(
     page_title="Diabetes NME",
     page_icon="🩸",
     layout="centered"
 )
 
-# --------------------------------------------------
-# 2. Gestión de navegación (estado)
-# --------------------------------------------------
-if "page" not in st.session_state:
-    st.session_state.page = "landing"
+# 2. Gestión de navegación (Estado)
+if 'page' not in st.session_state:
+    st.session_state.page = 'landing'
 
 def ir_a_simulacion():
-    st.session_state.page = "simulacion"
+    st.session_state.page = 'simulacion'
 
 def volver_inicio():
-    st.session_state.page = "landing"
+    st.session_state.page = 'landing'
 
-# --------------------------------------------------
-# 3. CSS personalizado
-# --------------------------------------------------
-st.markdown(
-    """
+# 3. CSS A MEDIDA
+st.markdown("""
 <style>
     .stApp {
         background-color: #f0f2f6;
     }
 
-    #MainMenu, footer, header {
-        visibility: hidden;
-    }
+    #MainMenu, footer, header {visibility: hidden;}
 
     .block-container {
         background-color: white;
@@ -46,19 +37,18 @@ st.markdown(
 
     h1 {
         text-align: center;
+        font-family: 'Arial', sans-serif;
         font-weight: 900 !important;
-        font-size: 3.2rem !important;
+        font-size: 3.5rem !important;
         color: #2c3e50;
-        margin-bottom: 0;
+        margin-bottom: 0 !important;
+        line-height: 1.2 !important;
     }
 
     .landing-pink { color: #ef7d86; }
     .landing-gray { color: #bdc3c7; }
 
-    .badge-container {
-        text-align: center;
-        margin-bottom: 10px;
-    }
+    .badge-container { text-align: center; margin-bottom: 10px; }
 
     .badge {
         background-color: #2c3e50;
@@ -74,26 +64,28 @@ st.markdown(
 
     .institution {
         text-align: center;
+        color: #555;
         font-size: 13px;
         font-weight: 700;
         letter-spacing: 1px;
         text-transform: uppercase;
         margin-bottom: 5px;
-        color: #555;
     }
 
     .subtitle {
         text-align: center;
         font-size: 1.1rem;
         font-weight: 700;
-        margin-bottom: 25px;
         color: #34495e;
+        margin-top: 5px;
+        margin-bottom: 25px;
     }
 
     .description {
         text-align: center;
-        font-size: 0.95rem;
         color: #666;
+        line-height: 1.6;
+        font-size: 0.95rem;
         margin-bottom: 30px;
         padding: 0 20px;
     }
@@ -105,13 +97,15 @@ st.markdown(
         border-radius: 4px;
         font-size: 0.85rem;
         color: #555;
-        text-align: center;
         margin-bottom: 25px;
+        text-align: center;
     }
 
+    /* BOTÓN CENTRADO */
     div.stButton {
         display: flex;
         justify-content: center;
+        width: 100%;
     }
 
     div.stButton > button {
@@ -121,60 +115,58 @@ st.markdown(
         padding: 12px 50px;
         border-radius: 50px;
         font-weight: bold;
+        font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(239,112,122,0.3);
+        box-shadow: 0 4px 15px rgba(239, 112, 122, 0.3);
+        transition: all 0.3s ease;
     }
 
     div.stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(239,112,122,0.5);
+        box-shadow: 0 6px 20px rgba(239, 112, 122, 0.5);
+        color: white;
     }
 </style>
-""",
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-# --------------------------------------------------
-# 4. Vistas
-# --------------------------------------------------
-if st.session_state.page == "landing":
+# 4. Renderizado de Vistas
+if st.session_state.page == 'landing':
 
-    st.markdown(
-        """
-<div class="badge-container">
-    <span class="badge">TFM • Máster en IA aplicada a la salud</span>
-</div>
+    st.markdown("""
+        <div class="badge-container">
+            <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
+        </div>
 
-<div class="institution">Centro Europeo de Másteres y Posgrados</div>
+        <div class="institution">Centro Europeo de Másteres y Posgrados</div>
 
-<h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
+        <h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
 
-<div class="subtitle">
-    Prototipo de CDSS para el diagnóstico temprano de diabetes
-</div>
+        <div class="subtitle">Prototipo de CDSS para el diagnóstico temprano de diabetes</div>
 
-<p class="description">
-    Proyecto académico que explora el uso de modelos predictivos avanzados
-    integrados en el flujo clínico para apoyar la detección temprana
-    de la diabetes tipo 2.
-</p>
+        <p class="description">
+            Este proyecto explora el potencial de integrar modelos predictivos avanzados en el flujo de trabajo 
+            clínico, visualizando un futuro donde la IA actúa como un potente aliado en la detección temprana y 
+            prevención de la diabetes tipo 2.
+        </p>
 
-<div class="warning-box">
-    <strong>Aplicación desarrollada exclusivamente con fines educativos.</strong><br><br>
-    ⚠️ No es un dispositivo médico certificado y no debe utilizarse para
-    decisiones clínicas reales.
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+        <div class="warning-box">
+            <p style="margin-bottom: 10px;">
+                <strong>Aplicación desarrollada con fines exclusivamente educativos como parte de un Trabajo de Fin de Máster.</strong>
+            </p>
 
-    if st.button("Iniciar simulación ➜"):
-        ir_a_simulacion()
-        st.rerun()
+            <span>⚠️ Esta herramienta NO es un dispositivo médico certificado. Los resultados son una simulación académica y NO deben 
+            utilizarse para el diagnóstico real, tratamiento o toma de decisiones clínicas.</span>
+        </div>
+    """, unsafe_allow_html=True)
 
-# --------------------------------------------------
-elif st.session_state.page == "simulacion":
+    # BOTÓN CENTRADO DEBAJO DE LA ADVERTENCIA
+    with st.container():
+        if st.button("INICIAR SIMULACIÓN ➔"):
+            ir_a_simulacion()
+            st.rerun()
+
+elif st.session_state.page == 'simulacion':
 
     if st.button("⬅ Volver"):
         volver_inicio()
@@ -184,15 +176,12 @@ elif st.session_state.page == "simulacion":
 
     with st.form("patient_data"):
         st.write("Introduzca los datos del paciente:")
-
         c1, c2 = st.columns(2)
+        c1.number_input("Edad", step=1)
+        c2.number_input("Glucosa (mg/dL)")
+        c1.number_input("IMC")
+        c2.selectbox("Antecedentes", ["Sí", "No"])
 
-        edad = c1.number_input("Edad", min_value=0, max_value=120, step=1, key="edad")
-        glucosa = c2.number_input("Glucosa (mg/dL)", min_value=0.0, key="glucosa")
-        imc = c1.number_input("IMC", min_value=0.0, key="imc")
-        antecedentes = c2.selectbox("Antecedentes familiares", ["No", "Sí"], key="ant")
-
-        submitted = st.form_submit_button("Ejecutar predicción")
-
+        submitted = st.form_submit_button("Ejecutar Predicción")
         if submitted:
-            st.success("Procesando predicción (simulación académica)...")
+            st.success("Procesando...")

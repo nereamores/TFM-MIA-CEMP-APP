@@ -384,6 +384,35 @@ elif st.session_state.page == "simulacion":
     def get_help_icon(description):
         return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
+    # --- OPTIMIZACIÓN: CACHÉ DE GRÁFICOS PESADOS ---
+    @st.cache_data(show_spinner=False)
+    def generate_calibration_plot(threshold_val):
+        x = np.linspace(-0.15, 1.25, 500)
+        y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
+                  0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+        y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
+                     1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
+        
+        fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
+        fig_calib.patch.set_facecolor('none')
+        ax_calib.set_facecolor('none')
+        ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
+        ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
+        ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
+        ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
+        ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
+        ax_calib.axvline(threshold_val, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
+        ax_calib.set_yticks([])
+        ax_calib.set_xlim(-0.2, 1.25)
+        ax_calib.spines['top'].set_visible(False)
+        ax_calib.spines['right'].set_visible(False)
+        ax_calib.spines['bottom'].set_visible(False)
+        ax_calib.spines['left'].set_visible(False)
+        ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
+        ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
+        
+        return fig_to_html(fig_calib)
+
     # --- 5. MODELO MOCK ---
     if 'model' not in st.session_state:
         class MockModel:
@@ -393,7 +422,7 @@ elif st.session_state.page == "simulacion":
                 return [[1-prob, prob]]
         st.session_state.model = MockModel()
 
-    # --- 6. INPUTS SINCRONIZADOS ---
+    # --- 6. INPUTS SINCRONIZADOS (VERSIÓN FORMULARIO) ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -409,37 +438,24 @@ elif st.session_state.page == "simulacion":
 
         if format_str is None:
             format_str = "%.2f" if input_type == float else "%d"
-
-        if key not in st.session_state:
-            st.session_state[key] = default_val
-
-        # CORRECCIÓN: ELIMINADO EL RESET (st.session_state.predict_clicked = False)
-        # Esto evita que la pantalla "salte" y se borren los resultados al mover un slider
-        def update_from_slider():
-            st.session_state[key] = st.session_state[f"{key}_slider"]
-            st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
-        
-        def update_from_input():
-            val = st.session_state[f"{key}_input"]
-            if val < min_val: val = min_val
-            if val > max_val: val = max_val
-            st.session_state[key] = val
-            st.session_state[f"{key}_slider"] = val 
-
+            
+        # En un formulario, eliminamos on_change para evitar recargas automáticas
         with c1:
-            st.slider(
+            val_slider = st.slider(
                 label="", min_value=min_val, max_value=max_val, step=step,
-                key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed"
+                key=f"{key}_slider", value=default_val, label_visibility="collapsed"
             )
         with c2:
-            st.number_input(
+            val_input = st.number_input(
                 label="", min_value=min_val, max_value=max_val, step=step,
-                key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
+                key=f"{key}_input", value=val_slider, label_visibility="collapsed",
                 format=format_str 
             )
-        return st.session_state[key]
+        
+        # Priorizamos el input numérico si difiere (lógica simple para formulario)
+        return val_input
 
-    # --- 7. BARRA LATERAL ---
+    # --- 7. BARRA LATERAL (CON FORMULARIO PARA EVITAR PARPADEO) ---
     with st.sidebar:
         if st.button("⬅ Volver"):
             volver_inicio()
@@ -449,91 +465,100 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- SECCIÓN NUEVA: DATOS DEL PACIENTE ---
-        st.markdown("**Datos del paciente**")
-        patient_name = st.text_input("ID / Nombre", value="Paciente #8842-X", label_visibility="collapsed")
-        
-        default_date = datetime.date.today()
-        consult_date = st.date_input("Fecha", value=default_date, label_visibility="collapsed")
-        
-        meses_es = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 
-                    7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
-        date_str = f"{consult_date.day} {meses_es[consult_date.month]} {consult_date.year}"
+        # --- INICIO DEL FORMULARIO ---
+        # Todo lo que esté dentro de este form no recargará la página hasta pulsar "Actualizar"
+        with st.form("patient_data_form"):
+            
+            # --- SECCIÓN NUEVA: DATOS DEL PACIENTE ---
+            st.markdown("**Datos del paciente**")
+            patient_name = st.text_input("ID / Nombre", value="Paciente #8842-X", label_visibility="collapsed")
+            
+            default_date = datetime.date.today()
+            consult_date = st.date_input("Fecha", value=default_date, label_visibility="collapsed")
+            
+            meses_es = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 
+                        7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
+            date_str = f"{consult_date.day} {meses_es[consult_date.month]} {consult_date.year}"
 
-        st.markdown("---")
-        
-        # 1. METABÓLICOS
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
-        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
-        
-        proxy_index = int(glucose * insulin)
-        proxy_str = f"{proxy_index}" 
+            st.markdown("---")
+            
+            # 1. METABÓLICOS
+            glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
+            insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
+            
+            # Cálculos internos (se actualizarán al enviar el form)
+            proxy_index = int(glucose * insulin)
+            proxy_str = f"{proxy_index}" 
 
-        st.markdown(f"""
-        <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="calc-label">Índice RI (Glucosa x Insulina)</span>
-                <span class="calc-value">{proxy_str}</span>
+            st.markdown(f"""
+            <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="calc-label">Índice RI (Glucosa x Insulina)</span>
+                    <span class="calc-value">{proxy_str}</span>
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        st.markdown("---") 
+            st.markdown("---") 
 
-        # 2. ANTROPOMÉTRICOS
-        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
-        height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
-        
-        bmi = weight / (height * height)
-        bmi_sq = bmi ** 2
-        
-        st.markdown(f"""
-        <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span class="calc-label">BMI (kg/m²)</span>
-                <span class="calc-value">{bmi:.2f}</span>
+            # 2. ANTROPOMÉTRICOS
+            weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
+            height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
+            
+            bmi = weight / (height * height)
+            bmi_sq = bmi ** 2
+            
+            st.markdown(f"""
+            <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span class="calc-label">BMI (kg/m²)</span>
+                    <span class="calc-value">{bmi:.2f}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="calc-label">BMI² (Non-Linear)</span>
+                    <span class="calc-value">{bmi_sq:.2f}</span>
+                </div>
             </div>
-            <div style="display:flex; justify-content:space-between;">
-                <span class="calc-label">BMI² (Non-Linear)</span>
-                <span class="calc-value">{bmi_sq:.2f}</span>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("---") 
+
+            # 3. PACIENTE
+            c_age, c_preg = st.columns(2)
+            age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
+            pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
+            
+            st.markdown("---") 
+
+            # 4. DPF
+            dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
+
+            if dpf <= 0.15:
+                dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
+            elif dpf <= 0.40:
+                dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
+            elif dpf <= 0.80:
+                dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
+            elif dpf <= 1.20:
+                dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
+            else:
+                dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
+
+            st.markdown(f"""
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-10px; margin-bottom:2px;">
+                <span style="font-size:0.8rem; font-weight:bold; color:{bar_color};">{dpf_label}</span>
+                <span style="font-size:0.8rem; color:#666;">{dpf:.2f}</span>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("---") 
-
-        # 3. PACIENTE
-        c_age, c_preg = st.columns(2)
-        age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
-        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
-        
-        st.markdown("---") 
-
-        # 4. DPF
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
-
-        if dpf <= 0.15:
-            dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
-        elif dpf <= 0.40:
-            dpf_label, bar_color = "Carga familiar BAJA", "#D4E157"
-        elif dpf <= 0.80:
-            dpf_label, bar_color = "Carga familiar MODERADA", "#FFB74D"
-        elif dpf <= 1.20:
-            dpf_label, bar_color = "Carga familiar ELEVADA", CEMP_PINK
-        else:
-            dpf_label, bar_color = "Carga familiar MUY ELEVADA", "#880E4F"
-
-        st.markdown(f"""
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-10px; margin-bottom:2px;">
-            <span style="font-size:0.8rem; font-weight:bold; color:{bar_color};">{dpf_label}</span>
-            <span style="font-size:0.8rem; color:#666;">{dpf:.2f}</span>
-        </div>
-        <div style="width:100%; background-color:#F0F2F5; border-radius:4px; height:8px; margin-bottom:10px;">
-            <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease, background-color 0.3s ease;"></div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.caption("Valores basados en el estudio Pima Indians Diabetes.")
+            <div style="width:100%; background-color:#F0F2F5; border-radius:4px; height:8px; margin-bottom:10px;">
+                <div style="width:{min(100, (dpf/2.5)*100)}%; background-color:{bar_color}; height:8px; border-radius:4px; transition: width 0.3s ease, background-color 0.3s ease;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.caption("Valores basados en el estudio Pima Indians Diabetes.")
+            
+            # BOTÓN DE ENVÍO DEL FORMULARIO
+            st.write("")
+            update_data = st.form_submit_button("ACTUALIZAR DATOS", use_container_width=True)
 
 
     # --- 8. MAIN ---
@@ -562,38 +587,15 @@ elif st.session_state.page == "simulacion":
                 """, unsafe_allow_html=True)
 
             with c_calib_2:
-                # --- SIMULACIÓN MATEMÁTICA ---
-                x = np.linspace(-0.15, 1.25, 500)
-                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
-                          0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
-                             1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
+                # --- SIMULACIÓN MATEMÁTICA (OPTIMIZADA CON CACHÉ) ---
+                # Usamos la función cacheada para evitar recalcular el gráfico en cada interacción
+                chart_html_calib = generate_calibration_plot(threshold)
                 
-                fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
-                fig_calib.patch.set_facecolor('none')
-                ax_calib.set_facecolor('none')
-                ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
-                ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
-                ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
-                ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
-                ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
-                ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
-                ax_calib.set_yticks([])
-                ax_calib.set_xlim(-0.2, 1.25)
-                ax_calib.spines['top'].set_visible(False)
-                ax_calib.spines['right'].set_visible(False)
-                ax_calib.spines['bottom'].set_visible(False)
-                ax_calib.spines['left'].set_visible(False)
-                ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
-                ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
-                
-                chart_html_calib = fig_to_html(fig_calib)
                 st.markdown(f"""
                 <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
                     {chart_html_calib}
                 </div>
                 """, unsafe_allow_html=True)
-                plt.close(fig_calib)
 
         # LÓGICA IA
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]

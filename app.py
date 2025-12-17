@@ -27,7 +27,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA
+# 3. PÁGINA: PORTADA (DISEÑO PERFECTO)
 # =========================================================
 if st.session_state.page == "landing":
 
@@ -41,6 +41,7 @@ if st.session_state.page == "landing":
             visibility: hidden;
         }
 
+        /* Contenedor estrecho y centrado */
         .block-container {
             background-color: white;
             padding: 3rem !important;
@@ -52,7 +53,7 @@ if st.session_state.page == "landing":
             margin-right: auto !important;
         }
 
-        /* TÍTULO - HELVETICA BOLD PARA PUNTO CUADRADO + SIN LINK */
+        /* TÍTULO PRINCIPAL - HELVETICA BOLD (Punto Cuadrado) */
         h1 {
             text-align: center;
             font-family: 'Helvetica', sans-serif !important;
@@ -64,8 +65,16 @@ if st.session_state.page == "landing":
             letter-spacing: -1px;
             cursor: default;
         }
-        h1 a { display: none !important; pointer-events: none !important; }
-        h1:hover { color: #2c3e50 !important; text-decoration: none !important; }
+
+        /* Ocultar enlace automático de Streamlit en el título */
+        h1 a {
+            display: none !important;
+            pointer-events: none !important;
+        }
+        h1:hover {
+            color: #2c3e50 !important;
+            text-decoration: none !important;
+        }
 
         .landing-pink { color: #ef7d86; }
         .landing-gray { color: #bdc3c7; }
@@ -99,13 +108,15 @@ if st.session_state.page == "landing":
         }
         .warning-box p { margin: 0; line-height: 1.5; }
 
+        /* BOTÓN */
         div.stButton > button {
             position: relative;
             background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
             color: white; border: none; padding: 14px 80px;
             border-radius: 50px; font-weight: bold; font-size: 14px;
             text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
-            box-shadow: 0 4px 15px rgba(239,112,122,0.3); cursor: pointer; overflow: visible;
+            box-shadow: 0 4px 15px rgba(239,112,122,0.3); cursor: pointer;
+            overflow: visible;
         }
         div.stButton > button > span {
             position: absolute; left: 50%; top: 50%;
@@ -126,22 +137,28 @@ if st.session_state.page == "landing":
     </style>
     """, unsafe_allow_html=True)
 
+    # HTML DE LA PORTADA
     st.markdown("""
 <div class="badge-container">
 <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
 </div>
+
 <div class="institution">Centro Europeo de Másteres y Posgrados</div>
+
 <h1>
     D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
 </h1>
+
 <div class="subtitle">
     Prototipo de CDSS para el diagnóstico temprano de diabetes
 </div>
+
 <p class="description">
     Este proyecto explora el potencial de integrar modelos predictivos avanzados
     en el flujo de trabajo clínico, visualizando un futuro donde la IA actúa como
     un potente aliado en la detección temprana y prevención de la diabetes tipo 2.
 </p>
+
 <div class="warning-box">
     <p><strong>
         Aplicación desarrollada con fines exclusivamente educativos como parte de
@@ -162,7 +179,7 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 4. PÁGINA: SIMULACIÓN
+# 4. PÁGINA: SIMULACIÓN (DASHBOARD COMPLETO)
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -329,7 +346,7 @@ elif st.session_state.page == "simulacion":
             st.number_input(
                 label="", min_value=min_val, max_value=max_val, step=step,
                 key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
-                format="%.2f" if isinstance(default_val, float) else "%d" # FORZAR FORMATO CON PUNTO
+                format="%.2f" if isinstance(default_val, float) else "%d"
             )
         return st.session_state[key]
 
@@ -349,7 +366,7 @@ elif st.session_state.page == "simulacion":
         st.markdown(f"""
         <div class="calc-box" style="border-left: 4px solid {CEMP_PINK};">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="calc-label">Índice RI (Glucosa x Insulina)</span>
+                <span class="calc-label">Índice RI (Glu x Ins)</span>
                 <span class="calc-value">{proxy_index:.2f}</span>
             </div>
         </div>

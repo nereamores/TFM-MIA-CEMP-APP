@@ -7,7 +7,7 @@ import base64
 import datetime
 
 # =========================================================
-# 1. CONFIGURACIÓN GLOBAL
+# 1. CONFIGURACIÓN GLOBAL Y CLASES (AL PRINCIPIO)
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -15,44 +15,48 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================================================
-# 2. DEFINICIÓN DEL MODELO (GLOBAL PARA EVITAR ERRORES)
-# =========================================================
-# Definimos la clase AQUÍ, fuera de cualquier función, para que Streamlit
-# siempre la encuentre, pase lo que pase.
+# --- DEFINICIÓN DEL MODELO (GLOBAL PARA EVITAR ERRORES) ---
 class MockModel:
     def predict_proba(self, X):
-        # Simulación de predicción basada en reglas simples + sigmoide
+        # Simulación de predicción
         score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicializamos el modelo en el estado si no existe
+# Inicializar modelo en Session State de forma segura
 if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
-# Estado del botón de predicción
+# Inicializar estado del botón
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
 # =========================================================
-# 3. FUNCIONES DE CACHÉ (OPTIMIZACIÓN VISUAL)
+# 2. FUNCIONES DE CACHÉ (OPTIMIZACIÓN GRÁFICA)
 # =========================================================
 
 def fig_to_html(fig):
+    # Convierte figura a HTML string (para usar en layouts complejos)
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
+def fig_to_bytes(fig):
+    # Convierte figura a Bytes (para usar con st.image - CERO PARPADEO)
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
+    buf.seek(0)
+    return buf
+
 def get_help_icon(description):
-    # Tooltip limpio sin HTML complejo
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
-# --- GRÁFICO DE CALIBRACIÓN (Caché) ---
+# --- GRÁFICO DE CALIBRACIÓN (DEVUELVE IMAGEN PURA) ---
 @st.cache_data(show_spinner=False)
-def get_calibration_plot(threshold_val):
+def get_calibration_plot_image(threshold_val):
+    # Colores
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50"
     OPTIMAL_GREEN = "#8BC34A"
@@ -81,17 +85,17 @@ def get_calibration_plot(threshold_val):
     ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
     ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
     
-    html = fig_to_html(fig_calib)
+    # Devolvemos bytes directamente para st.image (mucho más estable)
+    img_bytes = fig_to_bytes(fig_calib)
     plt.close(fig_calib)
-    return html
+    return img_bytes
 
-# --- FICHA PACIENTE (Caché) ---
+# --- FICHA PACIENTE (HTML CACHEADO) ---
 @st.cache_data(show_spinner=False)
 def get_patient_card_html(name, date_str, clicked, risk_label, risk_bg, risk_border, risk_icon, conf_desc, conf_color, conf_text):
     CEMP_DARK = "#2C3E50"
     
     if clicked:
-        # Solo construimos el HTML de las etiquetas si se ha hecho clic
         badges_html = f"""
             <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
                 {risk_icon} {risk_label}
@@ -118,7 +122,7 @@ def get_patient_card_html(name, date_str, clicked, risk_label, risk_bg, risk_bor
         </div>
     </div>"""
 
-# --- BARRAS CONTEXTO (Caché) ---
+# --- BARRAS CONTEXTO (HTML CACHEADO) ---
 @st.cache_data(show_spinner=False)
 def get_context_bars_html(glucose_val, bmi_val):
     CEMP_DARK = "#2C3E50"
@@ -161,7 +165,7 @@ def get_context_bars_html(glucose_val, bmi_val):
         </div>
     </div>"""
 
-# --- DONUT CHART (Caché) ---
+# --- DONUT CHART (HTML CACHEADO) ---
 @st.cache_data(show_spinner=False)
 def get_donut_chart_html(prob, threshold, clicked, risk_color):
     CEMP_DARK = "#2C3E50"
@@ -204,7 +208,7 @@ def get_donut_chart_html(prob, threshold, clicked, risk_color):
     </div>"""
 
 # =========================================================
-# 4. GESTIÓN DE NAVEGACIÓN
+# 3. GESTIÓN DE NAVEGACIÓN
 # =========================================================
 if "page" not in st.session_state:
     st.session_state.page = "landing"
@@ -216,7 +220,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 5. PÁGINA: PORTADA
+# 4. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
     st.markdown("""
@@ -312,7 +316,7 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 6. PÁGINA: SIMULACIÓN
+# 5. PÁGINA: SIMULACIÓN
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -559,21 +563,23 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
-                # GRÁFICO CACHEADO (NO SE RECALCULA SI NO MUEVES EL UMBRAL)
-                st.markdown(f"""
-                <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
-                    {get_calibration_plot(threshold)}
-                </div>
-                """, unsafe_allow_html=True)
+                # USO DE ST.IMAGE PARA EVITAR PARPADEO (Renderiza imagen nativa)
+                img_bytes = get_calibration_plot_image(threshold)
+                st.image(img_bytes, use_container_width=True)
 
         # LÓGICA IA (SE CALCULA SIEMPRE PARA TENER LOS DATOS DISPONIBLES)
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
         
-        # --- PROTECCIÓN CONTRA ERRORES DE MODELO ---
+        # --- PROTECCIÓN ROBUSTA CONTRA ATRIBUTE ERROR ---
+        # Aseguramos que la instancia existe y tiene el método antes de llamar
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
-            prob = st.session_state.model.predict_proba(input_data)[0][1]
+            try:
+                prob = st.session_state.model.predict_proba(input_data)[0][1]
+            except:
+                # Si falla por alguna razón esotérica, reiniciamos el modelo al vuelo
+                st.session_state.model = MockModel()
+                prob = st.session_state.model.predict_proba(input_data)[0][1]
         else:
-            # Fallback de seguridad (reinicializar si se perdió)
             st.session_state.model = MockModel()
             prob = st.session_state.model.predict_proba(input_data)[0][1]
 

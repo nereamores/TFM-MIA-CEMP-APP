@@ -1,13 +1,13 @@
 import streamlit as st
 
-# 1. Configuración de página
+# Configuración de página
 st.set_page_config(
     page_title="Diabetes NME",
     page_icon="🩸",
     layout="centered"
 )
 
-# 2. Gestión de navegación
+# Gestión de navegación
 if 'page' not in st.session_state:
     st.session_state.page = 'landing'
 
@@ -17,7 +17,7 @@ def ir_a_simulacion():
 def volver_inicio():
     st.session_state.page = 'landing'
 
-# 3. CSS personalizado
+# CSS
 st.markdown("""
 <style>
     .stApp {
@@ -106,15 +106,7 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* CONTENEDOR DEL BOTÓN: MISMO EJE QUE EL H1 */
-    .button-wrapper {
-        text-align: center;
-        width: 100%;
-    }
-
-    /* BOTÓN */
     div.stButton > button {
-        display: inline-block;
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
@@ -124,8 +116,8 @@ st.markdown("""
         font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(239,112,122,0.3);
         white-space: nowrap;
+        box-shadow: 0 4px 15px rgba(239,112,122,0.3);
     }
 
     div.stButton > button:hover {
@@ -136,7 +128,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 4. Vistas
+# Vistas
 if st.session_state.page == 'landing':
 
     st.markdown("""
@@ -165,12 +157,12 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN CENTRADO EXACTAMENTE EN LA MITAD DE "DIABETES.NME"
-    st.markdown('<div class="button-wrapper">', unsafe_allow_html=True)
-    if st.button("INICIAR SIMULACIÓN ➔"):
-        ir_a_simulacion()
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # CENTRAR BOTÓN EXACTAMENTE CON EL H1
+    col1, col2, col3 = st.columns([1, 2, 1])  # columna central 2x ancho
+    with col2:
+        if st.button("INICIAR SIMULACIÓN ➔"):
+            ir_a_simulacion()
+            st.rerun()
 
 elif st.session_state.page == 'simulacion':
 

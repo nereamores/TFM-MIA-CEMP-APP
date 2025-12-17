@@ -673,7 +673,7 @@ elif st.session_state.page == "simulacion":
         <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid #2C3E50; margin-bottom:20px;">
             <h4 style="margin:0; color:#2C3E50;">🧠 Inteligencia Artificial Explicable (XAI)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
-                La "caja negra" abierta. Aquí te explicamos <strong>por qué</strong> la IA piensa lo que piensa, traducido a un lenguaje que todos entendemos.
+                Módulo de transparencia algorítmica. A continuación, se detalla la interpretación de las variables utilizadas por el modelo predictivo.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -682,7 +682,6 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # Inicio del contendor blanco simulado (Parte superior HTML)
             st.markdown('<div class="white-card-container">', unsafe_allow_html=True)
             st.markdown(f'<div class="xai-title">🌎 Visión Global del Modelo</div>', unsafe_allow_html=True)
             
@@ -696,7 +695,7 @@ elif st.session_state.page == "simulacion":
                     df_imp = df_imp.sort_values(by='Importancia', ascending=True)
                     
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
-                    fig_imp.patch.set_facecolor('white') # Fondo blanco para integrarse mejor
+                    fig_imp.patch.set_facecolor('white') 
                     ax_imp.set_facecolor('white')
                     
                     bars = ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, alpha=0.8)
@@ -712,18 +711,17 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    # Usamos st.image para permitir "Ampliar"
                     st.image(fig_to_bytes(fig_imp), use_container_width=True)
                     plt.close(fig_imp)
                     
-                    # Caja rosa explicativa
+                    # Caja rosa explicativa - LENGUAJE TÉCNICO
                     st.markdown("""
                     <div class="pink-explanation-box">
-                        <strong>¿Qué significa este gráfico?</strong><br>
-                        Indica qué ingredientes de la "receta" son más importantes para la IA en general.<br><br>
+                        <strong>Interpretación de Variables Globales</strong><br>
+                        Este gráfico jerarquiza las variables según su peso relativo en la construcción del algoritmo.<br><br>
                         <ul>
-                            <li>Las <strong>barras más largas</strong> (como Glucosa o Resistencia) son los datos en los que más se fija el algoritmo para decidir si hay riesgo o no.</li>
-                            <li>Es como saber qué preguntas valora más un médico experto.</li>
+                            <li>Las barras de mayor longitud indican los <strong>biomarcadores de mayor sensibilidad</strong> a nivel poblacional.</li>
+                            <li>Permite validar que el modelo prioriza variables clínicamente relevantes (ej. Glucosa o Resistencia) frente a ruido estadístico.</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
@@ -733,7 +731,6 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
             
-            # Cierre del contenedor blanco
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
@@ -780,15 +777,15 @@ elif st.session_state.page == "simulacion":
                     st.image(fig_to_bytes(fig_shap), use_container_width=True)
                     plt.close(fig_shap)
 
+                    # Caja rosa explicativa - LENGUAJE TÉCNICO
                     st.markdown(f"""
                     <div class="pink-explanation-box">
-                        <strong>¿Por qué este resultado para {patient_name}?</strong><br>
-                        Este gráfico es la historia única de este paciente. Es como un "tira y afloja":<br><br>
+                        <strong>Contribución de Variables (Valores SHAP)</strong><br>
+                        Desglose de la probabilidad calculada ({prob*100:.1f}%) para el paciente {patient_name}.<br><br>
                         <ul>
-                            <li>🔴 <strong>Barras Rojas (Derecha):</strong> Factores que <em>aumentan</em> el riesgo (ej. Glucosa alta suma puntos de peligro).</li>
-                            <li>🔵 <strong>Barras Azules (Izquierda):</strong> Factores que <em>protegen</em> o bajan el riesgo (ej. ser joven resta puntos).</li>
+                            <li>🔴 <strong>Factores de Riesgo (+):</strong> Variables que contribuyen positivamente a la probabilidad del evento (diagnóstico positivo).</li>
+                            <li>🔵 <strong>Factores Protectores (-):</strong> Variables que mitigan el riesgo en este perfil clínico específico.</li>
                         </ul>
-                        El resultado final es la suma de todas estas fuerzas.
                     </div>
                     """, unsafe_allow_html=True)
                     

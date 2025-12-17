@@ -27,7 +27,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA (CON EL LOGO CORREGIDO)
+# 3. PÁGINA: PORTADA (CON PUNTO CUADRADO Y SIN LINK)
 # =========================================================
 if st.session_state.page == "landing":
 
@@ -41,7 +41,7 @@ if st.session_state.page == "landing":
             visibility: hidden;
         }
 
-        /* Contenedor estrecho y centrado para la portada */
+        /* Contenedor estrecho y centrado */
         .block-container {
             background-color: white;
             padding: 3rem !important;
@@ -53,20 +53,36 @@ if st.session_state.page == "landing":
             margin-right: auto !important;
         }
 
-        /* TÍTULO LOGO (Igual que en la simulación) */
+        /* TÍTULO PRINCIPAL */
         h1 {
             text-align: center;
-            font-family: 'Helvetica', sans-serif; /* Fuente del dashboard */
-            font-weight: 800 !important;          /* Peso heavy para punto cuadrado */
+            font-family: 'Helvetica', sans-serif;
+            font-weight: 800 !important;
             font-size: 3.5rem !important;
             color: #2c3e50;
             margin-bottom: 0 !important;
             line-height: 1.2 !important;
-            letter-spacing: -1px;                 /* Más compacto */
+            letter-spacing: -1px;
+            pointer-events: none; /* Desactiva interacción con el título */
+        }
+
+        /* OCULTAR EL ANCLA DEL HIPERVÍNCULO AL PASAR EL RATÓN */
+        h1 a {
+            display: none !important;
         }
 
         .landing-pink { color: #ef7d86; }
-        .landing-gray { color: #bdc3c7; }
+        
+        /* NUEVA CLASE PARA EL PUNTO CUADRADO */
+        .square-dot {
+            display: inline-block;
+            width: 0.18em;   /* Ancho relativo al tamaño de fuente */
+            height: 0.18em;  /* Alto relativo al tamaño de fuente */
+            background-color: #bdc3c7; /* Color gris */
+            margin: 0 4px;   /* Espacio a los lados */
+            position: relative;
+            bottom: 0.1em;   /* Ajuste vertical fino para alinearlo */
+        }
 
         .badge-container { text-align: center; margin-bottom: 10px; }
         .badge {
@@ -135,7 +151,7 @@ if st.session_state.page == "landing":
 <div class="institution">Centro Europeo de Másteres y Posgrados</div>
 
 <h1>
-    D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
+    D<span class="landing-pink">IA</span>BETES<span class="square-dot"></span><span class="landing-pink">NME</span>
 </h1>
 
 <div class="subtitle">

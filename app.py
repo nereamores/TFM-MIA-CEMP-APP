@@ -16,7 +16,7 @@ except ImportError:
     SHAP_AVAILABLE = False
 
 # =========================================================
-# 1. CONFIGURACIÓN Y CONSTANTES GLOBALES (CRÍTICO)
+# 1. CONFIGURACIÓN Y CONSTANTES GLOBALES (CRÍTICO PARA QUE NO FALLE)
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -25,7 +25,6 @@ st.set_page_config(
 )
 
 # --- DEFINICIÓN DE COLORES Y ESTILOS (GLOBAL) ---
-# Se definen aquí para evitar NameError en cualquier parte del código
 CEMP_PINK = "#E97F87"
 CEMP_DARK = "#2C3E50" 
 GOOD_TEAL = "#4DB6AC"
@@ -38,11 +37,12 @@ BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FF
 GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
 RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-# --- CLASE MOCK ---
+# --- CLASE MOCK (POR SI FALLA LA CARGA) ---
 class MockModel:
     def predict_proba(self, X):
         # Simulación simple
         if isinstance(X, pd.DataFrame):
+            # Usamos iloc para acceder por posición
             score = (X.iloc[0, 1]*0.5) + (X.iloc[0, 4]*0.4) + (X.iloc[0, 6]*0.1) 
         else:
             score = 50
@@ -209,9 +209,6 @@ elif st.session_state.page == "simulacion":
         div[data-testid="stExpander"] details > summary:hover {{
             background-color: rgba(233, 127, 135, 0.2) !important; color: {CEMP_DARK} !important;
         }}
-        div[data-testid="stExpander"] details > summary svg {{
-            fill: {CEMP_DARK} !important; color: {CEMP_DARK} !important;
-        }}
         div[data-testid="stExpander"] details[open] > div {{
             border-left: 1px solid rgba(233, 127, 135, 0.2);
             border-right: 1px solid rgba(233, 127, 135, 0.2);
@@ -224,7 +221,6 @@ elif st.session_state.page == "simulacion":
             padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK};
             font-weight: 800; border-radius: 8px; background-color: white; border: 1px solid #ddd;
         }}
-        [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {{ vertical-align: middle; }}
         .calc-box {{
             background-color: #F8F9FA; border-radius: 8px; padding: 12px 15px;
             border: 1px solid #EEE; margin-top: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -266,6 +262,8 @@ elif st.session_state.page == "simulacion":
             color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
             text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
         }}
+        
+        /* BARRAS DE CONTEXTO */
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
         .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
@@ -289,7 +287,7 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- HELPER DE INPUTS ROBUSTO ---
+    # --- HELPER INPUTS SEGURO ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -298,9 +296,10 @@ elif st.session_state.page == "simulacion":
         
         c1, c2 = st.columns([2.5, 1], gap="small")
         
-        # Casting explícito de los límites y default para evitar errores de tipo
+        # Validación de tipos estricta para evitar MixedNumericTypesError
         is_float = isinstance(default_val, float) or isinstance(min_val, float)
         
+        # Forzar tipos en los límites para que coincidan con el valor por defecto
         if is_float:
             min_val = float(min_val)
             max_val = float(max_val)
@@ -314,13 +313,11 @@ elif st.session_state.page == "simulacion":
             step = 1
             if format_str is None: format_str = "%d"
 
-        # IMPORTANTE: Asegurar que default está dentro de límites
-        if default_val < min_val: default_val = min_val
-        if default_val > max_val: default_val = max_val
-
+        # IMPORTANTE: Inicialización segura de session_state
         if key not in st.session_state:
             st.session_state[key] = default_val
 
+        # Callbacks
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
@@ -328,6 +325,7 @@ elif st.session_state.page == "simulacion":
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
+            # Validación manual para asegurar rango
             if val < min_val: val = min_val
             if val > max_val: val = max_val
             st.session_state[key] = val
@@ -371,12 +369,11 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        # 1. GLUCOSA E INSULINA
-        # Inicializamos en 50 para Glucosa para cumplir con el mínimo lógico
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
-        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
+        # 1. GLUCOSA E INSULINA (Inicializamos en 0)
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 0, 350, 0, "gluc", "Concentración plasmática a las 2h.", format_str="%d")
+        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h.", format_str="%d")
         
-        # 2. CÁLCULO ÍNDICE (ANTES DE PRESIÓN)
+        # 2. CÁLCULO RI
         proxy_index = int(glucose * insulin)
         proxy_str = f"{proxy_index}" 
 
@@ -389,13 +386,13 @@ elif st.session_state.page == "simulacion":
         </div>
         """, unsafe_allow_html=True)
 
-        # 3. PRESIÓN ARTERIAL (AHORA DESPUÉS)
-        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 70, "bp", "Presión arterial diastólica (mm Hg).", format_str="%d")
+        # 3. PRESIÓN ARTERIAL
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
 
         st.markdown("---") 
 
-        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.", format_str="%.2f")
-        height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.", format_str="%.2f")
+        weight = input_biomarker("Peso (kg)", 0.0, 250.0, 0.0, "weight", "Peso corporal actual.", format_str="%.2f")
+        height = input_biomarker("Altura (m)", 0.00, 2.20, 0.00, "height", "Altura en metros.", format_str="%.2f")
         
         if height > 0:
             bmi = weight / (height * height)
@@ -419,12 +416,12 @@ elif st.session_state.page == "simulacion":
         st.markdown("---") 
 
         c_age, c_preg = st.columns(2)
-        age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
-        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
+        age = input_biomarker("Edad (años)", 0, 90, 0, "age", format_str="%d")
+        pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
         
         st.markdown("---") 
 
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.", format_str="%.2f")
+        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Predisposición genética.", format_str="%.2f")
 
         if dpf <= 0.15:
             dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
@@ -500,7 +497,7 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
-                # GRÁFICO DENSIDADES (MATPLOTLIB)
+                # GRÁFICO DENSIDADES
                 x = np.linspace(-0.15, 1.25, 500)
                 y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + 0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
                 y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + 1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
@@ -551,7 +548,7 @@ elif st.session_state.page == "simulacion":
         elif bmi >= 35: alerts.append("Obesidad G2")
         elif bmi >= 30: alerts.append("Obesidad G1")
         elif bmi >= 25: alerts.append("Sobrepeso")
-        elif bmi < 18.5: alerts.append("Bajo Peso")
+        elif bmi < 18.5 and bmi > 0: alerts.append("Bajo Peso")
         if proxy_index > 19769.5: alerts.append("Resistencia Insulina")
         if blood_pressure > 90: alerts.append("Hipertensión Diastólica")
         

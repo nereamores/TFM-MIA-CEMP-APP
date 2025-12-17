@@ -667,11 +667,8 @@ elif st.session_state.page == "simulacion":
                     </div>
                 """
             else:
-                badges_html = """
-                    <div style="color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;">
-                        Análisis pendiente...
-                    </div>
-                """
+                # Texto plano sin multiline string para evitar errores de indentación en Streamlit
+                badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
 
             # FICHA PACIENTE 
             st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
@@ -734,8 +731,9 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            # --- BOTÓN DE PREDICCIÓN ---
-            if st.button("✨ ANALIZAR RIESGO", use_container_width=True, type="primary"):
+            # --- BOTÓN DE PREDICCIÓN (MODIFICADO) ---
+            # Se ha eliminado el emoji de estrellas y cambiado el texto a "CALCULAR RIESGO"
+            if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
                 st.session_state.predict_clicked = True
                 st.rerun()
 

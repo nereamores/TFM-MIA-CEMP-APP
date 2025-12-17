@@ -106,8 +106,15 @@ st.markdown("""
         line-height: 1.5;
     }
 
+    /* CONTENEDOR DEL BOTÓN: MISMO EJE QUE EL H1 */
+    .button-wrapper {
+        text-align: center;
+        width: 100%;
+    }
+
     /* BOTÓN */
     div.stButton > button {
+        display: inline-block;
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
@@ -119,6 +126,12 @@ st.markdown("""
         letter-spacing: 1px;
         box-shadow: 0 4px 15px rgba(239,112,122,0.3);
         white-space: nowrap;
+    }
+
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239,112,122,0.5);
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -152,12 +165,12 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN EN EL MISMO EJE QUE EL TÍTULO
-    col1, col2, col3 = st.columns([1, 3, 1])
-    with col2:
-        if st.button("INICIAR SIMULACIÓN ➔"):
-            ir_a_simulacion()
-            st.rerun()
+    # BOTÓN CENTRADO EXACTAMENTE EN LA MITAD DE "DIABETES.NME"
+    st.markdown('<div class="button-wrapper">', unsafe_allow_html=True)
+    if st.button("INICIAR SIMULACIÓN ➔"):
+        ir_a_simulacion()
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == 'simulacion':
 

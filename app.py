@@ -27,7 +27,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA (CON PUNTO CUADRADO Y SIN LINK)
+# 3. PÁGINA: PORTADA (SOLUCIÓN DEFINITIVA)
 # =========================================================
 if st.session_state.page == "landing":
 
@@ -53,36 +53,32 @@ if st.session_state.page == "landing":
             margin-right: auto !important;
         }
 
-        /* TÍTULO PRINCIPAL */
+        /* TÍTULO PRINCIPAL - MISMA TIPOGRAFÍA QUE SIMULACIÓN */
         h1 {
             text-align: center;
-            font-family: 'Helvetica', sans-serif;
-            font-weight: 800 !important;
+            font-family: 'Helvetica', sans-serif !important; /* La misma fuente */
+            font-weight: 800 !important;          /* El mismo grosor (hace el punto cuadrado) */
             font-size: 3.5rem !important;
             color: #2c3e50;
             margin-bottom: 0 !important;
             line-height: 1.2 !important;
-            letter-spacing: -1px;
-            pointer-events: none; /* Desactiva interacción con el título */
+            letter-spacing: -1px;                 /* Compacto como en el logo */
+            cursor: default;                      /* Cursor normal, no de mano */
         }
 
-        /* OCULTAR EL ANCLA DEL HIPERVÍNCULO AL PASAR EL RATÓN */
+        /* TRUCO PARA QUITAR EL HIPERVÍNCULO/ANCLA DE STREAMLIT */
         h1 a {
-            display: none !important;
+            display: none !important;             /* Oculta el icono de cadena */
+            pointer-events: none !important;      /* Desactiva el click */
+        }
+        /* Esto asegura que no se pueda hacer click en el texto tampoco */
+        h1:hover {
+            color: #2c3e50 !important;            /* Que no cambie de color */
+            text-decoration: none !important;
         }
 
         .landing-pink { color: #ef7d86; }
-        
-        /* NUEVA CLASE PARA EL PUNTO CUADRADO */
-        .square-dot {
-            display: inline-block;
-            width: 0.18em;   /* Ancho relativo al tamaño de fuente */
-            height: 0.18em;  /* Alto relativo al tamaño de fuente */
-            background-color: #bdc3c7; /* Color gris */
-            margin: 0 4px;   /* Espacio a los lados */
-            position: relative;
-            bottom: 0.1em;   /* Ajuste vertical fino para alinearlo */
-        }
+        .landing-gray { color: #bdc3c7; } /* El color gris del punto */
 
         .badge-container { text-align: center; margin-bottom: 10px; }
         .badge {
@@ -151,7 +147,7 @@ if st.session_state.page == "landing":
 <div class="institution">Centro Europeo de Másteres y Posgrados</div>
 
 <h1>
-    D<span class="landing-pink">IA</span>BETES<span class="square-dot"></span><span class="landing-pink">NME</span>
+    D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span>
 </h1>
 
 <div class="subtitle">

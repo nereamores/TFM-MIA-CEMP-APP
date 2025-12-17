@@ -16,7 +16,7 @@ except ImportError:
     SHAP_AVAILABLE = False
 
 # =========================================================
-# 1. CONFIGURACIÓN Y CLASES (GLOBAL)
+# 1. CONFIGURACIÓN GLOBAL
 # =========================================================
 st.set_page_config(
     page_title="Diabetes NME",
@@ -63,7 +63,7 @@ if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
 # =========================================================
-# 2. GESTIÓN DE ESTADO (VARIABLES COMUNES)
+# 2. GESTIÓN DE ESTADO
 # =========================================================
 if "page" not in st.session_state:
     st.session_state.page = "landing"
@@ -83,7 +83,7 @@ def ejecutar_prediccion():
     st.session_state.prediction_run = True
 
 # =========================================================
-# 3. FUNCIONES AUXILIARES DE VISUALIZACIÓN
+# 3. FUNCIONES AUXILIARES
 # =========================================================
 
 def fig_to_html(fig):
@@ -103,7 +103,7 @@ def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
 # =========================================================
-# 4. PÁGINA: PORTADA (TEXTO RECUPERADO)
+# 4. PÁGINA: PORTADA (TEXTO DEL PRIMER CÓDIGO)
 # =========================================================
 if st.session_state.page == "landing":
     st.markdown("""
@@ -148,12 +148,17 @@ if st.session_state.page == "landing":
             padding: 20px; border-radius: 4px; font-size: 0.85rem;
             color: #555; margin-bottom: 30px; text-align: center;
         }
+        .warning-box p { margin: 0; line-height: 1.5; }
         div.stButton > button {
             position: relative; background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
             color: white; border: none; padding: 14px 80px; border-radius: 50px;
             font-weight: bold; font-size: 14px; text-transform: uppercase;
             letter-spacing: 1px; white-space: nowrap; box-shadow: 0 4px 15px rgba(239,112,122,0.3);
             cursor: pointer; overflow: visible;
+        }
+        div.stButton > button > span {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) translateX(4px);
+            display: inline-block; pointer-events: none;
         }
         div.stButton > button::after {
             content: "➔"; position: absolute; right: 28px; top: 50%;
@@ -201,7 +206,7 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 5. PÁGINA: SIMULACIÓN
+# 5. PÁGINA: SIMULACIÓN (ESTRUCTURA CÓDIGO 2, TEXTOS CÓDIGO 1)
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -300,7 +305,7 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- FUNCIÓN INPUT MEJORADA (Combina lógica visual y format) ---
+    # --- FUNCIÓN INPUT MEJORADA ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -360,11 +365,14 @@ elif st.session_state.page == "simulacion":
         patient_date_input = st.date_input("Fecha Revisión", datetime.date.today(), label_visibility="collapsed")
         st.markdown("---")
         
+        # VARIABLES: Texto y valores por defecto del PRIMER CÓDIGO
+        
         # 1. METABÓLICOS
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
-        # Añadimos Blood Pressure por necesidad del modelo, manteniendo estilo
-        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 70, "bp", "Diastólica.", format_str="%d")
+        
+        # (Presión Arterial añadida porque la lógica del segundo código la necesita, pero con valor normal)
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 72, "bp", "Presión arterial diastólica.", format_str="%d")
         
         proxy_index = int(glucose * insulin)
         st.markdown(f"""
@@ -426,7 +434,7 @@ elif st.session_state.page == "simulacion":
         </div>
         """, unsafe_allow_html=True)
 
-    # --- LÓGICA DE PREDICCIÓN (Backend) ---
+    # --- LÓGICA DE PREDICCIÓN (Backend del código 2) ---
     is_prediabetes = 1 if glucose >= 140 else 0
     # DataFrame con nombres de columnas EXACTOS para el modelo
     input_df = pd.DataFrame([[
@@ -440,7 +448,7 @@ elif st.session_state.page == "simulacion":
     with tab1:
         st.write("")
         
-        # --- CALIBRACIÓN PLOT (De la versión lógica) ---
+        # --- CALIBRACIÓN PLOT (Del código 2) ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
             with c_calib_1:

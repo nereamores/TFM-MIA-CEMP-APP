@@ -97,7 +97,7 @@ st.markdown("""
         border-radius: 4px;
         font-size: 0.85rem;
         color: #555;
-        margin-bottom: 30px;
+        margin-bottom: 35px;
         text-align: center;
     }
 
@@ -106,13 +106,7 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* BOTÓN: CENTRADO REAL */
-    div.stButton {
-        margin-left: auto;
-        margin-right: auto;
-        width: fit-content;
-    }
-
+    /* BOTÓN */
     div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
@@ -123,15 +117,8 @@ st.markdown("""
         font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(239, 112, 122, 0.3);
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(239,112,122,0.3);
         white-space: nowrap;
-    }
-
-    div.stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(239, 112, 122, 0.5);
-        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -165,10 +152,12 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN EXACTAMENTE EN EL CENTRO DEL CARD
-    if st.button("INICIAR SIMULACIÓN ➔"):
-        ir_a_simulacion()
-        st.rerun()
+    # BOTÓN EN EL MISMO EJE QUE EL TÍTULO
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        if st.button("INICIAR SIMULACIÓN ➔"):
+            ir_a_simulacion()
+            st.rerun()
 
 elif st.session_state.page == 'simulacion':
 

@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. Gestión de navegación
+# 2. Gestión de navegación (Estado)
 if 'page' not in st.session_state:
     st.session_state.page = 'landing'
 
@@ -17,20 +17,17 @@ def ir_a_simulacion():
 def volver_inicio():
     st.session_state.page = 'landing'
 
-# 3. CSS "Pixel-Perfect" para replicar tu diseño
+# 3. CSS A MEDIDA (Actualizado para el título y centrado del botón)
 st.markdown("""
 <style>
-    /* Fondo general */
+    /* --- ESTRUCTURA GENERAL --- */
     .stApp {
         background-color: #f0f2f6;
     }
+    
+    #MainMenu, footer, header {visibility: hidden;}
 
-    /* Ocultar elementos nativos de Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-
-    /* LA TARJETA BLANCA (Contenedor Principal) */
+    /* Contenedor Principal (La Tarjeta Blanca) */
     .block-container {
         background-color: white;
         padding: 3rem !important;
@@ -40,28 +37,30 @@ st.markdown("""
         margin-top: 2rem;
     }
 
-    /* TIPOGRAFÍA Y TEXTOS */
+    /* --- TIPOGRAFÍA DEL TÍTULO (Branding específico) --- */
     h1 {
         text-align: center;
         font-family: 'Arial', sans-serif;
         font-weight: 900 !important;
         font-size: 3.5rem !important;
-        color: #2c3e50;
+        color: #2c3e50; /* Color gris oscuro base (D...BETES) */
         margin-bottom: 0 !important;
         padding: 0 !important;
         line-height: 1.2 !important;
     }
 
-    /* Clase para la parte rosada del logo */
-    .logo-highlight {
-        color: #ef7d86;
+    /* Clases para los colores intercalados */
+    .landing-pink {
+        color: #ef7d86; /* Rosa salmón */
+    }
+    
+    .landing-gray {
+        color: #bdc3c7; /* Gris suave para el punto, o usa #2c3e50 si lo quieres oscuro */
     }
 
-    /* Badge superior negro */
-    .badge-container {
-        text-align: center; 
-        margin-bottom: 10px;
-    }
+    /* --- RESTO DE TEXTOS --- */
+    .badge-container { text-align: center; margin-bottom: 10px; }
+    
     .badge {
         background-color: #2c3e50;
         color: white;
@@ -74,7 +73,6 @@ st.markdown("""
         display: inline-block;
     }
 
-    /* Institución (Texto gris mayúsculas) */
     .institution {
         text-align: center;
         color: #555;
@@ -85,7 +83,6 @@ st.markdown("""
         margin-bottom: 5px;
     }
 
-    /* Subtítulo */
     .subtitle {
         text-align: center;
         font-size: 1.1rem;
@@ -95,7 +92,6 @@ st.markdown("""
         margin-bottom: 25px;
     }
 
-    /* Párrafo descriptivo */
     .description {
         text-align: center;
         color: #666;
@@ -105,15 +101,15 @@ st.markdown("""
         padding: 0 20px;
     }
 
-    /* CAJA DE ADVERTENCIA COMPLETA */
+    /* --- CAJA DE ADVERTENCIA --- */
     .warning-box {
         background-color: #f9fafb;
-        border-left: 4px solid #ef7d86; /* Borde rosa a la izquierda */
+        border-left: 4px solid #ef7d86;
         padding: 20px;
         border-radius: 4px;
         font-size: 0.85rem;
         color: #555;
-        margin-bottom: 30px; /* Espacio antes del botón */
+        margin-bottom: 35px; /* Separación con el botón */
         text-align: center;
     }
     
@@ -123,13 +119,16 @@ st.markdown("""
         color: #777;
     }
 
-    /* ESTILO DEL BOTÓN (CENTRADO PERFECTO) */
-    /* Esto centra el contenedor del botón */
+    /* --- BOTÓN CENTRADO (LA SOLUCIÓN DEFINITIVA) --- */
+    
+    /* 1. Forzamos al contenedor del botón a usar Flexbox para centrar su contenido */
     div.stButton {
-        text-align: center; 
+        display: flex;
+        justify-content: center;
+        width: 100%;
     }
 
-    /* Esto da estilo al botón en sí */
+    /* 2. Estilo visual del botón */
     div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
@@ -142,20 +141,11 @@ st.markdown("""
         letter-spacing: 1px;
         box-shadow: 0 4px 15px rgba(239, 112, 122, 0.3);
         transition: all 0.3s ease;
-        
-        /* Truco para centrar elemento block */
-        display: block; 
-        margin: 0 auto; 
     }
 
     div.stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(239, 112, 122, 0.5);
-        color: white;
-        border-color: transparent;
-    }
-    
-    div.stButton > button:active {
         color: white;
         border-color: transparent;
     }
@@ -166,7 +156,7 @@ st.markdown("""
 # 4. Renderizado de Vistas
 if st.session_state.page == 'landing':
     
-    # HTML Estático para textos y logos
+    # HTML Estático
     st.markdown("""
         <div class="badge-container">
             <span class="badge">TFM • Máster en Inteligencia Artificial aplicada a la salud</span>
@@ -174,7 +164,7 @@ if st.session_state.page == 'landing':
         
         <div class="institution">Centro Europeo de Másteres y Posgrados</div>
         
-        <h1>DIABETES<span class="logo-highlight">.NME</span></h1>
+        <h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
         
         <div class="subtitle">Prototipo de CDSS para el diagnóstico temprano de diabetes</div>
         
@@ -191,30 +181,27 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN DE STREAMLIT (Ahora centrado por CSS)
+    # BOTÓN DE ACCIÓN (Ahora centrado gracias al CSS Flexbox)
     if st.button("INICIAR SIMULACIÓN ➔"):
         ir_a_simulacion()
         st.rerun()
 
 elif st.session_state.page == 'simulacion':
-    # --- TU CÓDIGO DE LA APP DE PREDICCIÓN VA AQUÍ ---
-    
-    # Botón pequeño para volver (sin estilo fancy para diferenciarlo)
+    # --- PANTALLA DE SIMULACIÓN ---
     if st.button("⬅ Volver"):
         volver_inicio()
         st.rerun()
 
     st.title("Panel de Diagnóstico Clínico")
-    st.info("El modelo predictivo está listo para recibir datos.")
-
-    # Ejemplo de formulario
+    
     with st.form("patient_data"):
+        st.write("Introduzca los datos del paciente:")
         c1, c2 = st.columns(2)
-        c1.text_input("ID Paciente")
-        c2.number_input("Edad", step=1)
-        c1.number_input("Glucosa en sangre (mg/dL)")
-        c2.number_input("IMC (Índice de Masa Corporal)")
+        c1.number_input("Edad", step=1)
+        c2.number_input("Glucosa (mg/dL)")
+        c1.number_input("IMC")
+        c2.selectbox("Antecedentes", ["Sí", "No"])
         
         submitted = st.form_submit_button("Ejecutar Predicción")
         if submitted:
-            st.success("Analizando datos...")
+            st.success("Procesando...")

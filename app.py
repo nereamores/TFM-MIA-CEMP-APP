@@ -28,7 +28,10 @@ st.set_page_config(
 class MockModel:
     def predict_proba(self, X):
         # Simulación simple
-        score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
+        if isinstance(X, pd.DataFrame):
+            score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
+        else:
+            score = 50
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
@@ -341,7 +344,7 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        # AJUSTE VALORES POR DEFECTO PARA EVITAR ERROR (Min=50 -> Default=50)
+        # IMPORTANTE: Valor por defecto de Glucosa = 50 (para coincidir con el mínimo)
         glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
@@ -645,14 +648,12 @@ elif st.session_state.page == "simulacion":
                     importances = rf.feature_importances_
                     feat_names = ['Embarazos', 'Glucosa', 'Presión', 'Insulina', 'BMI', 'DPF', 'Edad', 'Índice R', 'BMI²', 'Prediabetes']
                     
-                    # Ordenar
                     indices = np.argsort(importances)
                     
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 4))
                     fig_imp.patch.set_facecolor('none')
                     ax_imp.set_facecolor('none')
                     
-                    # Barras
                     ax_imp.barh(range(len(indices)), importances[indices], color=CEMP_PINK, align='center')
                     ax_imp.set_yticks(range(len(indices)))
                     ax_imp.set_yticklabels([feat_names[i] for i in indices])
@@ -676,37 +677,47 @@ elif st.session_state.page == "simulacion":
                 try:
                     pipeline = st.session_state.model
                     
-                    # 1. Transformación de datos para que SHAP los entienda
-                    # Aplicamos pasos previos al modelo (imputer, scaler)
-                    # Pipeline: [('imputer', ...), ('scaler', ...), ('model', ...)]
+                    # 1. Transformación para SHAP (Manual porque SHAP necesita los datos transformados pero el pipeline lo hace todo junto)
+                    # Pipeline tiene: Imputer -> Scaler -> Model
                     
-                    # Accedemos a los pasos previos
-                    # Nota: input_data es un DataFrame de una fila
-                    
-                    # Transformamos manualmente usando los pasos del pipeline
-                    step1 = pipeline.named_steps['imputer'].transform(input_data)
-                    step2 = pipeline.named_steps['scaler'].transform(step1)
-                    
-                    # Creamos dataframe transformado con nombres de columnas
-                    input_transformed = pd.DataFrame(step2, columns=input_data.columns)
-                    
-                    # 2. Explainer
+                    imputer = pipeline.named_steps['imputer']
+                    scaler = pipeline.named_steps['scaler']
                     model_step = pipeline.named_steps['model']
                     
-                    # Para RandomForest y clasificación binaria, TreeExplainer es ideal
+                    # Transformamos input
+                    step1 = imputer.transform(input_data)
+                    step2 = scaler.transform(step1)
+                    
+                    # Creamos DF con nombres para que SHAP los pinte bonitos
+                    input_transformed_df = pd.DataFrame(step2, columns=input_data.columns)
+                    
+                    # 2. Explainer (Método agnóstico que funciona mejor con pipelines)
+                    # Usamos una función lambda para decirle a SHAP cómo predecir
+                    # PERO para TreeExplainer es mejor pasar el modelo directamente si es un árbol
+                    
                     explainer = shap.TreeExplainer(model_step)
+                    shap_values = explainer.shap_values(input_transformed_df)
                     
-                    # 3. Valores SHAP para esta instancia
-                    # shap_values será una lista de matrices [clase0, clase1]
-                    shap_values = explainer.shap_values(input_transformed)
-                    
-                    # Queremos explicar la clase 1 (Diabetes) -> índice 1
-                    # shap_values[1] es una matriz (1, n_features)
-                    shap_val_instance = shap_values[1][0] 
-                    base_value = explainer.expected_value[1]
-                    
-                    # 4. Objeto Explanation para waterfall
-                    # data=input_data.iloc[0].values muestra los valores originales en el gráfico (más fácil de leer)
+                    # 3. Manejo de la estructura de shap_values (puede variar según versión)
+                    # A veces es una lista [clase0, clase1], a veces es solo un array
+                    if isinstance(shap_values, list):
+                        # Clasificación binaria, queremos la clase positiva (1)
+                        shap_val_instance = shap_values[1][0]
+                        base_value = explainer.expected_value[1]
+                    else:
+                        # Si devuelve solo un array (raro en clasificación, común en regresión, pero posible)
+                        if len(shap_values.shape) == 3: # (1, features, classes)
+                             shap_val_instance = shap_values[0, :, 1]
+                        else:
+                             shap_val_instance = shap_values[0]
+                        
+                        if isinstance(explainer.expected_value, np.ndarray):
+                             base_value = explainer.expected_value[1]
+                        else:
+                             base_value = explainer.expected_value
+
+                    # 4. Generar Waterfall
+                    # Usamos los datos originales (input_data) para mostrar los valores reales en el gráfico
                     exp = shap.Explanation(
                         values=shap_val_instance,
                         base_values=base_value,
@@ -714,11 +725,8 @@ elif st.session_state.page == "simulacion":
                         feature_names=input_data.columns
                     )
                     
-                    # 5. Gráfico Waterfall
                     fig_shap, ax_shap = plt.subplots(figsize=(6, 4))
-                    shap.plots.waterfall(exp, show=False) # show=False para capturar en fig
-                    
-                    # Ajuste fino para Streamlit
+                    shap.plots.waterfall(exp, show=False)
                     plt.tight_layout()
                     
                     chart_html_shap = fig_to_html(fig_shap)
@@ -730,7 +738,6 @@ elif st.session_state.page == "simulacion":
                     </div>""", unsafe_allow_html=True)
                     
                 except Exception as e:
-                    # Fallback visual limpio
                     st.markdown(f"""<div class="card card-auto">
                         <span class="card-header">ANÁLISIS DEL PACIENTE</span>
                         <div style="padding:20px; text-align:center; color:#999;">

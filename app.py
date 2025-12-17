@@ -117,7 +117,11 @@ st.markdown("""
         line-height: 1.5;
     }
 
+    /* BOTÓN */
     div.stButton > button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
         border: none;
@@ -181,14 +185,12 @@ if st.session_state.page == "landing":
         </div>
     """, unsafe_allow_html=True)
 
-    # -------- BOTÓN CENTRADO CON COLUMNAS --------
+    # -------- BOTÓN CENTRADO (SIN DESCENTRAR TEXTO) --------
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN ➔"):
             ir_a_simulacion()
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # =========================================================
 # PÁGINA DE SIMULACIÓN

@@ -59,7 +59,7 @@ if 'predict_clicked' not in st.session_state:
 # =========================================================
 
 def fig_to_html(fig):
-    """Convierte una figura de Matplotlib a string HTML base64."""
+    """Convierte una figura de Matplotlib a string HTML base64 (Solo para visualizaciones pequeñas no ampliables)."""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -67,6 +67,7 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
+    """Convierte figura a bytes para st.image (Permite zoom)."""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -274,38 +275,41 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === NUEVO CSS: TARJETAS UNIFICADAS SIMPLES (CON DOBLES LLAVES) === */
-        .unified-card {{
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-            overflow: hidden; 
-            border: 1px solid #eee;
-        }}
-        
-        .unified-top {{
+        /* === ESTILOS PARA TARJETAS CON ZOOM (SEPARADAS PERO ESTILIZADAS) === */
+        .card-header-box {{
             background-color: white;
-            padding: 25px;
-            text-align: center; 
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 20px 25px 10px 25px;
+            border-left: 1px solid #eee;
+            border-right: 1px solid #eee;
+            border-top: 1px solid #eee;
+            text-align: center;
+            margin-bottom: -5px; /* Intento de reducir gap con la imagen */
         }}
-        
-        .unified-title {{
+
+        .card-title-text {{
             color: #2C3E50;
             font-family: 'Helvetica', sans-serif;
             font-weight: 800;
             font-size: 1.1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
+            margin: 0;
         }}
         
-        .unified-bottom {{
+        .card-footer-box {{
             background-color: rgba(233, 127, 135, 0.15); 
             padding: 20px 25px;
             color: #555;
             font-size: 0.9rem;
             line-height: 1.5;
-            border-top: 1px solid #eee;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            border-left: 1px solid #eee;
+            border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            margin-top: -5px; /* Intento de reducir gap con la imagen */
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -686,8 +690,12 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            # 1. GENERAMOS EL HTML DE LA IMAGEN
-            chart_html = ""
+            st.markdown(f"""
+            <div class="card-header-box">
+                <div class="card-title-text">Visión Global del Modelo</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
                     rf = st.session_state.model.named_steps['model']
@@ -714,30 +722,30 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    chart_html = fig_to_html(fig_imp)
+                    # Usamos st.image nativo para permitir zoom
+                    st.image(fig_to_bytes(fig_imp), use_container_width=True)
                     plt.close(fig_imp)
-                except:
-                    chart_html = "<div style='padding:20px; color:#999;'>No se pudo generar la gráfica.</div>"
-            else:
-                chart_html = "<div style='padding:20px; color:#999;'>Modelo simulado.</div>"
 
-            # 2. RENDERIZAMOS TODO EN UN SOLO BLOQUE MARKDOWN
-            st.markdown(f"""
-            <div class="unified-card">
-                <div class="unified-top">
-                    <div class="unified-title">Visión Global del Modelo</div>
-                    {chart_html}
-                </div>
-                <div class="unified-bottom">
-                    <strong>Interpretación de Relevancia Global:</strong><br>
-                    Este gráfico muestra qué datos son más importantes para la predicción del riesgo de padecer diabetes. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
-                </div>
+                except:
+                    st.warning("No se pudo extraer la importancia global del modelo cargado.")
+            else:
+                st.warning("Modelo simulado: No hay datos reales de importancia global.")
+
+            st.markdown("""
+            <div class="card-footer-box">
+                <strong>Interpretación de Relevancia Global:</strong><br>
+                Este gráfico muestra qué datos son más importantes para la predicción del riesgo de padecer diabetes. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
             </div>
             """, unsafe_allow_html=True)
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            chart_html_shap = ""
+            st.markdown(f"""
+            <div class="card-header-box">
+                <div class="card-title-text">Análisis Individual (SHAP)</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
                     pipeline = st.session_state.model
@@ -774,25 +782,19 @@ elif st.session_state.page == "simulacion":
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
-                    chart_html_shap = fig_to_html(fig_shap)
+                    # Usamos st.image nativo para permitir zoom
+                    st.image(fig_to_bytes(fig_shap), use_container_width=True)
                     plt.close(fig_shap)
 
                 except Exception as e:
-                    chart_html_shap = f"<div style='padding:20px; color:red;'>Error SHAP: {e}</div>"
+                    st.error(f"Error generando SHAP: {e}")
             else:
-                chart_html_shap = "<div style='padding:40px; color:#999; font-style:italic;'>Visualización no disponible en modo simulación.</div>"
+                st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
             
-            # 2. RENDERIZAMOS TODO EN UN SOLO BLOQUE MARKDOWN
             st.markdown(f"""
-            <div class="unified-card">
-                <div class="unified-top">
-                    <div class="unified-title">Análisis Individual (SHAP)</div>
-                    {chart_html_shap}
-                </div>
-                <div class="unified-bottom">
-                    <strong>Interpretación del Resultado:</strong><br>
-                    El análisis parte de una 'Línea Base' (aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final ({prob*100:.1f}%) es la suma de estos factores.
-                </div>
+            <div class="card-footer-box">
+                <strong>Interpretación del Resultado:</strong><br>
+                El análisis parte de una 'Línea Base' (aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final ({prob*100:.1f}%) es la suma de estos factores.
             </div>
             """, unsafe_allow_html=True)
 

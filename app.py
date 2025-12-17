@@ -55,7 +55,8 @@ st.markdown(f"""
     /* === PORTADA (LANDING) === */
     .landing-wrapper {{
         background: linear-gradient(145deg, #FFFFFF 0%, #FFF5F6 100%);
-        padding: 50px 40px 60px 40px;
+        /* Aumentamos el padding inferior para que el botón quepa visualmente DENTRO de la caja blanca */
+        padding: 50px 40px 120px 40px; 
         border-radius: 20px;
         text-align: center;
         border: 1px solid rgba(233, 127, 135, 0.15);
@@ -113,28 +114,29 @@ st.markdown(f"""
         line-height: 1.4;
     }}
     
+    /* CAMBIO 1: Centrado del párrafo */
     .landing-description {{
         font-size: 1rem;
         color: #666;
         line-height: 1.6;
         max-width: 700px;
         margin: 0 auto 35px auto;
-        text-align: center;
+        text-align: center; /* Centrado */
     }}
 
+    /* Estilo del rectángulo rosita de disclaimer */
     .disclaimer-box {{
         background: linear-gradient(180deg, #FDFBFB 0%, #FFE6E9 100%);
         border: 1px solid #FADADD;
         border-left: 4px solid {CEMP_PINK};
-        padding: 25px 25px 95px 25px;
+        padding: 20px;
         margin: 0 auto 0 auto; 
         text-align: center;
         font-size: 0.85rem;
         color: #555;
-        border-radius: 15px;
+        border-radius: 12px;
         max-width: 750px;
         line-height: 1.5;
-        box-shadow: inset 0 0 20px rgba(233, 127, 135, 0.05);
     }}
     
     /* BOTONES */
@@ -262,7 +264,9 @@ Este proyecto explora el potencial de integrar modelos predictivos avanzados en 
 </div>
 </div>""", unsafe_allow_html=True)
         
-        st.markdown('<div style="display: flex; justify-content: center; margin-top: -85px; position: relative; z-index: 10;">', unsafe_allow_html=True)
+        # CAMBIO 2: Botón posicionado visualmente DENTRO de la caja blanca (landing-wrapper) mediante margen negativo
+        # y asegurado con padding-bottom en la clase CSS
+        st.markdown('<div style="display: flex; justify-content: center; margin-top: -90px; position: relative; z-index: 10;">', unsafe_allow_html=True)
         if st.button("INICIAR SIMULACIÓN  ➔", key="landing_btn"):
             st.session_state.step = 2
             st.rerun()
@@ -291,6 +295,7 @@ if st.session_state.step > 1:
         st.markdown("---") 
         st.markdown("**3. Historia**")
         age = input_biomarker("Edad (años)", 18, 90, 45, "age")
+        # CAMBIO 3: Corrección de Indentación en la siguiente línea (eliminado el espacio extra al inicio)
         pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada.") 
         st.markdown("---") 
         st.markdown("**4. Genética**")

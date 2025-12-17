@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definición del modelo al principio para evitar errores
+# Definimos la clase del modelo AQUÍ ARRIBA para que nunca falle
 class MockModel:
     def predict_proba(self, X):
         # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
@@ -23,7 +23,7 @@ class MockModel:
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicialización segura
+# Inicialización segura del modelo
 if 'model' not in st.session_state:
     st.session_state.model = MockModel()
 
@@ -40,12 +40,6 @@ def fig_to_html(fig):
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
-
-def fig_to_bytes(fig):
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
-    buf.seek(0)
-    return buf
 
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
@@ -412,7 +406,7 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
-                # Generamos gráfico al vuelo (sin caché para evitar errores de contexto)
+                # GRÁFICO NORMAL (SIN CACHÉ)
                 x = np.linspace(-0.15, 1.25, 500)
                 y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
                           0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
@@ -437,9 +431,12 @@ elif st.session_state.page == "simulacion":
                 ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
                 ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
                 
-                # Usar st.image con bytes para mejor rendimiento visual que HTML
-                img_bytes = fig_to_bytes(fig_calib)
-                st.image(img_bytes, use_container_width=True)
+                chart_html_calib = fig_to_html(fig_calib)
+                st.markdown(f"""
+                <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
+                    {chart_html_calib}
+                </div>
+                """, unsafe_allow_html=True)
                 plt.close(fig_calib)
 
         # --- LÓGICA IA ---
@@ -492,7 +489,7 @@ elif st.session_state.page == "simulacion":
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
-            # FICHA PACIENTE (Construimos HTML aquí mismo para asegurar unsafe_allow_html)
+            # FICHA PACIENTE (LÓGICA SIMPLE)
             if st.session_state.predict_clicked:
                 badges_html = f"""
                     <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">

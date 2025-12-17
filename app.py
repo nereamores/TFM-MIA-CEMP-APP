@@ -107,6 +107,11 @@ st.markdown("""
     }
 
     /* Botón */
+    div.stButton {
+        display: flex;
+        justify-content: center;
+    }
+
     div.stButton > button {
         background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
         color: white;
@@ -157,8 +162,8 @@ if st.session_state.page == 'landing':
         </div>
     """, unsafe_allow_html=True)
 
-    # BOTÓN PERFECTAMENTE CENTRADO EN EL CUADRADO BLANCO
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # BOTÓN EXACTAMENTE CENTRADO EN EL EJE DEL CARD
+    col1, col2, col3 = st.columns(3)
     with col2:
         if st.button("INICIAR SIMULACIÓN ➔"):
             ir_a_simulacion()

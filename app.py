@@ -28,7 +28,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA (TEXTO ORIGINAL)
+# 3. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
 
@@ -393,7 +393,7 @@ elif st.session_state.page == "simulacion":
                 return [[1-prob, prob]]
         st.session_state.model = MockModel()
 
-    # --- 6. INPUTS SINCRONIZADOS (CORREGIDO PARA FORMATO) ---
+    # --- 6. INPUTS SINCRONIZADOS ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -413,11 +413,11 @@ elif st.session_state.page == "simulacion":
         if key not in st.session_state:
             st.session_state[key] = default_val
 
-        # Modificado: Resetear predicción al cambiar valores
+        # CORRECCIÓN: ELIMINADO EL RESET (st.session_state.predict_clicked = False)
+        # Esto evita que la pantalla "salte" y se borren los resultados al mover un slider
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
-            st.session_state.predict_clicked = False # Resetear estado
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
@@ -425,7 +425,6 @@ elif st.session_state.page == "simulacion":
             if val > max_val: val = max_val
             st.session_state[key] = val
             st.session_state[f"{key}_slider"] = val 
-            st.session_state.predict_clicked = False # Resetear estado
 
         with c1:
             st.slider(
@@ -667,7 +666,6 @@ elif st.session_state.page == "simulacion":
                     </div>
                 """
             else:
-                # Texto plano sin multiline string para evitar errores de indentación en Streamlit
                 badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
 
             # FICHA PACIENTE 
@@ -731,8 +729,7 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            # --- BOTÓN DE PREDICCIÓN (MODIFICADO) ---
-            # Se ha eliminado el emoji de estrellas y cambiado el texto a "CALCULAR RIESGO"
+            # --- BOTÓN DE PREDICCIÓN ---
             if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
                 st.session_state.predict_clicked = True
                 st.rerun()

@@ -16,7 +16,182 @@ st.set_page_config(
 )
 
 # =========================================================
-# 2. GESTIÓN DE NAVEGACIÓN
+# 2. FUNCIONES DE CACHÉ (ESTO EVITA EL PARPADEO)
+# =========================================================
+# Estas funciones solo se ejecutan si sus datos de entrada cambian.
+# Si cambias el nombre, los gráficos de glucosa no se recalculan.
+
+def fig_to_html(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
+    buf.seek(0)
+    img_str = base64.b64encode(buf.read()).decode()
+    return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
+
+def get_help_icon(description):
+    return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
+
+# --- CACHÉ 1: GRÁFICO DE CALIBRACIÓN (PESADO) ---
+@st.cache_data(show_spinner=False)
+def get_calibration_plot(threshold_val):
+    # Colores
+    CEMP_PINK = "#E97F87"
+    CEMP_DARK = "#2C3E50"
+    OPTIMAL_GREEN = "#8BC34A"
+    
+    x = np.linspace(-0.15, 1.25, 500)
+    y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
+              0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+    y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
+                 1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
+    
+    fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
+    fig_calib.patch.set_facecolor('none')
+    ax_calib.set_facecolor('none')
+    ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
+    ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
+    ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
+    ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
+    ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
+    ax_calib.axvline(threshold_val, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
+    ax_calib.set_yticks([])
+    ax_calib.set_xlim(-0.2, 1.25)
+    ax_calib.spines['top'].set_visible(False)
+    ax_calib.spines['right'].set_visible(False)
+    ax_calib.spines['bottom'].set_visible(False)
+    ax_calib.spines['left'].set_visible(False)
+    ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
+    ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
+    
+    html = fig_to_html(fig_calib)
+    plt.close(fig_calib)
+    return html
+
+# --- CACHÉ 2: FICHA DEL PACIENTE ---
+@st.cache_data(show_spinner=False)
+def get_patient_card_html(name, date_str, clicked, risk_label, risk_bg, risk_border, risk_icon, conf_desc, conf_color, conf_text):
+    CEMP_DARK = "#2C3E50"
+    
+    if clicked:
+        badges_html = f"""
+            <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+                {risk_icon} {risk_label}
+            </div>
+            <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
+                <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
+                <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
+            </div>
+        """
+    else:
+        badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
+
+    return f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
+            <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
+            <div>
+                <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
+                <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">{name}</h2>
+                <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{date_str}</b></div>
+            </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+            {badges_html}
+        </div>
+    </div>"""
+
+# --- CACHÉ 3: BARRAS DE CONTEXTO ---
+@st.cache_data(show_spinner=False)
+def get_context_bars_html(glucose_val, bmi_val):
+    # Constantes y colores
+    CEMP_DARK = "#2C3E50"
+    GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
+    BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
+    
+    g_pos = min(100, max(0, (glucose_val - 50) / 3.0)) 
+    b_pos = min(100, max(0, (bmi_val - 10) * 2.5)) 
+    
+    return f"""<div class="card">
+        <span class="card-header">CONTEXTO POBLACIONAL</span>
+        <div style="margin-top:15px;">
+            <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA 2H (TEST TOLERANCIA) <span style="font-weight:normal">({glucose_val} mg/dL)</span></div>
+            <div class="bar-container">
+                <div class="bar-bg"><div class="bar-fill" style="background: {GLUCOSE_GRADIENT};"></div></div>
+                <div class="bar-marker" style="left: {g_pos}%;"></div>
+                <div class="bar-txt" style="left: {g_pos}%;">{glucose_val}</div>
+            </div>
+            <div class="legend-container">
+                <span class="legend-label" style="left: 15%;">Normal (&lt;140)</span>
+                <span class="legend-label" style="left: 40%;">Intolerancia (140-199)</span>
+                <span class="legend-label" style="left: 75%;">Diabetes (&gt;200)</span>
+            </div>
+        </div>
+        <div style="margin-top:35px;">
+            <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi_val:.1f})</span></div>
+            <div class="bar-container">
+                <div class="bar-bg"><div class="bar-fill" style="background: {BMI_GRADIENT};"></div></div>
+                <div class="bar-marker" style="left: {b_pos}%;"></div>
+                <div class="bar-txt" style="left: {b_pos}%;">{bmi_val:.1f}</div>
+            </div>
+            <div class="legend-container">
+                <span class="legend-label" style="left: 10%;">Bajo</span>
+                <span class="legend-label" style="left: 29%;">Normal</span>
+                <span class="legend-label" style="left: 43%;">Sobrepeso</span>
+                <span class="legend-label" style="left: 56%;">Ob. G1</span>
+                <span class="legend-label" style="left: 68%;">Ob. G2</span>
+                <span class="legend-label" style="left: 87%;">Ob. G3</span>
+            </div>
+        </div>
+    </div>"""
+
+# --- CACHÉ 4: DONUT CHART (PESADO) ---
+@st.cache_data(show_spinner=False)
+def get_donut_chart_html(prob, threshold, clicked, risk_color):
+    CEMP_DARK = "#2C3E50"
+    
+    fig, ax = plt.subplots(figsize=(3.2, 3.2))
+    fig.patch.set_facecolor('none')
+    ax.set_facecolor('none')
+
+    if clicked:
+        # GRAFICO REAL
+        ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+        # LÍNEA DEL UMBRAL
+        threshold_angle = 90 - (threshold * 360)
+        theta_rad = np.deg2rad(threshold_angle)
+        x1 = 0.85 * np.cos(theta_rad)
+        y1 = 0.85 * np.sin(theta_rad)
+        x2 = 1.15 * np.cos(theta_rad)
+        y2 = 1.15 * np.sin(theta_rad)
+        ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
+        
+        center_text = f"{prob*100:.1f}%"
+    else:
+        # GRAFICO VACÍO
+        ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+        center_text = "---"
+
+    chart_html = fig_to_html(fig)
+    plt.close(fig)
+    
+    prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
+            
+    return f"""<div class="card" style="text-align:center; justify-content: center;">
+        <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
+        <div style="position:relative; display:inline-block; margin: auto;">
+            {chart_html}
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
+                {center_text}
+            </div>
+        </div>
+        <div style="margin-top: 8px; font-size: 0.65rem; color: #999; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
+            <span style="display: inline-block; width: 15px; border-top: 2px dashed {CEMP_DARK};"></span>
+            <span>Umbral de decisión</span>
+        </div>
+    </div>"""
+
+
+# =========================================================
+# 3. GESTIÓN DE NAVEGACIÓN
 # =========================================================
 if "page" not in st.session_state:
     st.session_state.page = "landing"
@@ -28,7 +203,7 @@ def volver_inicio():
     st.session_state.page = "landing"
 
 # =========================================================
-# 3. PÁGINA: PORTADA
+# 4. PÁGINA: PORTADA
 # =========================================================
 if st.session_state.page == "landing":
 
@@ -180,7 +355,7 @@ if st.session_state.page == "landing":
             st.rerun()
 
 # =========================================================
-# 4. PÁGINA: SIMULACIÓN
+# 5. PÁGINA: SIMULACIÓN
 # =========================================================
 elif st.session_state.page == "simulacion":
 
@@ -190,22 +365,12 @@ elif st.session_state.page == "simulacion":
 
     # --- 2. COLORES ---
     CEMP_PINK = "#E97F87"
-    CEMP_DARK = "#2C3E50" # Azul muy oscuro
+    CEMP_DARK = "#2C3E50" 
     GOOD_TEAL = "#4DB6AC"
     SLIDER_GRAY = "#BDC3C7"
-    OPTIMAL_GREEN = "#8BC34A" # Verde lima (Referencia F2)
-    NOTE_GRAY_BG = "#F8F9FA"  # Fondo gris para notas
-    NOTE_GRAY_TEXT = "#6C757D" # Texto gris para notas
-
-    # --- GRADIENTES SUAVES ---
-    # BMI (Escala 10-50)
-    BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
-
-    # GLUCOSA (Escala 50-350)
-    GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
-
-    # Genérico (Riesgo)
-    RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
+    OPTIMAL_GREEN = "#8BC34A"
+    NOTE_GRAY_BG = "#F8F9FA"  
+    NOTE_GRAY_TEXT = "#6C757D" 
 
     # --- 3. CSS (ESTILOS AVANZADOS) ---
     st.markdown(f"""
@@ -337,9 +502,7 @@ elif st.session_state.page == "simulacion":
         }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
         
-        .bar-fill {{ height: 100%; width: 100%; background: {RISK_GRADIENT}; border-radius: 6px; opacity: 1; }}
-        .bar-fill-bmi {{ height: 100%; width: 100%; background: {BMI_GRADIENT}; border-radius: 6px; opacity: 1; }}
-        .bar-fill-glucose {{ height: 100%; width: 100%; background: {GLUCOSE_GRADIENT}; border-radius: 6px; opacity: 1; }}
+        .bar-fill {{ height: 100%; width: 100%; border-radius: 6px; opacity: 1; }}
 
         .bar-marker {{ 
             position: absolute; top: -6px; width: 4px; height: 24px; 
@@ -373,17 +536,6 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- 4. HELPERS ---
-    def fig_to_html(fig):
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
-        buf.seek(0)
-        img_str = base64.b64encode(buf.read()).decode()
-        return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
-
-    def get_help_icon(description):
-        return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
-
     # --- 5. MODELO MOCK ---
     if 'model' not in st.session_state:
         class MockModel:
@@ -393,7 +545,7 @@ elif st.session_state.page == "simulacion":
                 return [[1-prob, prob]]
         st.session_state.model = MockModel()
 
-    # --- 6. INPUTS SINCRONIZADOS (CORREGIDO PARA FORMATO) ---
+    # --- 6. INPUTS SINCRONIZADOS ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -413,11 +565,9 @@ elif st.session_state.page == "simulacion":
         if key not in st.session_state:
             st.session_state[key] = default_val
 
-        # Modificado: NO resetear predicción al cambiar valores (mantiene resultado visible)
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"] 
-            # Eliminado: st.session_state.predict_clicked = False 
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
@@ -425,7 +575,6 @@ elif st.session_state.page == "simulacion":
             if val > max_val: val = max_val
             st.session_state[key] = val
             st.session_state[f"{key}_slider"] = val 
-            # Eliminado: st.session_state.predict_clicked = False 
 
         with c1:
             st.slider(
@@ -545,7 +694,7 @@ elif st.session_state.page == "simulacion":
     with tab1:
         st.write("")
         
-        # --- UMBRAL ---
+        # --- UMBRAL (CACHÉ APLICADO AQUÍ PARA GRÁFICO PESADO) ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
             
@@ -563,38 +712,12 @@ elif st.session_state.page == "simulacion":
                 """, unsafe_allow_html=True)
 
             with c_calib_2:
-                # --- SIMULACIÓN MATEMÁTICA ---
-                x = np.linspace(-0.15, 1.25, 500)
-                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
-                          0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
-                             1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
-                
-                fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
-                fig_calib.patch.set_facecolor('none')
-                ax_calib.set_facecolor('none')
-                ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
-                ax_calib.plot(x, y_sanos, color="gray", lw=0.8, alpha=0.6)
-                ax_calib.fill_between(x, y_enfermos, color=CEMP_PINK, alpha=0.3, label="Clase 1: Diabetes")
-                ax_calib.plot(x, y_enfermos, color=CEMP_PINK, lw=0.8, alpha=0.6)
-                ax_calib.axvline(0.27, color=OPTIMAL_GREEN, linestyle="--", linewidth=1.5, label="Óptimo (0.27)")
-                ax_calib.axvline(threshold, color=CEMP_DARK, linestyle="--", linewidth=2, label="Tu Selección")
-                ax_calib.set_yticks([])
-                ax_calib.set_xlim(-0.2, 1.25)
-                ax_calib.spines['top'].set_visible(False)
-                ax_calib.spines['right'].set_visible(False)
-                ax_calib.spines['bottom'].set_visible(False)
-                ax_calib.spines['left'].set_visible(False)
-                ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
-                ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
-                
-                chart_html_calib = fig_to_html(fig_calib)
+                # Usamos la función cacheada
                 st.markdown(f"""
                 <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
-                    {chart_html_calib}
+                    {get_calibration_plot(threshold)}
                 </div>
                 """, unsafe_allow_html=True)
-                plt.close(fig_calib)
 
         # LÓGICA IA
         input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
@@ -654,71 +777,15 @@ elif st.session_state.page == "simulacion":
         
         # IZQUIERDA
         with c_left:
-            
-            # LÓGICA CONDICIONAL PARA MOSTRAR RIESGO/FIABILIDAD
-            if st.session_state.predict_clicked:
-                badges_html = f"""
-                    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
-                        {risk_icon} {risk_label}
-                    </div>
-                    <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE;" title="{conf_desc}">
-                        <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
-                        <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
-                    </div>
-                """
-            else:
-                badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
+            # FICHA PACIENTE (CACHÉ)
+            st.markdown(get_patient_card_html(
+                patient_name, date_str, st.session_state.predict_clicked,
+                risk_label, risk_bg, risk_border, risk_icon,
+                conf_desc, conf_color, conf_text
+            ), unsafe_allow_html=True)
 
-            # FICHA PACIENTE 
-            st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
-                    <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
-                    <div>
-                        <span class="card-header" style="margin-bottom:5px;">EXPEDIENTE MÉDICO</span>
-                        <h2 style="margin:0; color:{CEMP_DARK}; font-size:1.6rem; line-height:1.2;">{patient_name}</h2>
-                        <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{date_str}</b></div>
-                    </div>
-                </div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-                    {badges_html}
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-            g_pos = min(100, max(0, (glucose - 50) / 3.0)) 
-            b_pos = min(100, max(0, (bmi - 10) * 2.5)) 
-            
-            st.markdown(f"""<div class="card">
-                <span class="card-header">CONTEXTO POBLACIONAL</span>
-                <div style="margin-top:15px;">
-                    <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA 2H (TEST TOLERANCIA) <span style="font-weight:normal">({glucose} mg/dL)</span></div>
-                    <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill-glucose"></div></div>
-                        <div class="bar-marker" style="left: {g_pos}%;"></div>
-                        <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
-                    </div>
-                    <div class="legend-container">
-                        <span class="legend-label" style="left: 15%;">Normal (&lt;140)</span>
-                        <span class="legend-label" style="left: 40%;">Intolerancia (140-199)</span>
-                        <span class="legend-label" style="left: 75%;">Diabetes (&gt;200)</span>
-                    </div>
-                </div>
-                <div style="margin-top:35px;">
-                    <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
-                    <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill-bmi"></div></div>
-                        <div class="bar-marker" style="left: {b_pos}%;"></div>
-                        <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
-                    </div>
-                    <div class="legend-container">
-                        <span class="legend-label" style="left: 10%;">Bajo</span>
-                        <span class="legend-label" style="left: 29%;">Normal</span>
-                        <span class="legend-label" style="left: 43%;">Sobrepeso</span>
-                        <span class="legend-label" style="left: 56%;">Ob. G1</span>
-                        <span class="legend-label" style="left: 68%;">Ob. G2</span>
-                        <span class="legend-label" style="left: 87%;">Ob. G3</span>
-                    </div>
-                </div>
-            </div>""", unsafe_allow_html=True)
+            # GRÁFICOS DE BARRAS (CACHÉ)
+            st.markdown(get_context_bars_html(glucose, bmi), unsafe_allow_html=True)
 
         # DERECHA
         with c_right:
@@ -735,47 +802,10 @@ elif st.session_state.page == "simulacion":
                 st.session_state.predict_clicked = True
                 st.rerun()
 
-            # FIGURA CON LÍNEA DE UMBRAL (CONDICIONAL)
-            fig, ax = plt.subplots(figsize=(3.2, 3.2))
-            fig.patch.set_facecolor('none')
-            ax.set_facecolor('none')
-
-            if st.session_state.predict_clicked:
-                # GRAFICO REAL
-                ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
-                # LÍNEA DEL UMBRAL
-                threshold_angle = 90 - (threshold * 360)
-                theta_rad = np.deg2rad(threshold_angle)
-                x1 = 0.85 * np.cos(theta_rad)
-                y1 = 0.85 * np.sin(theta_rad)
-                x2 = 1.15 * np.cos(theta_rad)
-                y2 = 1.15 * np.sin(theta_rad)
-                ax.plot([x1, x2], [y1, y2], color=CEMP_DARK, linestyle='--', linewidth=2)
-                
-                center_text = f"{prob*100:.1f}%"
-            else:
-                # GRAFICO VACÍO (Placeholder)
-                ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
-                center_text = "---"
-
-            chart_html = fig_to_html(fig)
-            plt.close(fig)
-
-            prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
-            
-            st.markdown(f"""<div class="card" style="text-align:center; justify-content: center;">
-                <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
-                <div style="position:relative; display:inline-block; margin: auto;">
-                    {chart_html}
-                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
-                        {center_text}
-                    </div>
-                </div>
-                <div style="margin-top: 8px; font-size: 0.65rem; color: #999; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-                    <span style="display: inline-block; width: 15px; border-top: 2px dashed {CEMP_DARK};"></span>
-                    <span>Umbral de decisión</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
+            # FIGURA CON DONUT CHART (CACHÉ)
+            st.markdown(get_donut_chart_html(
+                prob, threshold, st.session_state.predict_clicked, risk_color
+            ), unsafe_allow_html=True)
 
     with tab2:
         st.write("")

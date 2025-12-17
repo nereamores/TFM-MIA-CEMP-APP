@@ -290,13 +290,15 @@ elif st.session_state.page == "simulacion":
             margin-bottom: -5px; /* Intento de reducir gap con la imagen */
         }}
 
+        /* TIPOGRAFÍA ACTUALIZADA PARA INTEGRACIÓN NATIVA */
         .card-title-text {{
             color: #2C3E50;
-            font-family: 'Helvetica', sans-serif;
+            /* Pila de fuentes de sistema moderna */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
             font-weight: 800;
             font-size: 1.1rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px; /* Un poco menos de espaciado para que se vea más compacto */
             margin: 0;
         }}
         
@@ -736,10 +738,11 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
 
+            # TEXTO EXPLICATIVO CON NEGRITAS AÑADIDAS
             st.markdown("""
             <div class="card-footer-box">
                 <strong>Interpretación de Relevancia Global:</strong><br>
-                Este gráfico muestra qué datos son más importantes para la predicción del riesgo de padecer diabetes. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
+                Este gráfico muestra qué <b>datos son más importantes</b> para la predicción del riesgo de padecer diabetes. Las <b>barras más largas</b> (como Glucosa o Resistencia) indican los <b>factores que más influyen</b> en el diagnóstico final para la población general.
             </div>
             """, unsafe_allow_html=True)
 
@@ -800,10 +803,11 @@ elif st.session_state.page == "simulacion":
             else:
                 st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
             
+            # TEXTO EXPLICATIVO CON NEGRITAS AÑADIDAS
             st.markdown(f"""
             <div class="card-footer-box">
                 <strong>Interpretación del Resultado:</strong><br>
-                El análisis parte de una 'Línea Base' (aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final ({prob*100:.1f}%) es la suma de estos factores.
+                El análisis parte de una <b>'Línea Base' (aprox. 50%)</b>. A este valor se le <b>suman (barras rojas)</b> o <b>restan (barras azules)</b> las contribuciones específicas de los datos del paciente. El <b>resultado final ({prob*100:.1f}%)</b> es la suma de estos factores.
             </div>
             """, unsafe_allow_html=True)
 

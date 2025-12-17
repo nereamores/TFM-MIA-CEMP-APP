@@ -24,10 +24,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase del modelo AQUÍ para evitar errores
 class MockModel:
     def predict_proba(self, X):
-        # Simulación simple
         if isinstance(X, pd.DataFrame):
             score = (X.iloc[0]['Glucose']*0.5) + (X.iloc[0]['BMI']*0.4) + (X.iloc[0]['Age']*0.1) 
         else:
@@ -35,7 +33,6 @@ class MockModel:
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# --- FUNCIÓN DE CARGA DEL MODELO ---
 @st.cache_resource
 def load_model():
     model_path = "modelos/diabetes_rf_pipeline.pkl"
@@ -48,7 +45,6 @@ def load_model():
     else:
         return MockModel()
 
-# Inicialización segura
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
@@ -60,6 +56,7 @@ if 'predict_clicked' not in st.session_state:
 # =========================================================
 
 def fig_to_html(fig):
+    """Convierte una figura de Matplotlib a string HTML base64."""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -274,65 +271,41 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === ESTILOS TARJETAS UNIFICADAS XAI (CENTRADOS) === */
-        .card-top {{
-            background-color: white;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            padding: 30px 25px 10px 25px; 
-            border-left: 1px solid #eee;
-            border-right: 1px solid #eee;
-            border-top: 1px solid #eee;
-            text-align: center; /* CENTRADO TOTAL */
-            position: relative;
-        }}
+        /* === NUEVO CSS: TARJETAS UNIFICADAS SIMPLES === */
+        .unified-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            overflow: hidden; /* Esto es clave para que los bordes no se escapen */
+            border: 1px solid #eee;
+        }
         
-        .xai-title {{
+        /* Parte de arriba: BLANCA, incluye Título + Gráfico */
+        .unified-top {
+            background-color: white;
+            padding: 25px;
+            text-align: center; /* Centra título e imagen */
+        }
+        
+        .unified-title {
             color: #2C3E50;
             font-family: 'Helvetica', sans-serif;
             font-weight: 800;
             font-size: 1.1rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 20px;
-            background-color: transparent;
-            display: block;
-            width: 100%;
-        }}
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
         
-        /* Línea decorativa debajo del título */
-        .xai-title::after {{
-            content: "";
-            display: block;
-            width: 40px;
-            height: 3px;
-            background-color: #E97F87; 
-            margin: 10px auto 0 auto; 
-            border-radius: 2px;
-        }}
-        
-        .card-bottom {{
-            background-color: rgba(233, 127, 135, 0.15); 
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
+        /* Parte de abajo: ROSA, texto explicativo */
+        .unified-bottom {
+            background-color: rgba(233, 127, 135, 0.15); /* CEMP Pink muy suave */
             padding: 20px 25px;
-            border-top: none; 
             color: #555;
             font-size: 0.9rem;
             line-height: 1.5;
-            text-align: left;
-            border-left: 1px solid #eee;
-            border-right: 1px solid #eee;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 20px;
-        }}
-        
-        div[data-testid="stImage"] {{
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            background-color: transparent;
-        }}
+            border-top: 1px solid #eee;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -712,9 +685,8 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            st.markdown('<div class="card-top">', unsafe_allow_html=True)
-            st.markdown('<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
-            
+            # 1. GENERAMOS EL HTML DE LA IMAGEN
+            chart_html = ""
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
                     rf = st.session_state.model.named_steps['model']
@@ -741,28 +713,30 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    st.image(fig_to_bytes(fig_imp), use_container_width=True)
+                    chart_html = fig_to_html(fig_imp)
                     plt.close(fig_imp)
-
                 except:
-                    st.warning("No se pudo extraer la importancia global del modelo cargado.")
+                    chart_html = "<div style='padding:20px; color:#999;'>No se pudo generar la gráfica.</div>"
             else:
-                st.warning("Modelo simulado: No hay datos reales de importancia global.")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            st.markdown("""
-            <div class="card-bottom">
-                <strong>Interpretación de Relevancia Global:</strong><br>
-                Este gráfico muestra qué datos son más importantes para la predicción del riesgo de padecer diabetes. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
+                chart_html = "<div style='padding:20px; color:#999;'>Modelo simulado.</div>"
+
+            # 2. RENDERIZAMOS TODO EN UN SOLO BLOQUE MARKDOWN
+            st.markdown(f"""
+            <div class="unified-card">
+                <div class="unified-top">
+                    <div class="unified-title">Visión Global del Modelo</div>
+                    {chart_html}
+                </div>
+                <div class="unified-bottom">
+                    <strong>Interpretación de Relevancia Global:</strong><br>
+                    Este gráfico muestra qué datos son más importantes para la predicción del riesgo de padecer diabetes. Las barras más largas (como Glucosa o Resistencia) indican los factores que más influyen en el diagnóstico final para la población general.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            st.markdown('<div class="card-top">', unsafe_allow_html=True)
-            st.markdown('<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
-            
+            chart_html_shap = ""
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
                     pipeline = st.session_state.model
@@ -799,20 +773,25 @@ elif st.session_state.page == "simulacion":
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
-                    st.image(fig_to_bytes(fig_shap), use_container_width=True)
+                    chart_html_shap = fig_to_html(fig_shap)
                     plt.close(fig_shap)
 
                 except Exception as e:
-                    st.error(f"Error generando SHAP: {e}")
+                    chart_html_shap = f"<div style='padding:20px; color:red;'>Error SHAP: {e}</div>"
             else:
-                st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
+                chart_html_shap = "<div style='padding:40px; color:#999; font-style:italic;'>Visualización no disponible en modo simulación.</div>"
             
-            st.markdown('</div>', unsafe_allow_html=True)
-            
+            # 2. RENDERIZAMOS TODO EN UN SOLO BLOQUE MARKDOWN
             st.markdown(f"""
-            <div class="card-bottom">
-                <strong>Interpretación del Resultado:</strong><br>
-                El análisis parte de una 'Línea Base' (aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final ({prob*100:.1f}%) es la suma de estos factores.
+            <div class="unified-card">
+                <div class="unified-top">
+                    <div class="unified-title">Análisis Individual (SHAP)</div>
+                    {chart_html_shap}
+                </div>
+                <div class="unified-bottom">
+                    <strong>Interpretación del Resultado:</strong><br>
+                    El análisis parte de una 'Línea Base' (aprox. 50%). A este valor se le suman (barras rojas) o restan (barras azules) las contribuciones específicas de los datos del paciente. El resultado final ({prob*100:.1f}%) es la suma de estos factores.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 

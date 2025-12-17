@@ -5,9 +5,18 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import datetime
+import joblib
+import os
+
+# Intentamos importar SHAP de forma segura
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
 
 # =========================================================
-# 1. CONFIGURACIÓN Y CLASES (GLOBAL)
+# 1. CONFIGURACIÓN Y CONSTANTES GLOBALES
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -15,19 +24,49 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase del modelo AQUÍ para que siempre esté disponible
+# --- COLORES Y ESTILOS (Globales para evitar NameError) ---
+CEMP_PINK = "#E97F87"
+CEMP_DARK = "#2C3E50" 
+GOOD_TEAL = "#4DB6AC"
+SLIDER_GRAY = "#BDC3C7"
+OPTIMAL_GREEN = "#8BC34A"
+NOTE_GRAY_BG = "#F8F9FA"  
+NOTE_GRAY_TEXT = "#6C757D" 
+
+BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
+GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
+RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
+
+# --- CLASE MOCK (Respaldo) ---
 class MockModel:
     def predict_proba(self, X):
-        # Simulación: (Glucosa*0.5 + BMI*0.4 + Edad*0.1) -> Sigmoide
-        score = (X[0]*0.5) + (X[1]*0.4) + (X[3]*0.1) 
+        # Simulación simple si no hay modelo
+        if isinstance(X, pd.DataFrame):
+            # Usamos iloc para acceder por posición y evitar errores de índice
+            # Glucosa(1), BMI(4), Age(6)
+            score = (X.iloc[0, 1]*0.5) + (X.iloc[0, 4]*0.4) + (X.iloc[0, 6]*0.1) 
+        else:
+            score = 50
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
-# Inicialización segura del modelo
-if 'model' not in st.session_state:
-    st.session_state.model = MockModel()
+# --- CARGA DEL MODELO ---
+@st.cache_resource
+def load_model():
+    model_path = "modelos/diabetes_rf_pipeline.pkl"
+    if os.path.exists(model_path):
+        try:
+            return joblib.load(model_path)
+        except Exception as e:
+            st.error(f"Error cargando modelo: {e}")
+            return MockModel()
+    else:
+        return MockModel()
 
-# Estado del botón
+# Inicialización segura
+if 'model' not in st.session_state:
+    st.session_state.model = load_model()
+
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
@@ -36,6 +75,7 @@ if 'predict_clicked' not in st.session_state:
 # =========================================================
 
 def fig_to_html(fig):
+    """Para gráficos estáticos dentro de HTML (Tab 1)"""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -43,6 +83,7 @@ def fig_to_html(fig):
     return f'<img src="data:image/png;base64,{img_str}" style="width:100%; object-fit:contain;">'
 
 def fig_to_bytes(fig):
+    """Para gráficos ampliables con st.image (Tab 2)"""
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
@@ -83,8 +124,6 @@ if st.session_state.page == "landing":
             color: #2c3e50; margin-bottom: 0 !important;
             line-height: 1.2 !important; letter-spacing: -1px; cursor: default;
         }
-        h1 a { display: none !important; pointer-events: none !important; }
-        h1:hover { color: #2c3e50 !important; text-decoration: none !important; }
         .landing-pink { color: #ef7d86; }
         .landing-gray { color: #bdc3c7; }
         .badge-container { text-align: center; margin-bottom: 10px; }
@@ -110,7 +149,6 @@ if st.session_state.page == "landing":
             padding: 20px; border-radius: 4px; font-size: 0.85rem;
             color: #555; margin-bottom: 30px; text-align: center;
         }
-        .warning-box p { margin: 0; line-height: 1.5; }
         div.stButton > button {
             position: relative;
             background: linear-gradient(90deg, #ef707a 0%, #e8aeb3 100%);
@@ -118,23 +156,9 @@ if st.session_state.page == "landing":
             border-radius: 50px; font-weight: bold; font-size: 14px;
             text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
             box-shadow: 0 4px 15px rgba(239,112,122,0.3); cursor: pointer;
-            overflow: visible;
-        }
-        div.stButton > button > span {
-            position: absolute; left: 50%; top: 50%;
-            transform: translate(-50%, -50%) translateX(4px);
-            display: inline-block; pointer-events: none;
-        }
-        div.stButton > button::after {
-            content: "➔"; position: absolute; right: 28px; top: 50%;
-            transform: translateY(-50%); font-size: 16px; pointer-events: none;
         }
         div.stButton > button:hover {
             transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,112,122,0.5); color: white;
-        }
-        @media (max-width: 600px) {
-            div.stButton > button { padding: 12px 40px; font-size: 13px; }
-            div.stButton > button::after { right: 18px; }
         }
     </style>
     """, unsafe_allow_html=True)
@@ -164,18 +188,6 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
-    CEMP_PINK = "#E97F87"
-    CEMP_DARK = "#2C3E50" 
-    GOOD_TEAL = "#4DB6AC"
-    SLIDER_GRAY = "#BDC3C7"
-    OPTIMAL_GREEN = "#8BC34A"
-    NOTE_GRAY_BG = "#F8F9FA"  
-    NOTE_GRAY_TEXT = "#6C757D" 
-    
-    BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
-    GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
-    RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
-
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
@@ -188,6 +200,8 @@ elif st.session_state.page == "simulacion":
         }}
         .cemp-logo span {{ color: {CEMP_PINK}; }}
         .stSlider {{ padding-top: 0px !important; padding-bottom: 10px !important; }}
+        
+        /* EXPANDER ESTILIZADO */
         div[data-testid="stExpander"] details > summary {{
             background-color: rgba(233, 127, 135, 0.1) !important;
             border: 1px solid rgba(233, 127, 135, 0.2) !important;
@@ -206,6 +220,8 @@ elif st.session_state.page == "simulacion":
             border-bottom: 1px solid rgba(233, 127, 135, 0.2);
             border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
         }}
+
+        /* INPUTS SIDEBAR */
         [data-testid="stSidebar"] [data-testid="stNumberInput"] input {{
             padding: 0px 5px; font-size: 0.9rem; text-align: center; color: {CEMP_DARK};
             font-weight: 800; border-radius: 8px; background-color: white; border: 1px solid #ddd;
@@ -221,6 +237,8 @@ elif st.session_state.page == "simulacion":
         .calc-value {{
             font-size: 1rem; color: {CEMP_DARK}; font-weight: 800;
         }}
+        
+        /* TARJETAS GENERALES */
         .card {{
             background-color: white; border-radius: 12px; padding: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04);
@@ -231,6 +249,26 @@ elif st.session_state.page == "simulacion":
             color: #999; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px;
             text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center;
         }}
+
+        /* TARJETAS DIVIDIDAS (EXPLICABILIDAD) */
+        .card-top {{
+            background-color: white; border-top-left-radius: 12px; border-top-right-radius: 12px;
+            padding: 20px 20px 0px 20px;
+            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-top: 1px solid rgba(0,0,0,0.04);
+        }}
+        .card-mid {{
+            background-color: white; padding: 0px 20px;
+            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04);
+            display: flex; justify-content: center;
+        }}
+        .card-bottom {{
+            background-color: white; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+            padding: 10px 20px 20px 20px;
+            border-left: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-bottom: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px;
+        }}
+        
+        /* BARRAS DE CONTEXTO */
         .bar-container {{ position: relative; width: 100%; margin-top: 20px; margin-bottom: 30px; }}
         .bar-bg {{ background: #F0F2F5; height: 12px; border-radius: 6px; width: 100%; overflow: hidden; }}
         .bar-fill {{ height: 100%; width: 100%; border-radius: 6px; opacity: 1; }}
@@ -252,6 +290,7 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
+    # --- HELPER INPUTS SEGURO ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -259,13 +298,24 @@ elif st.session_state.page == "simulacion":
         st.markdown(label_html, unsafe_allow_html=True)
         
         c1, c2 = st.columns([2.5, 1], gap="small")
-        input_type = type(default_val)
-        min_val = input_type(min_val)
-        max_val = input_type(max_val)
-        step = 0.1 if input_type == float else 1
-
-        if format_str is None:
-            format_str = "%.2f" if input_type == float else "%d"
+        
+        # Validación de tipos estricta para evitar MixedNumericTypesError
+        is_float = isinstance(default_val, float) or isinstance(min_val, float)
+        
+        if is_float:
+            min_val = float(min_val)
+            max_val = float(max_val)
+            default_val = float(default_val)
+            step = 0.1
+            if format_str is None: format_str = "%.2f"
+            tech_min = 0.0 # Permitimos 0 para inicializar
+        else:
+            min_val = int(min_val)
+            max_val = int(max_val)
+            default_val = int(default_val)
+            step = 1
+            if format_str is None: format_str = "%d"
+            tech_min = 0 # Permitimos 0 para inicializar
 
         if key not in st.session_state:
             st.session_state[key] = default_val
@@ -273,24 +323,33 @@ elif st.session_state.page == "simulacion":
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
-            st.session_state.predict_clicked = False # Reset
+            st.session_state.predict_clicked = False 
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
-            if val < min_val: val = min_val
+            # Validación manual para asegurar rango lógico, pero permitir escribir
+            if val < tech_min: val = tech_min # Solo prohibimos negativos
             if val > max_val: val = max_val
             st.session_state[key] = val
-            st.session_state[f"{key}_slider"] = val 
-            st.session_state.predict_clicked = False # Reset
+            
+            # Sincronizar slider si está dentro de rango visible
+            if val >= min_val:
+                st.session_state[f"{key}_slider"] = val 
+            
+            st.session_state.predict_clicked = False 
 
+        # Slider solo muestra el rango lógico "médico"
+        # Input permite empezar desde 0
         with c1:
+            # Si el valor actual es menor que el mínimo del slider, el slider empieza al mínimo
+            slider_val = max(min_val, st.session_state[key])
             st.slider(
                 label="", min_value=min_val, max_value=max_val, step=step,
-                key=f"{key}_slider", value=st.session_state[key], on_change=update_from_slider, label_visibility="collapsed"
+                key=f"{key}_slider", value=slider_val, on_change=update_from_slider, label_visibility="collapsed"
             )
         with c2:
             st.number_input(
-                label="", min_value=min_val, max_value=max_val, step=step,
+                label="", min_value=tech_min, max_value=max_val, step=step,
                 key=f"{key}_input", value=st.session_state[key], on_change=update_from_input, label_visibility="collapsed",
                 format=format_str 
             )
@@ -307,12 +366,10 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("**Datos del paciente**")
         
-        # Reset al cambiar nombre o fecha
         def reset_on_change():
             st.session_state.predict_clicked = False
 
         patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_on_change)
-        
         default_date = datetime.date.today()
         consult_date = st.date_input("Fecha Predicción", value=default_date, label_visibility="collapsed", on_change=reset_on_change)
         
@@ -322,9 +379,11 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 120, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
-        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 100, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
+        # 1. GLUCOSA E INSULINA (Inicializadas a 0)
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 0, "gluc", "Concentración plasmática.", format_str="%d")
+        insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h.", format_str="%d")
         
+        # 2. CÁLCULO RI (Ordenado)
         proxy_index = int(glucose * insulin)
         proxy_str = f"{proxy_index}" 
 
@@ -337,12 +396,18 @@ elif st.session_state.page == "simulacion":
         </div>
         """, unsafe_allow_html=True)
 
+        # 3. PRESIÓN ARTERIAL (Después de RI)
+        blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
+
         st.markdown("---") 
 
-        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 70.0, "weight", "Peso corporal actual.")
-        height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
+        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 0.0, "weight", "Peso corporal actual.", format_str="%.2f")
+        height = input_biomarker("Altura (m)", 1.00, 2.20, 0.00, "height", "Altura en metros.", format_str="%.2f")
         
-        bmi = weight / (height * height)
+        if height > 0:
+            bmi = weight / (height * height)
+        else:
+            bmi = 0
         bmi_sq = bmi ** 2
         
         st.markdown(f"""
@@ -361,12 +426,12 @@ elif st.session_state.page == "simulacion":
         st.markdown("---") 
 
         c_age, c_preg = st.columns(2)
-        age = input_biomarker("Edad (años)", 18, 90, 45, "age", format_str="%d")
-        pregnancies = input_biomarker("Embarazos", 0, 20, 1, "preg", "Nº veces embarazada (a término o no).", format_str="%d") 
+        age = input_biomarker("Edad (años)", 18, 90, 0, "age", format_str="%d")
+        pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
         
         st.markdown("---") 
 
-        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.5, "dpf", "Estimación de predisposición genética por historial familiar.")
+        dpf = input_biomarker("Antecedentes Familiares (DPF)", 0.0, 2.5, 0.0, "dpf", "Estimación de predisposición genética.", format_str="%.2f")
 
         if dpf <= 0.15:
             dpf_label, bar_color = "Carga familiar MUY BAJA", GOOD_TEAL
@@ -394,11 +459,40 @@ elif st.session_state.page == "simulacion":
 
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
+    tab1, tab2, tab3 = st.tabs(["Panel General", "Explicabilidad", "Protocolo"])
+
+    # PREPARACIÓN DE DATOS GLOBALES
+    input_data = pd.DataFrame([[
+        pregnancies,
+        glucose,
+        blood_pressure,
+        insulin,
+        bmi,
+        dpf,
+        age,
+        proxy_index, # Indice_resistencia
+        bmi_sq,      # BMI_square
+        1 if glucose >= 140 else 0 # Is_prediabetes
+    ]], columns=['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DPF', 'Age', 'Indice_resistencia', 'BMI_square', 'Is_prediabetes'])
+    
+    if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
+        try:
+            prob = st.session_state.model.predict_proba(input_data)[0][1]
+        except:
+            st.session_state.model = MockModel()
+            prob = 0.5
+    else:
+        st.session_state.model = MockModel()
+        prob = 0.5
+
+    # UMBRAL INICIAL
+    threshold = 0.27
+    is_high = prob > threshold 
 
     with tab1:
         st.write("")
         
+        # --- AJUSTE SENSIBILIDAD ---
         with st.expander("Ajuste de Sensibilidad Clínica"):
             c_calib_1, c_calib_2 = st.columns([1, 2], gap="large")
             with c_calib_1:
@@ -408,16 +502,15 @@ elif st.session_state.page == "simulacion":
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
                     <span style="font-size:1.1rem;">💡</span> 
                     <div>
-                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos.
+                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo (F2-Score) para priorizar la detección de casos positivos (minimizar falsos negativos).
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
             with c_calib_2:
+                # GRÁFICO DENSIDADES (MATPLOTLIB)
                 x = np.linspace(-0.15, 1.25, 500)
-                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \
-                          0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
-                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + \
-                             1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
+                y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + 0.5 * np.exp(-((x - 0.55)**2) / (2 * 0.15**2))
+                y_enfermos = 0.35 * np.exp(-((x - 0.28)**2) / (2 * 0.1**2)) + 1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
                 
                 fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
                 fig_calib.patch.set_facecolor('none')
@@ -437,41 +530,27 @@ elif st.session_state.page == "simulacion":
                 ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
                 ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
                 
-                img_bytes = fig_to_bytes(fig_calib)
-                st.image(img_bytes, use_container_width=True)
+                # HTML para insertar
+                img_calib = fig_to_html(fig_calib)
+                st.markdown(f'<div style="display:flex; justify-content:center;">{img_calib}</div>', unsafe_allow_html=True)
                 plt.close(fig_calib)
 
-        input_data = [glucose, bmi, insulin, age, pregnancies, dpf]
+        # RECALCULAR RIESGO
+        is_high = prob > threshold
         
-        if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
-            try:
-                prob = st.session_state.model.predict_proba(input_data)[0][1]
-            except:
-                st.session_state.model = MockModel()
-                prob = st.session_state.model.predict_proba(input_data)[0][1]
-        else:
-            st.session_state.model = MockModel()
-            prob = st.session_state.model.predict_proba(input_data)[0][1]
-
-        is_high = prob > threshold 
-        
-        distancia_al_corte = abs(prob - threshold)
-        if distancia_al_corte > 0.15:
-            conf_text, conf_color = "ALTA", GOOD_TEAL
-            conf_desc = "Probabilidad claramente alejada del umbral. Clasificación robusta."
-        elif distancia_al_corte > 0.05:
-            conf_text, conf_color = "MEDIA", "#F39C12"
-            conf_desc = "Probabilidad relativamente cerca del umbral. Precaución."
-        else:
-            conf_text, conf_color = "BAJA", CEMP_PINK
-            conf_desc = "Zona de incertidumbre clínica (Borderline). La probabilidad roza el umbral."
-
+        # Colores y Textos dinámicos
         risk_color = CEMP_PINK if is_high else GOOD_TEAL
         risk_label = "ALTO RIESGO" if is_high else "BAJO RIESGO"
         risk_icon = "🔴" if is_high else "🟢"
         risk_bg = "#FFF5F5" if is_high else "#F0FDF4"
         risk_border = CEMP_PINK if is_high else GOOD_TEAL
         
+        distancia_al_corte = abs(prob - threshold)
+        if distancia_al_corte > 0.15: conf_text, conf_color = "ALTA", GOOD_TEAL
+        elif distancia_al_corte > 0.05: conf_text, conf_color = "MEDIA", "#F39C12"
+        else: conf_text, conf_color = "BAJA", CEMP_PINK
+
+        # Alertas de texto
         alerts = []
         if glucose >= 200: alerts.append("Posible Diabetes")
         elif glucose >= 140: alerts.append("Posible Prediabetes")
@@ -479,8 +558,9 @@ elif st.session_state.page == "simulacion":
         elif bmi >= 35: alerts.append("Obesidad G2")
         elif bmi >= 30: alerts.append("Obesidad G1")
         elif bmi >= 25: alerts.append("Sobrepeso")
-        elif bmi < 18.5: alerts.append("Bajo Peso")
+        elif bmi < 18.5 and bmi > 0: alerts.append("Bajo Peso")
         if proxy_index > 19769.5: alerts.append("Resistencia Insulina")
+        if blood_pressure > 90: alerts.append("Hipertensión Diastólica")
         
         if not alerts: insight_txt, insight_bd, alert_icon = "Sin hallazgos significativos", GOOD_TEAL, "✅"
         else: insight_txt, insight_bd, alert_icon = " • ".join(alerts), CEMP_PINK, "⚠️"
@@ -489,12 +569,19 @@ elif st.session_state.page == "simulacion":
         
         with c_left:
             if st.session_state.predict_clicked:
-                badges_html = f"""<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">{risk_icon} {risk_label}</div><div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top:5px;" title="{conf_desc}"><span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span><span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span></div>"""
+                badges_html = f"""
+                    <div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">
+                        {risk_icon} {risk_label}
+                    </div>
+                    <div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top: 5px;" title="{conf_desc}">
+                        <span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span>
+                        <span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span>
+                    </div>
+                """
             else:
-                badges_html = """<div style="color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;">Análisis pendiente...</div>"""
+                badges_html = "<div style='color:#BDC3C7; font-size:0.8rem; font-weight:600; padding:10px; font-style:italic;'>Análisis pendiente...</div>"
 
-            st.markdown(f"""
-            <div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
+            st.markdown(f"""<div class="card card-auto" style="flex-direction:row; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:20px; flex-grow:1;">
                     <div style="background:rgba(233, 127, 135, 0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:{CEMP_DARK};">👤</div>
                     <div>
@@ -503,7 +590,7 @@ elif st.session_state.page == "simulacion":
                         <div style="font-size:0.85rem; color:#666; margin-top:5px;">📅 Revisión: <b>{date_str}</b></div>
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
                     {badges_html}
                 </div>
             </div>""", unsafe_allow_html=True)
@@ -516,20 +603,20 @@ elif st.session_state.page == "simulacion":
                 <div style="margin-top:15px;">
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">GLUCOSA 2H (TEST TOLERANCIA) <span style="font-weight:normal">({glucose} mg/dL)</span></div>
                     <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill" style="background: {GLUCOSE_GRADIENT};"></div></div>
+                        <div class="bar-bg"><div class="bar-fill" style="background: {GLUCOSE_GRADIENT}; width:100%; height:100%; border-radius:6px;"></div></div>
                         <div class="bar-marker" style="left: {g_pos}%;"></div>
                         <div class="bar-txt" style="left: {g_pos}%;">{glucose}</div>
                     </div>
                     <div class="legend-container">
                         <span class="legend-label" style="left: 15%;">Normal (&lt;140)</span>
-                        <span class="legend-label" style="left: 40%;">Intolerancia (140-199)</span>
+                        <span class="legend-label" style="left: 40%;">Intolerancia</span>
                         <span class="legend-label" style="left: 75%;">Diabetes (&gt;200)</span>
                     </div>
                 </div>
                 <div style="margin-top:35px;">
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-bottom:5px;">ÍNDICE DE MASA CORPORAL <span style="font-weight:normal">({bmi:.1f})</span></div>
                     <div class="bar-container">
-                        <div class="bar-bg"><div class="bar-fill" style="background: {BMI_GRADIENT};"></div></div>
+                        <div class="bar-bg"><div class="bar-fill" style="background: {BMI_GRADIENT}; width:100%; height:100%; border-radius:6px;"></div></div>
                         <div class="bar-marker" style="left: {b_pos}%;"></div>
                         <div class="bar-txt" style="left: {b_pos}%;">{bmi:.1f}</div>
                     </div>
@@ -557,12 +644,14 @@ elif st.session_state.page == "simulacion":
                 st.session_state.predict_clicked = True
                 st.rerun()
 
+            # FIGURA DONUT
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
 
             if st.session_state.predict_clicked:
                 ax.pie([prob, 1-prob], colors=[risk_color, '#F4F6F9'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
+                # Línea de umbral punteada
                 threshold_angle = 90 - (threshold * 360)
                 theta_rad = np.deg2rad(threshold_angle)
                 x1 = 0.85 * np.cos(theta_rad)
@@ -575,7 +664,7 @@ elif st.session_state.page == "simulacion":
                 ax.pie([100], colors=['#EEEEEE'], startangle=90, counterclock=False, wedgeprops=dict(width=0.15, edgecolor='none'))
                 center_text = "---"
 
-            chart_html = fig_to_html(fig)
+            chart_donut = fig_to_html(fig)
             plt.close(fig)
             
             prob_help = get_help_icon("Probabilidad calculada por el modelo de IA.")
@@ -583,7 +672,7 @@ elif st.session_state.page == "simulacion":
             st.markdown(f"""<div class="card" style="text-align:center; justify-content: center;">
                 <span class="card-header" style="justify-content:center; margin-bottom:15px;">PROBABILIDAD IA{prob_help}</span>
                 <div style="position:relative; display:inline-block; margin: auto;">
-                    {chart_html}
+                    {chart_donut}
                     <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5rem; font-weight:800; color:{CEMP_DARK}; letter-spacing:-1px;">
                         {center_text}
                     </div>
@@ -596,28 +685,169 @@ elif st.session_state.page == "simulacion":
 
     with tab2:
         st.write("")
-        features = ["Glucosa", "BMI", "Edad", "Insulina"]
-        vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
-        colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
-        fig, ax = plt.subplots(figsize=(8, 4))
-        fig.patch.set_facecolor('none')
-        ax.set_facecolor('none')
-        ax.barh(features, vals, color=colors, height=0.6)
-        ax.axvline(0, color='#eee')
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.tick_params(axis='x', colors='#999')
-        ax.tick_params(axis='y', labelsize=10, labelcolor=CEMP_DARK)
-        chart_html = fig_to_html(fig)
-        plt.close(fig)
-        st.markdown(f"""<div class="card">
-        <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
-        <span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
-        {chart_html}
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid #2C3E50; margin-bottom:20px;">
+            <h4 style="margin:0; color:#2C3E50;">Inteligencia Artificial Explicable (XAI)</h4>
+            <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
+                Este módulo desglosa las decisiones del modelo para brindar transparencia clínica. 
+                A la izquierda, la visión global del algoritmo. A la derecha, el caso específico de este paciente.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        c_exp1, c_exp2 = st.columns(2, gap="medium")
+        
+        # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
+        with c_exp1:
+            st.markdown('<div class="card-top"><h4 style="text-align:center; color:#2C3E50; margin:0;">Visión Global del Modelo</h4></div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-mid">', unsafe_allow_html=True)
+            
+            if hasattr(st.session_state.model, 'named_steps'):
+                try:
+                    rf = st.session_state.model.named_steps['model']
+                    importances = rf.feature_importances_
+                    
+                    # Nombres amigables (Indice R -> Indice RI)
+                    feat_names_es = ['Embarazos', 'Glucosa', 'Presión Art.', 'Insulina', 'BMI', 'Ant. Familiares', 'Edad', 'Índice RI', 'BMI²', 'Prediabetes']
+                    
+                    df_imp = pd.DataFrame({'Feature': feat_names_es, 'Importancia': importances})
+                    df_imp = df_imp.sort_values(by='Importancia', ascending=True)
+                    
+                    fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
+                    fig_imp.patch.set_facecolor('white')
+                    ax_imp.set_facecolor('white')
+                    
+                    bars = ax_imp.barh(df_imp['Feature'], df_imp['Importancia'], color=CEMP_PINK, alpha=0.8)
+                    ax_imp.spines['top'].set_visible(False)
+                    ax_imp.spines['right'].set_visible(False)
+                    ax_imp.spines['bottom'].set_visible(False)
+                    ax_imp.spines['left'].set_visible(False)
+                    ax_imp.tick_params(axis='y', colors=CEMP_DARK, labelsize=9)
+                    ax_imp.tick_params(axis='x', colors='#999', labelsize=8)
+                    
+                    for bar in bars:
+                        width = bar.get_width()
+                        ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
+                                    f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
+
+                    chart_bytes_imp = fig_to_bytes(fig_imp)
+                    plt.close(fig_imp)
+                    st.image(chart_bytes_imp, use_container_width=True)
+
+                except:
+                    st.warning("No disponible")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown(f"""
+            <div class="card-bottom">
+                <div style="background-color: rgba(233, 127, 135, 0.15); padding:15px; border-radius:8px; border-left:4px solid {CEMP_PINK}; color:#555; font-size:0.9rem;">
+                    <strong style="color:{CEMP_DARK};">¿Qué muestra este gráfico?</strong>
+                    <br>Indica qué variables tienen más peso <em>en general</em> para el algoritmo.
+                    <ul style="margin-top:5px; padding-left:20px; margin-bottom:0;">
+                        <li>Las barras más largas son los factores de riesgo más potentes en la población estudiada.</li>
+                        <li><strong>Utilidad:</strong> Ayuda a entender qué prioriza la IA al entrenarse.</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
+        with c_exp2:
+            st.markdown('<div class="card-top"><h4 style="text-align:center; color:#2C3E50; margin:0;">Análisis Individual (SHAP)</h4></div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-mid">', unsafe_allow_html=True)
+            
+            if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
+                try:
+                    pipeline = st.session_state.model
+                    step1 = pipeline.named_steps['imputer'].transform(input_data)
+                    step2 = pipeline.named_steps['scaler'].transform(step1)
+                    input_transformed = pd.DataFrame(step2, columns=input_data.columns)
+                    
+                    explainer = shap.TreeExplainer(pipeline.named_steps['model'])
+                    shap_values = explainer.shap_values(input_transformed)
+                    
+                    if isinstance(shap_values, list):
+                        shap_val_instance = shap_values[1][0]
+                        base_value = explainer.expected_value[1]
+                    else:
+                        if len(shap_values.shape) == 3:
+                             shap_val_instance = shap_values[0, :, 1]
+                        else:
+                             shap_val_instance = shap_values[0]
+                        
+                        if isinstance(explainer.expected_value, np.ndarray):
+                             base_value = explainer.expected_value[1]
+                        else:
+                             base_value = explainer.expected_value
+
+                    exp = shap.Explanation(
+                        values=shap_val_instance,
+                        base_values=base_value,
+                        data=input_data.iloc[0].values, 
+                        feature_names=input_data.columns
+                    )
+                    
+                    fig_shap, ax_shap = plt.subplots(figsize=(6, 5))
+                    shap.plots.waterfall(exp, show=False, max_display=10)
+                    plt.tight_layout()
+                    
+                    chart_bytes_shap = fig_to_bytes(fig_shap)
+                    plt.close(fig_shap)
+                    st.image(chart_bytes_shap, use_container_width=True)
+                    
+                except Exception as e:
+                    st.warning(f"Error SHAP: {e}")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="card-bottom">
+                <div style="background-color: rgba(233, 127, 135, 0.15); padding:15px; border-radius:8px; border-left:4px solid {CEMP_PINK}; color:#555; font-size:0.9rem;">
+                    <strong style="color:{CEMP_DARK};">¿Cómo se lee esto?</strong>
+                    <br>Partimos de una <strong>Probabilidad Base</strong> del azar (0.5).
+                    <ul style="margin-top:5px; padding-left:20px; margin-bottom:0;">
+                        <li><strong style="color:#E97F87;">Barras Rojas (+):</strong> Factores que <em>aumentan</em> el riesgo en este paciente.</li>
+                        <li><strong style="color:#4DB6AC;">Barras Azules (-):</strong> Factores que <em>disminuyen</em> el riesgo.</li>
+                        <li>La suma final nos da la probabilidad de diabetes del paciente.</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     with tab3:
         st.write("")
-        st.info("💡 Módulo de recomendaciones clínicas y generación de informes.")
+        if is_high:
+            st.markdown(f"""
+            <div style="padding: 20px; background-color: #FFF5F5; border-left: 5px solid {CEMP_PINK}; border-radius: 5px; margin-bottom: 20px;">
+                <h3 style="color: {CEMP_PINK}; margin:0;">🚨 PROTOCOLO DE ALTO RIESGO DETECTADO</h3>
+                <p style="margin-top:10px; color: #555;">El paciente presenta una probabilidad elevada ({prob*100:.1f}%) de diabetes tipo 2.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                st.markdown("#### 1. Acción Inmediata")
+                st.warning("⚠️ **Derivación a Endocrinología** (Prioridad: ALTA)")
+                st.checkbox("Solicitar HbA1c confirmatoria")
+                st.checkbox("Perfil lipídico completo")
+            with c_p2:
+                st.markdown("#### 2. Intervención Terapéutica")
+                st.info("💊 Valorar inicio de Metformina")
+                st.write("- **Dieta:** Restricción calórica moderada.")
+        
+        else:
+            st.markdown(f"""
+            <div style="padding: 20px; background-color: #F0FDF4; border-left: 5px solid {GOOD_TEAL}; border-radius: 5px; margin-bottom: 20px;">
+                <h3 style="color: {GOOD_TEAL}; margin:0;">🛡️ PROTOCOLO PREVENTIVO (BAJO RIESGO)</h3>
+                <p style="margin-top:10px; color: #555;">El perfil actual ({prob*100:.1f}%) no sugiere riesgo inminente.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                st.markdown("#### 1. Seguimiento")
+                st.success("✅ **Control Rutinario**")
+                st.checkbox("Repetir test en 12 meses")
+            with c_p2:
+                st.markdown("#### 2. Educación Sanitaria")
+                st.write("- Mantener BMI < 25.")

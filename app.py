@@ -274,34 +274,38 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* ESTILOS XAI (CON DOBLE LLAVE PARA EVITAR ERROR DE F-STRING) */
-        .white-card-container {{
+        /* === NUEVOS ESTILOS UNIFICADOS PARA XAI === */
+        .unified-xai-card {{
             background-color: white;
-            padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             margin-bottom: 20px;
-            height: 100%;
+            overflow: hidden; /* Para que el footer rosa respete los bordes redondeados */
+            border: 1px solid #eee;
         }}
-        .pink-explanation-box {{
-            background-color: rgba(233, 127, 135, 0.15);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-            border-left: 4px solid #E97F87;
+        .xai-chart-section {{
+            padding: 25px 25px 10px 25px; /* Menos padding abajo para acercar al footer */
+            background-color: white;
+        }}
+        .xai-explanation-footer {{
+            background-color: rgba(233, 127, 135, 0.15); /* CEMP PINK transparente */
+            padding: 20px 25px;
+            border-top: 3px solid #E97F87;
             color: #555;
             font-size: 0.9rem;
             line-height: 1.5;
         }}
-        .pink-explanation-box strong {{
-            color: #C0392B;
+        .xai-explanation-footer strong {{
+            color: #000000; /* Negrita en NEGRO PURO */
+            font-weight: 800;
         }}
         .xai-title {{
             text-align: center;
             color: #2C3E50;
-            font-weight: 700;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -682,7 +686,11 @@ elif st.session_state.page == "simulacion":
         
         # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
         with c_exp1:
-            st.markdown('<div class="white-card-container">', unsafe_allow_html=True)
+            # INICIO TARJETA UNIFICADA
+            st.markdown('<div class="unified-xai-card">', unsafe_allow_html=True)
+            
+            # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
+            st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
             st.markdown(f'<div class="xai-title">🌎 Visión Global del Modelo</div>', unsafe_allow_html=True)
             
             if hasattr(st.session_state.model, 'named_steps'):
@@ -713,29 +721,35 @@ elif st.session_state.page == "simulacion":
                     
                     st.image(fig_to_bytes(fig_imp), use_container_width=True)
                     plt.close(fig_imp)
-                    
-                    # Caja rosa explicativa - LENGUAJE TÉCNICO
-                    st.markdown("""
-                    <div class="pink-explanation-box">
-                        <strong>Interpretación de Relevancia Global (Feature Importance)</strong><br>
-                        Jerarquización de variables según la ganancia de información (Gini importance) en la construcción del modelo.<br><br>
-                        <ul>
-                            <li><strong>Interpretación:</strong> Las barras de mayor longitud indican los biomarcadores con mayor sensibilidad y capacidad discriminante a nivel poblacional.</li>
-                            <li><strong>Validación:</strong> Confirma que el algoritmo prioriza factores clínicamente significativos (ej. hiperglucemia, resistencia a la insulina) frente a variables de confusión.</li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
 
                 except:
                     st.warning("No se pudo extraer la importancia global del modelo cargado.")
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
             
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True) # FIN SECCIÓN BLANCA
+
+            # SECCIÓN INFERIOR ROSA (EXPLICACIÓN) - INTEGRADA EN LA MISMA TARJETA
+            st.markdown("""
+            <div class="xai-explanation-footer">
+                <strong>Interpretación de Relevancia Global (Feature Importance)</strong><br>
+                Jerarquización de variables según la ganancia de información (Gini importance) en la construcción del modelo.<br><br>
+                <ul>
+                    <li><strong>Interpretación:</strong> Las barras de mayor longitud indican los biomarcadores con mayor sensibilidad y capacidad discriminante a nivel poblacional.</li>
+                    <li><strong>Validación:</strong> Confirma que el algoritmo prioriza factores clínicamente significativos (ej. hiperglucemia, resistencia a la insulina) frente a variables de confusión.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True) # FIN TARJETA UNIFICADA
 
         # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
         with c_exp2:
-            st.markdown('<div class="white-card-container">', unsafe_allow_html=True)
+            # INICIO TARJETA UNIFICADA
+            st.markdown('<div class="unified-xai-card">', unsafe_allow_html=True)
+            
+            # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
+            st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
             st.markdown(f'<div class="xai-title">👤 Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
             
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
@@ -777,24 +791,26 @@ elif st.session_state.page == "simulacion":
                     st.image(fig_to_bytes(fig_shap), use_container_width=True)
                     plt.close(fig_shap)
 
-                    # Caja rosa explicativa - LENGUAJE TÉCNICO
-                    st.markdown(f"""
-                    <div class="pink-explanation-box">
-                        <strong>Análisis de Contribución Vectorial (Valores SHAP)</strong><br>
-                        Desglose aditivo de la probabilidad predicha ({prob*100:.1f}%) respecto a la tasa base del modelo.<br><br>
-                        <ul>
-                            <li>🔴 <strong>Factores de Riesgo (+):</strong> Variables que incrementan la probabilidad del evento positivo (Diagnóstico DM2).</li>
-                            <li>🔵 <strong>Factores Protectores/Atenuantes (-):</strong> Variables que mitigan el riesgo en este perfil clínico específico, reduciendo la probabilidad final.</li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
                 except Exception as e:
                     st.error(f"Error generando SHAP: {e}")
             else:
                 st.warning("Librería SHAP no disponible o modelo simulado.")
             
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True) # FIN SECCIÓN BLANCA
+
+            # SECCIÓN INFERIOR ROSA (EXPLICACIÓN) - INTEGRADA EN LA MISMA TARJETA
+            st.markdown(f"""
+            <div class="xai-explanation-footer">
+                <strong>Análisis de Contribución Vectorial (Valores SHAP)</strong><br>
+                Desglose aditivo de la probabilidad predicha ({prob*100:.1f}%) respecto a la tasa base del modelo.<br><br>
+                <ul>
+                    <li>🔴 <strong>Factores de Riesgo (+):</strong> Variables que incrementan la probabilidad del evento positivo (Diagnóstico DM2).</li>
+                    <li>🔵 <strong>Factores Protectores/Atenuantes (-):</strong> Variables que mitigan el riesgo en este perfil clínico específico, reduciendo la probabilidad final.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown('</div>', unsafe_allow_html=True) # FIN TARJETA UNIFICADA
 
     with tab3:
         st.write("")

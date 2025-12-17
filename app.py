@@ -691,7 +691,7 @@ elif st.session_state.page == "simulacion":
             
             # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
             st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
-            st.markdown(f'<div class="xai-title">🌎 Visión Global del Modelo</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="xai-title">Visión Global del Modelo</div>', unsafe_allow_html=True)
             
             if hasattr(st.session_state.model, 'named_steps'):
                 try:
@@ -750,7 +750,6 @@ elif st.session_state.page == "simulacion":
             
             # SECCIÓN SUPERIOR BLANCA (TÍTULO Y GRÁFICO)
             st.markdown('<div class="xai-chart-section">', unsafe_allow_html=True)
-            # SE QUITA EL EMOJI DEL TÍTULO
             st.markdown(f'<div class="xai-title">Análisis Individual (SHAP)</div>', unsafe_allow_html=True)
             
             if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):

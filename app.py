@@ -9,7 +9,7 @@ import joblib
 import os
 
 # =========================================================
-# 1. CONFIGURACIÓN Y CLASES (GLOBAL)
+# 1. CONFIGURACIÓN Y CLASE MODELO (GLOBAL)
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -17,11 +17,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# CLASE MOCK (Respaldo por si falla la carga del modelo real)
+# Definimos la clase AQUÍ para evitar el AttributeError
+# (Usamos MockModel solo si falla la carga del real, para que no rompa la app)
 class MockModel:
     def predict_proba(self, X):
         # Simulación simple
-        score = (X[0][1]*0.5) + (X[0][4]*0.4) + (X[0][6]*0.1) # Glucosa, BMI, Edad aprox
+        score = (X[0][1]*0.5) + (X[0][4]*0.4) + (X[0][6]*0.1) 
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
 
@@ -36,10 +37,10 @@ def load_model():
             st.error(f"Error cargando modelo: {e}")
             return MockModel()
     else:
-        # Si no está el archivo, usamos el Mock silenciosamente para que la app funcione
+        # Fallback silencioso a MockModel si no hay archivo (para desarrollo)
         return MockModel()
 
-# Inicialización del modelo
+# Inicialización segura del modelo
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
@@ -179,6 +180,7 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
+    # --- CONSTANTES ---
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50" 
     GOOD_TEAL = "#4DB6AC"
@@ -191,6 +193,7 @@ elif st.session_state.page == "simulacion":
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
+    # --- CSS ---
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
@@ -267,6 +270,7 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
+    # --- INPUT HELPER ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -336,7 +340,7 @@ elif st.session_state.page == "simulacion":
         st.markdown("---")
         
         # METABÓLICOS
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 0, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
         
         # NUEVO INPUT: PRESIÓN ARTERIAL
@@ -357,8 +361,8 @@ elif st.session_state.page == "simulacion":
         st.markdown("---") 
 
         # ANTROPOMÉTRICOS
-        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 0.0, "weight", "Peso corporal actual.")
-        height = input_biomarker("Altura (m)", 1.00, 2.20, 1.70, "height", "Altura en metros.")
+        weight = input_biomarker("Peso (kg)", 30.0, 250.0, 30.0, "weight", "Peso corporal actual.")
+        height = input_biomarker("Altura (m)", 1.00, 2.20, 1.00, "height", "Altura en metros.")
         
         # Cálculo BMI seguro (evitar división por cero)
         if height > 0:
@@ -384,7 +388,7 @@ elif st.session_state.page == "simulacion":
 
         # PACIENTE
         c_age, c_preg = st.columns(2)
-        age = input_biomarker("Edad (años)", 18, 90, 0, "age", format_str="%d")
+        age = input_biomarker("Edad (años)", 18, 90, 18, "age", format_str="%d")
         pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
         
         st.markdown("---") 
@@ -470,7 +474,8 @@ elif st.session_state.page == "simulacion":
         # Calcular variable is_prediabetes (1 si glucosa >= 140, else 0)
         is_prediabetes = 1 if glucose >= 140 else 0
         
-        input_data = np.array([[
+        # Crear DataFrame con nombres de columnas
+        input_data = pd.DataFrame([[
             pregnancies,
             glucose,
             blood_pressure, # Ahora lo tenemos
@@ -481,7 +486,7 @@ elif st.session_state.page == "simulacion":
             proxy_index, # Indice_resistencia
             bmi_sq,      # BMI_square
             is_prediabetes
-        ]])
+        ]], columns=['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DPF', 'Age', 'Indice_resistencia', 'BMI_square', 'Is_prediabetes'])
         
         # PREDICCIÓN SEGURA
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):

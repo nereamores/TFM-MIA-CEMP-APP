@@ -8,8 +8,15 @@ import datetime
 import joblib
 import os
 
+# Intentamos importar SHAP, si falla no romperemos la app
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+
 # =========================================================
-# 1. CONFIGURACIÓN Y CLASE MODELO (GLOBAL)
+# 1. CONFIGURACIÓN Y CLASES (GLOBAL)
 # =========================================================
 st.set_page_config(
     page_title="DIABETES.NME", 
@@ -17,11 +24,10 @@ st.set_page_config(
     layout="wide"
 )
 
-# Definimos la clase AQUÍ para evitar el AttributeError
-# (Usamos MockModel solo si falla la carga del real, para que no rompa la app)
+# Definimos la clase del modelo AQUÍ para evitar errores
 class MockModel:
     def predict_proba(self, X):
-        # Simulación simple
+        # Simulación simple por si falla la carga real
         score = (X[0][1]*0.5) + (X[0][4]*0.4) + (X[0][6]*0.1) 
         prob = 1 / (1 + np.exp(-(score - 100) / 15)) 
         return [[1-prob, prob]]
@@ -37,10 +43,9 @@ def load_model():
             st.error(f"Error cargando modelo: {e}")
             return MockModel()
     else:
-        # Fallback silencioso a MockModel si no hay archivo (para desarrollo)
         return MockModel()
 
-# Inicialización segura del modelo
+# Inicialización segura
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
@@ -180,7 +185,6 @@ if st.session_state.page == "landing":
 # =========================================================
 elif st.session_state.page == "simulacion":
 
-    # --- CONSTANTES ---
     CEMP_PINK = "#E97F87"
     CEMP_DARK = "#2C3E50" 
     GOOD_TEAL = "#4DB6AC"
@@ -193,7 +197,6 @@ elif st.session_state.page == "simulacion":
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
     RISK_GRADIENT = f"linear-gradient(90deg, {GOOD_TEAL} 0%, #FFD54F 50%, {CEMP_PINK} 100%)"
 
-    # --- CSS ---
     st.markdown(f"""
         <style>
         #MainMenu {{visibility: hidden;}}
@@ -270,7 +273,6 @@ elif st.session_state.page == "simulacion":
         </style>
     """, unsafe_allow_html=True)
 
-    # --- INPUT HELPER ---
     def input_biomarker(label_text, min_val, max_val, default_val, key, help_text="", format_str=None):
         label_html = f"**{label_text}**"
         if help_text:
@@ -292,7 +294,7 @@ elif st.session_state.page == "simulacion":
         def update_from_slider():
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
-            st.session_state.predict_clicked = False # Reset
+            st.session_state.predict_clicked = False 
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
@@ -300,7 +302,7 @@ elif st.session_state.page == "simulacion":
             if val > max_val: val = max_val
             st.session_state[key] = val
             st.session_state[f"{key}_slider"] = val 
-            st.session_state.predict_clicked = False # Reset
+            st.session_state.predict_clicked = False 
 
         with c1:
             st.slider(
@@ -324,8 +326,8 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- INPUTS PACIENTE ---
         st.markdown("**Datos del paciente**")
+        
         def reset_on_change():
             st.session_state.predict_clicked = False
 
@@ -339,11 +341,8 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---")
         
-        # METABÓLICOS
-        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática a las 2h de test de tolerancia oral.", format_str="%d")
+        glucose = input_biomarker("Glucosa 2h (mg/dL)", 50, 350, 50, "gluc", "Concentración plasmática.", format_str="%d")
         insulin = input_biomarker("Insulina (µU/ml)", 0, 900, 0, "ins", "Insulina a las 2h de ingesta.", format_str="%d")
-        
-        # NUEVO INPUT: PRESIÓN ARTERIAL
         blood_pressure = input_biomarker("Presión Arterial (mm Hg)", 0, 150, 0, "bp", "Presión arterial diastólica.", format_str="%d")
 
         proxy_index = int(glucose * insulin)
@@ -360,11 +359,9 @@ elif st.session_state.page == "simulacion":
 
         st.markdown("---") 
 
-        # ANTROPOMÉTRICOS
         weight = input_biomarker("Peso (kg)", 30.0, 250.0, 30.0, "weight", "Peso corporal actual.")
         height = input_biomarker("Altura (m)", 1.00, 2.20, 1.00, "height", "Altura en metros.")
         
-        # Cálculo BMI seguro (evitar división por cero)
         if height > 0:
             bmi = weight / (height * height)
         else:
@@ -386,7 +383,6 @@ elif st.session_state.page == "simulacion":
         
         st.markdown("---") 
 
-        # PACIENTE
         c_age, c_preg = st.columns(2)
         age = input_biomarker("Edad (años)", 18, 90, 18, "age", format_str="%d")
         pregnancies = input_biomarker("Embarazos", 0, 20, 0, "preg", "Nº veces embarazada.", format_str="%d") 
@@ -421,7 +417,7 @@ elif st.session_state.page == "simulacion":
 
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Panel General", "Factores (SHAP)", "Protocolo"])
+    tab1, tab2, tab3 = st.tabs(["Panel General", "Explicabilidad", "Protocolo"])
 
     with tab1:
         st.write("")
@@ -469,16 +465,13 @@ elif st.session_state.page == "simulacion":
                 plt.close(fig_calib)
 
         # PREPARAR DATOS PARA EL MODELO REAL
-        # Orden exacto: ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DPF', 'Age', 'Indice_resistencia', 'BMI_square', 'Is_prediabetes']
-        
-        # Calcular variable is_prediabetes (1 si glucosa >= 140, else 0)
         is_prediabetes = 1 if glucose >= 140 else 0
         
-        # Crear DataFrame con nombres de columnas
+        # DATAFRAME DE UNA SOLA FILA
         input_data = pd.DataFrame([[
             pregnancies,
             glucose,
-            blood_pressure, # Ahora lo tenemos
+            blood_pressure,
             insulin,
             bmi,
             dpf,
@@ -488,12 +481,11 @@ elif st.session_state.page == "simulacion":
             is_prediabetes
         ]], columns=['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DPF', 'Age', 'Indice_resistencia', 'BMI_square', 'Is_prediabetes'])
         
-        # PREDICCIÓN SEGURA
         if 'model' in st.session_state and hasattr(st.session_state.model, 'predict_proba'):
             try:
+                # El pipeline ya incluye el scaler, pasamos el dataframe directo
                 prob = st.session_state.model.predict_proba(input_data)[0][1]
             except:
-                # Si falla por forma, usamos simulado
                 st.session_state.model = MockModel()
                 prob = 0.5
         else:
@@ -536,7 +528,6 @@ elif st.session_state.page == "simulacion":
         c_left, c_right = st.columns([1.8, 1], gap="medium") 
         
         with c_left:
-            # HTML DIRECTO Y LIMPIO (SIN CACHÉ)
             if st.session_state.predict_clicked:
                 badges_html = f"""<div style="background:{risk_bg}; border:1px solid {risk_border}; color:{risk_border}; font-weight:bold; font-size:0.9rem; padding:8px 16px; border-radius:30px;">{risk_icon} {risk_label}</div><div style="background:#F8F9FA; border-radius:8px; padding: 4px 10px; border:1px solid #EEE; margin-top:5px;" title="{conf_desc}"><span style="font-size:0.7rem; color:#999; font-weight:600;">FIABILIDAD: </span><span style="font-size:0.75rem; color:{conf_color}; font-weight:800;">{conf_text}</span></div>"""
             else:
@@ -645,27 +636,73 @@ elif st.session_state.page == "simulacion":
 
     with tab2:
         st.write("")
-        features = ["Glucosa", "BMI", "Edad", "Insulina"]
-        vals = [(glucose-100)/100, (bmi-25)/50, -0.1, 0.05]
-        colors = [CEMP_PINK if x>0 else "#BDC3C7" for x in vals]
-        fig, ax = plt.subplots(figsize=(8, 4))
-        fig.patch.set_facecolor('none')
-        ax.set_facecolor('none')
-        ax.barh(features, vals, color=colors, height=0.6)
-        ax.axvline(0, color='#eee')
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.tick_params(axis='x', colors='#999')
-        ax.tick_params(axis='y', labelsize=10, labelcolor=CEMP_DARK)
-        chart_html = fig_to_html(fig)
-        plt.close(fig)
-        st.markdown(f"""<div class="card">
-        <h3 style="color:{CEMP_DARK}; font-size:1.2rem; margin-bottom:5px;">Factores de Riesgo (SHAP)</h3>
-        <span class="card-header" style="margin-bottom:20px;">EXPLICABILIDAD DEL MODELO</span>
-        {chart_html}
-        </div>""", unsafe_allow_html=True)
+        c_exp1, c_exp2 = st.columns(2)
+        
+        with c_exp1:
+            st.markdown(f'<div class="card card-auto"><span class="card-header">IMPORTANCIA GLOBAL</span><div id="global_shap_placeholder"></div></div>', unsafe_allow_html=True)
+            # Aquí iría el gráfico de barras global (si tuviéramos feature_importances_)
+            # Como usamos pipeline, accedemos así:
+            if hasattr(st.session_state.model, 'named_steps'):
+                try:
+                    rf = st.session_state.model.named_steps['model']
+                    importances = rf.feature_importances_
+                    feat_names = ['Embarazos', 'Glucosa', 'Presión', 'Insulina', 'BMI', 'DPF', 'Edad', 'Índice R', 'BMI²', 'Prediabetes']
+                    
+                    fig_imp, ax_imp = plt.subplots(figsize=(6, 4))
+                    fig_imp.patch.set_facecolor('none')
+                    ax_imp.set_facecolor('none')
+                    ax_imp.barh(feat_names, importances, color=CEMP_PINK)
+                    ax_imp.spines['top'].set_visible(False)
+                    ax_imp.spines['right'].set_visible(False)
+                    
+                    st.pyplot(fig_imp)
+                except:
+                    st.info("Modelo cargado no permite visualizar importancias.")
+            else:
+                st.info("Visualización disponible solo con modelo real.")
+
+        with c_exp2:
+            st.markdown(f'<div class="card card-auto"><span class="card-header">ANÁLISIS DEL PACIENTE (SHAP)</span></div>', unsafe_allow_html=True)
+            
+            if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
+                try:
+                    # PREPARACIÓN PARA SHAP (Local)
+                    # 1. Transformar input
+                    pipeline = st.session_state.model
+                    imputer = pipeline.named_steps['imputer']
+                    scaler = pipeline.named_steps['scaler']
+                    model_step = pipeline.named_steps['model']
+                    
+                    # Transformamos manualmente
+                    step1 = imputer.transform(input_data)
+                    step2 = scaler.transform(step1)
+                    
+                    # 2. Calcular SHAP values
+                    explainer = shap.TreeExplainer(model_step)
+                    shap_values = explainer.shap_values(step2)
+                    
+                    # 3. Visualizar (Waterfall)
+                    # Para clasificación binaria, shap_values es una lista [clase0, clase1]
+                    # Queremos explicar la clase 1 (Diabetes)
+                    shap_val_instance = shap_values[1][0] # Primera fila, clase 1
+                    base_value = explainer.expected_value[1]
+                    
+                    # Crear objeto Explanation para waterfall
+                    explanation = shap.Explanation(
+                        values=shap_val_instance,
+                        base_values=base_value,
+                        data=input_data.iloc[0].values, # Mostrar valores originales
+                        feature_names=input_data.columns
+                    )
+                    
+                    fig_shap, ax_shap = plt.subplots()
+                    shap.plots.waterfall(explanation, show=False)
+                    st.pyplot(fig_shap)
+                    
+                except Exception as e:
+                    st.warning(f"No se pudo generar SHAP: {e}")
+            else:
+                st.info("Instala 'shap' y carga el modelo real para ver este gráfico.")
 
     with tab3:
         st.write("")

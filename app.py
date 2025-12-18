@@ -763,7 +763,7 @@ elif st.session_state.page == "simulacion":
         with c_exp2:
             st.markdown(f"""
             <div class="card-header-box">
-                <div class="card-title-text">ANÁLISIS ESPECÍFICO: {patient_name.upper()}</div>
+                <div class="card-title-text">ANÁLISIS INDIVIDUAL (SHAP)</div>
             </div>
             """, unsafe_allow_html=True)
             

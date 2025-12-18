@@ -371,6 +371,14 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
+        # --- AÑADIDO: INDICADOR DE CAMPOS ---
+        st.markdown("""
+        <div style="background-color: #FFF3E0; border-left: 4px solid #FFB74D; padding: 10px; border-radius: 5px; font-size: 0.8rem; color: #E65100; margin-bottom: 20px;">
+            ⚠️ <strong>Importante:</strong> Por favor, asegúrese de rellenar todos los campos clínicos con precisión.
+        </div>
+        """, unsafe_allow_html=True)
+        # ------------------------------------
+
         st.markdown("**Datos del paciente**")
         
         def reset_on_change():
@@ -683,8 +691,10 @@ elif st.session_state.page == "simulacion":
 
     with tab2:
         st.write("")
-        st.markdown("""
-        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid #2C3E50; margin-bottom:20px;">
+        
+        # --- CAMBIO: Borde izquierdo en ROSA CEMP (#E97F87) ---
+        st.markdown(f"""
+        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {CEMP_PINK}; margin-bottom:20px;">
             <h4 style="margin:0; color:#2C3E50;">🧠 Inteligencia Artificial Explicable (XAI)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
                 Módulo de transparencia algorítmica. A continuación, se detalla la interpretación de las variables utilizadas por el modelo predictivo.
@@ -738,11 +748,11 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
 
-            # TEXTO EXPLICATIVO CON NEGRITAS AÑADIDAS
-            st.markdown("""
+            # TEXTO EXPLICATIVO CON TÍTULO EN ROSA CORAL (CEMP_PINK) Y CONTENIDO ACTUALIZADO
+            st.markdown(f"""
             <div class="card-footer-box">
-                <strong>Interpretación de Relevancia Global:</strong><br>
-                Este gráfico muestra qué <b>datos son más importantes</b> para la predicción del riesgo de padecer diabetes. Las <b>barras más largas</b> (como Glucosa o Resistencia) indican los <b>factores que más influyen</b> en el diagnóstico final para la población general.
+                <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación de Relevancia Global:</span><br>
+                Este gráfico muestra qué <b>datos son más importantes</b> para la predicción del riesgo de padecer diabetes. Las <b>barras más largas</b> (como Glucosa o Índice RI) indican los <b>factores que más influyen</b> en el diagnóstico final para la población general.
             </div>
             """, unsafe_allow_html=True)
 
@@ -803,10 +813,10 @@ elif st.session_state.page == "simulacion":
             else:
                 st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
             
-            # TEXTO EXPLICATIVO CON NEGRITAS AÑADIDAS
+            # TEXTO EXPLICATIVO CON TÍTULO EN ROSA FUERTE (CEMP_PINK) Y NEGRITAS
             st.markdown(f"""
             <div class="card-footer-box">
-                <strong>Interpretación del Resultado:</strong><br>
+                <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación del Resultado:</span><br>
                 El análisis parte de una <b>'Línea Base' (aprox. 50%)</b>. A este valor se le <b>suman (barras rojas)</b> o <b>restan (barras azules)</b> las contribuciones específicas de los datos del paciente. El <b>resultado final ({prob*100:.1f}%)</b> es la suma de estos factores.
             </div>
             """, unsafe_allow_html=True)

@@ -54,10 +54,6 @@ if 'model' not in st.session_state:
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
-# Variable de estado para guardar los datos SHAP entre pestañas
-if 'shap_data' not in st.session_state:
-    st.session_state.shap_data = None
-
 # =========================================================
 # 2. FUNCIONES AUXILIARES
 # =========================================================
@@ -593,7 +589,6 @@ elif st.session_state.page == "simulacion":
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
             st.session_state.predict_clicked = False 
-            st.session_state.shap_data = None # Reset SHAP
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
@@ -602,7 +597,6 @@ elif st.session_state.page == "simulacion":
             st.session_state[key] = val
             st.session_state[f"{key}_slider"] = val 
             st.session_state.predict_clicked = False 
-            st.session_state.shap_data = None # Reset SHAP
 
         with c1:
             st.slider(
@@ -636,7 +630,6 @@ elif st.session_state.page == "simulacion":
         
         def reset_on_change():
             st.session_state.predict_clicked = False
-            st.session_state.shap_data = None
 
         patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_on_change)
         default_date = datetime.date.today()
@@ -1102,22 +1095,30 @@ elif st.session_state.page == "simulacion":
             </div>
             """, unsafe_allow_html=True)
             
-            if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps') and st.session_state.predict_clicked:
+            if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
                 try:
                     pipeline = st.session_state.model
                     step1 = pipeline.named_steps['imputer'].transform(input_data)
                     step2 = pipeline.named_steps['scaler'].transform(step1)
+                    input_transformed = pd.DataFrame(step2, columns=input_data.columns)
                     
                     model_step = pipeline.named_steps['model']
                     explainer = shap.TreeExplainer(model_step)
-                    shap_values = explainer.shap_values(step2)
+                    shap_values = explainer.shap_values(input_transformed)
                     
-                    if isinstance(shap_values, list): shap_val_instance = shap_values[1][0]
-                    elif len(shap_values.shape) == 3: shap_val_instance = shap_values[0, :, 1]
-                    else: shap_val_instance = shap_values[0]
-                    
-                    if isinstance(explainer.expected_value, np.ndarray): base_value = explainer.expected_value[1]
-                    else: base_value = explainer.expected_value
+                    if isinstance(shap_values, list):
+                        shap_val_instance = shap_values[1][0]
+                        base_value = explainer.expected_value[1]
+                    else:
+                        if len(shap_values.shape) == 3:
+                             shap_val_instance = shap_values[0, :, 1]
+                        else:
+                             shap_val_instance = shap_values[0]
+                        
+                        if isinstance(explainer.expected_value, np.ndarray):
+                             base_value = explainer.expected_value[1]
+                        else:
+                             base_value = explainer.expected_value
 
                     exp = shap.Explanation(
                         values=shap_val_instance,
@@ -1139,11 +1140,7 @@ elif st.session_state.page == "simulacion":
                 except Exception as e:
                     st.error(f"Error generando SHAP: {e}")
             else:
-                 st.markdown("""
-                    <div style="display:flex; justify-content:center; align-items:center; height:300px; color:#aaa; font-style:italic;">
-                        <div>Calcula el riesgo primero para ver el análisis individual.</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
             
             st.markdown(f"""
             <div class="card-footer-box">
@@ -1156,7 +1153,7 @@ elif st.session_state.page == "simulacion":
         st.write("")
         # --- CABECERA DEL FRAMEWORK ---
         st.markdown(f"""
-        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {GOOD_TEAL}; margin-bottom:20px;">
+        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {CEMP_PINK}; margin-bottom:20px;">
             <h4 style="margin:0; color:#2C3E50;">📋 Matriz de Acción Clínica (Par Resultado-Acción)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
                 Marco de referencia para la toma de decisiones. El sistema destaca la intervención recomendada basándose en la predicción de la IA y los datos clínicos clave.

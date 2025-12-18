@@ -739,14 +739,56 @@ elif st.session_state.page == "simulacion":
             with c_calib_1:
                 st.caption("Selecciona manualmente el umbral de decisión.")
                 threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
+                
+                # --- NUEVA FUNCIÓN: MODAL (POP-UP) ---
+                @st.dialog("Ficha Técnica Resumida")
+                def ver_metricas_modal():
+                    st.markdown(f"""
+                    <style>
+                        .metrics-table {{ width: 100%; font-size: 0.85rem; border-collapse: separate; border-spacing: 0; }}
+                        .metrics-table th {{ text-align: center; padding: 8px; border-bottom: 2px solid #eee; background: white; }}
+                        .metrics-table td {{ padding: 8px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #2C3E50; }}
+                        .badge-optimal {{ background: rgba(77, 182, 172, 0.1); color: #4DB6AC; border: 1px solid #4DB6AC; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.7rem; }}
+                        .highlight-optimal {{ color: #4DB6AC; font-weight: 800; }}
+                    </style>
+                    <p style="font-size:0.9rem; color:#666; margin-bottom:15px; line-height:1.5;">
+                        El umbral de <strong>0.27</strong> fue seleccionado para maximizar la detección de casos positivos (Sensibilidad).
+                    </p>
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;">Métrica</th>
+                                <th>Estándar (0.5)</th>
+                                <th>Óptimo (0.27)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="text-align:left;">Accuracy</td><td>0.738</td><td>0.719</td></tr>
+                            <tr><td style="text-align:left;">Precision</td><td>0.604</td><td>0.560</td></tr>
+                            <tr style="background:#fcfcfc;"><td style="text-align:left; font-weight:bold; color:#2C3E50;">Recall (Sensibilidad)</td><td>0.733</td><td class="highlight-optimal">0.924</td></tr>
+                            <tr style="background:#fcfcfc;"><td style="text-align:left; font-weight:bold; color:#2C3E50;">F2-Score</td><td>0.703</td><td class="highlight-optimal">0.818</td></tr>
+                            <tr><td style="text-align:left;">AUC-ROC</td><td>0.815</td><td>0.815</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top:20px; font-size:0.8rem; color:#999; text-align:center; font-style:italic;">
+                        Para la documentación completa, navega a la pestaña "Ficha Técnica".
+                    </div>
+                    """, unsafe_allow_html=True)
+
                 st.markdown(f"""
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px; text-align: justify;">
                     <span style="font-size:1.1rem;">💡</span> 
                     <div>
-                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos. <a href='#metrics-anchor' style='color:#4DB6AC; text-decoration:underline;'>Ver métricas</a>.
+                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos.
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # BOTÓN QUE ABRE EL MODAL
+                st.write("") 
+                if st.button("📊 Ver Tabla de Métricas", type="secondary", use_container_width=True):
+                    ver_metricas_modal()
+
             with c_calib_2:
                 x = np.linspace(-0.15, 1.25, 500)
                 y_sanos = 1.9 * np.exp(-((x - 0.1)**2) / (2 * 0.11**2)) + \

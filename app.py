@@ -105,6 +105,7 @@ if st.session_state.page == "landing":
         h1 {
             text-align: center; font-family: 'Helvetica', sans-serif !important;
             font-weight: 800 !important; font-size: 3.5rem !important;
+            /* COLOR AZUL OSCURO ORIGINAL */
             color: #2c3e50 !important; 
             margin-bottom: 0 !important;
             line-height: 1.2 !important; letter-spacing: -1px; cursor: default;
@@ -210,6 +211,7 @@ elif st.session_state.page == "simulacion":
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
         
+        /* Ocultar enlaces de ancla (símbolos de cadena) en los títulos */
         [data-testid="stMarkdownContainer"] h1 a, 
         [data-testid="stMarkdownContainer"] h2 a, 
         [data-testid="stMarkdownContainer"] h3 a, 
@@ -294,8 +296,10 @@ elif st.session_state.page == "simulacion":
             border-right: 1px solid #eee;
             border-top: 1px solid #eee;
             text-align: center;
-            margin-bottom: -5px; 
+            margin-bottom: -5px; /* Reducción de gap con la imagen */
         }}
+
+        /* TIPOGRAFÍA ACTUALIZADA PARA INTEGRACIÓN NATIVA */
         .card-title-text {{
             color: #2C3E50;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -305,6 +309,7 @@ elif st.session_state.page == "simulacion":
             letter-spacing: 0.5px;
             margin: 0;
         }}
+        
         .card-footer-box {{
             background-color: rgba(233, 127, 135, 0.15); 
             padding: 20px 25px;
@@ -316,7 +321,7 @@ elif st.session_state.page == "simulacion":
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
             border-bottom: 1px solid #eee;
-            margin-top: -5px; 
+            margin-top: -5px; /* Reducción de gap con la imagen */
         }}
         
         /* ESTILOS PARA LA TABLA DE MÉTRICAS MEJORADA Y COMPACTA */
@@ -330,12 +335,12 @@ elif st.session_state.page == "simulacion":
         }}
         .metrics-table th {{
             text-align: center;
-            padding: 10px 8px;
+            padding: 10px 8px; /* Padding reducido */
             font-weight: 700;
             border-bottom: 2px solid #eee;
         }}
         .metrics-table td {{
-            padding: 8px 8px;
+            padding: 8px 8px; /* Padding reducido */
             color: {CEMP_DARK};
             border-bottom: 1px solid #f0f0f0;
             text-align: center;
@@ -358,16 +363,16 @@ elif st.session_state.page == "simulacion":
             display: inline-block;
             white-space: nowrap;
         }}
+        /* CORRECCIÓN: Badge óptimo sin sombreado y sin negrita extra */
         .badge-optimal {{
-            background-color: rgba(77, 182, 172, 0.15); 
+            background-color: rgba(77, 182, 172, 0.1); /* Fondo muy ligero */
             color: {GOOD_TEAL};
-            border: 2px solid {GOOD_TEAL};
+            border: 1px solid {GOOD_TEAL}; /* Borde fino */
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: 700; /* CAMBIO: Peso reducido de 800 a 700 */
+            font-weight: 700; /* Igual que el estándar */
             display: inline-block;
-            box-shadow: 0 2px 5px rgba(77, 182, 172, 0.2);
             white-space: nowrap;
         }}
 
@@ -992,8 +997,8 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
-            st.markdown(f"""
-<div class="card" style="height:100%;">
+            # HTML SIN INDENTACIÓN EN LA PRIMERA LÍNEA PARA EVITAR EL ERROR
+            st.markdown(f"""<div class="card" style="height:100%;">
     <div class="tech-card-title">Origen de los Datos</div>
     <p style="font-size:0.9rem; color:#666; margin-bottom: 10px;">
         <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
@@ -1001,16 +1006,13 @@ elif st.session_state.page == "simulacion":
     <p style="font-size:0.9rem; color:#666; margin-bottom: 15px;">
         <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
     </p>
-    
     <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
         <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5;">
             ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
         </p>
     </div>
-
     <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
     <div class="tech-card-title" style="margin-bottom: 10px;">Variables Utilizadas (10)</div>
-    
     <p style="font-size:0.85rem; font-weight:700; color:#555; margin-bottom:5px;">CLÍNICAS DIRECTAS:</p>
     <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin-bottom:15px; list-style-type: disc;">
         <li><strong>Pregnancies:</strong> Nº de embarazos.</li>
@@ -1021,20 +1023,21 @@ elif st.session_state.page == "simulacion":
         <li><strong>DPF:</strong> Predisposición genética (función pedigrí).</li>
         <li><strong>Age:</strong> Edad (años).</li>
     </ul>
-    
     <p style="font-size:0.85rem; font-weight:700; color:{CEMP_PINK}; margin-bottom:5px;">CALCULADAS:</p>
     <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0; list-style-type: disc;">
         <li><strong>Indice_resistencia:</strong> Producto Glucosa × Insulina.</li>
         <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>
         <li><strong>Is_prediabetes:</strong> Indicador binario si Glucosa ≥ 140.</li>
     </ul>
-    
-    <div style="background-color: rgba(233, 127, 135, 0.1); border-radius: 8px; padding: 15px; margin-top: 25px; text-align: center; border: 1px solid rgba(233, 127, 135, 0.2);">
-        <p style="font-size: 0.75rem; color: #888; margin: 0; line-height: 1.4;">
+</div>""", unsafe_allow_html=True)
+
+    # FOOTER FUERA DE LAS COLUMNAS (AL FINAL DE LA PESTAÑA 4)
+    st.markdown(f"""
+    <div style="background-color: rgba(233, 127, 135, 0.1); border-radius: 10px; padding: 20px; margin-top: 30px; text-align: center; border: 1px solid rgba(233, 127, 135, 0.2);">
+        <p style="font-size: 0.8rem; color: #555; margin: 0; line-height: 1.6;">
             © 2025 <strong>Nerea Moreno Escamilla</strong><br>
-            TFM • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad<br>
+            <span style="color:{CEMP_PINK}; font-weight:bold;">TFM</span> • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad<br>
             CEMP - Centro Europeo de Másteres y Posgrados
         </p>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)

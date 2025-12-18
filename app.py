@@ -59,9 +59,8 @@ if 'predict_clicked' not in st.session_state:
 # =========================================================
 
 def fig_to_html(fig):
-    """Convierte una figura de Matplotlib a string HTML base64 (Solo para visualizaciones pequeñas no ampliables)."""
+    """Convierte una figura de Matplotlib a string HTML base64."""
     buf = io.BytesIO()
-    # Mantenemos transparente aquí porque se usa sobre fondos de color en las tarjetas pequeñas
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=True, dpi=300)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode()
@@ -70,7 +69,6 @@ def fig_to_html(fig):
 def fig_to_bytes(fig):
     """Convierte figura a bytes para st.image (Permite zoom con fondo BLANCO)."""
     buf = io.BytesIO()
-    # CAMBIO CLAVE: transparent=False y facecolor='white'
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=False, facecolor='white', dpi=300)
     buf.seek(0)
     return buf
@@ -330,17 +328,17 @@ elif st.session_state.page == "simulacion":
             border-collapse: separate;
             border-spacing: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 0.85rem; /* Fuente más pequeña */
+            font-size: 0.85rem; 
             margin-top: 15px;
         }}
         .metrics-table th {{
             text-align: center;
-            padding: 10px 8px; /* Padding reducido */
+            padding: 8px;
             font-weight: 700;
             border-bottom: 2px solid #eee;
         }}
         .metrics-table td {{
-            padding: 8px 8px; /* Padding reducido */
+            padding: 6px 8px;
             color: {CEMP_DARK};
             border-bottom: 1px solid #f0f0f0;
             text-align: center;
@@ -353,23 +351,23 @@ elif st.session_state.page == "simulacion":
         
         /* Badges para cabeceras */
         .badge-standard {{
-            background-color: rgba(233, 127, 135, 0.1); /* Rosa transparente */
+            background-color: rgba(233, 127, 135, 0.1); 
             color: {CEMP_PINK};
-            border: 1px solid {CEMP_PINK};
-            padding: 6px 12px;
+            border: 1px solid rgba(233, 127, 135, 0.2);
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
             display: inline-block;
             white-space: nowrap;
         }}
         .badge-optimal {{
-            background-color: rgba(77, 182, 172, 0.15); /* Teal transparente */
+            background-color: rgba(77, 182, 172, 0.15); 
             color: {GOOD_TEAL};
             border: 2px solid {GOOD_TEAL};
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 800;
             display: inline-block;
             box-shadow: 0 2px 5px rgba(77, 182, 172, 0.2);
@@ -380,7 +378,7 @@ elif st.session_state.page == "simulacion":
         .highlight-optimal {{
             color: {GOOD_TEAL};
             font-weight: 800;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }}
         .highlight-row {{
             background-color: #FAFAFA;
@@ -1003,9 +1001,11 @@ elif st.session_state.page == "simulacion":
                 <p style="font-size:0.9rem; color:#666;">
                     <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
                 </p>
-                <p style="font-size:0.9rem; color:#666;">
-                    <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
-                </p>
+                <div style="background-color: #FFF8E1; border-left: 4px solid #FFC107; padding: 10px; margin: 15px 0; border-radius: 4px;">
+                    <p style="font-size:0.8rem; color: #856404; margin: 0;">
+                        ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía (mujeres >21 años de ascendencia indígena) y no deben generalizarse a la población global sin recalibración.
+                    </p>
+                </div>
                 <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
                 <div class="tech-card-title" style="margin-bottom: 10px;">Variables Utilizadas (10)</div>
                 
@@ -1028,10 +1028,10 @@ elif st.session_state.page == "simulacion":
                 </ul>
                 
                 <hr style="margin:25px 0 15px 0; border:0; border-top:1px solid #eee;">
-                <div style="font-size:0.75rem; color:#999; text-align:right;">
-                    <strong>Desarrollado por:</strong> Nerea Moreno Escamilla<br>
+                <div style="font-size:0.75rem; color:#999; text-align:right; line-height:1.4;">
+                    <strong>TFM Desarrollado por:</strong> Nerea Moreno Escamilla<br>
                     CEMP - Centro Europeo de Másteres y Posgrados<br>
-                    Máster en Aplicaciones de la IA en la Sanidad
+                    Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad
                 </div>
             </div>
             """, unsafe_allow_html=True)

@@ -873,6 +873,23 @@ elif st.session_state.page == "simulacion":
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # CSS específico para el botón de métricas (Rosa transparente)
+                st.markdown(f"""
+                <style>
+                section[data-testid="stMain"] button[kind="secondary"] {{
+                    background-color: rgba(233, 127, 135, 0.15) !important;
+                    color: {CEMP_PINK} !important;
+                    border: 1px solid {CEMP_PINK} !important;
+                    transition: all 0.3s ease;
+                }}
+                section[data-testid="stMain"] button[kind="secondary"]:hover {{
+                    background-color: rgba(233, 127, 135, 0.3) !important;
+                    border-color: {CEMP_PINK} !important;
+                    color: #C0392B !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+                
                 # BOTÓN QUE ABRE EL MODAL
                 st.write("") 
                 if st.button("📊 Ver Tabla de Métricas", type="secondary", use_container_width=True):

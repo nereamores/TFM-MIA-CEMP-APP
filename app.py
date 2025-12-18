@@ -323,6 +323,30 @@ elif st.session_state.page == "simulacion":
             border-bottom: 1px solid #eee;
             margin-top: -5px; /* Reducción de gap con la imagen */
         }}
+        
+        /* ESTILOS PARA LA TABLA DE MÉTRICAS */
+        .metrics-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 0.85rem;
+        }}
+        .metrics-table th {{
+            text-align: left;
+            padding: 8px;
+            color: #888;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+        }}
+        .metrics-table td {{
+            padding: 8px;
+            color: {CEMP_DARK};
+            border-bottom: 1px solid #f0f0f0;
+        }}
+        .metric-highlight {{
+            color: {CEMP_PINK};
+            font-weight: 800;
+        }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -478,7 +502,7 @@ elif st.session_state.page == "simulacion":
 
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Panel General", "Explicabilidad", "Protocolo"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Panel General", "Explicabilidad", "Protocolo", "Ficha Técnica"])
 
     with tab1:
         st.write("")
@@ -858,3 +882,100 @@ elif st.session_state.page == "simulacion":
             with c_p2:
                 st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">2. Educación Sanitaria</h4>', unsafe_allow_html=True)
                 st.write("- Mantener BMI < 25.")
+
+    with tab4:
+        st.write("")
+        
+        c_tech_1, c_tech_2 = st.columns([1.2, 1], gap="medium")
+        
+        with c_tech_1:
+            st.markdown(f"""
+            <div class="unified-card">
+                <div class="unified-top" style="text-align:left;">
+                    <div class="unified-title">Especificaciones del Modelo</div>
+                    <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+                        El núcleo del sistema es un algoritmo de <strong>Random Forest Classifier</strong> optimizado para datos médicos desbalanceados.
+                    </p>
+                    <div style="background:#F8F9FA; padding:15px; border-radius:8px; border:1px solid #eee; font-family:monospace; font-size:0.8rem; color:#444;">
+                        <strong>Pipeline:</strong><br>
+                        1. Imputer (Median)<br>
+                        2. StandardScaler<br>
+                        3. RandomForest (n=200, depth=5, balanced)
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="unified-card">
+                <div class="unified-top" style="text-align:left;">
+                    <div class="unified-title">Métricas de Rendimiento (Test)</div>
+                    <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+                        Evaluación realizada sobre conjunto de test independiente (10 repeticiones). Se prioriza la <strong>Sensibilidad (Recall)</strong> para minimizar falsos negativos.
+                    </p>
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Métrica</th>
+                                <th>Umbral Estándar (0.5)</th>
+                                <th>Umbral Óptimo (0.27)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Accuracy</td>
+                                <td>0.738</td>
+                                <td>0.719</td>
+                            </tr>
+                            <tr>
+                                <td>Precision</td>
+                                <td>0.604</td>
+                                <td>0.560</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recall (Sensibilidad)</strong></td>
+                                <td>0.733</td>
+                                <td class="metric-highlight">0.924</td>
+                            </tr>
+                            <tr>
+                                <td>F2-Score</td>
+                                <td>0.703</td>
+                                <td class="metric-highlight">0.818</td>
+                            </tr>
+                            <tr>
+                                <td>AUC-ROC</td>
+                                <td>0.815</td>
+                                <td>0.815</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c_tech_2:
+            st.markdown(f"""
+            <div class="unified-card">
+                <div class="unified-top" style="text-align:left;">
+                    <div class="unified-title">Origen de los Datos</div>
+                    <p style="font-size:0.9rem; color:#666;">
+                        <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
+                    </p>
+                    <p style="font-size:0.9rem; color:#666;">
+                        <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
+                    </p>
+                    <hr style="margin:15px 0; border:0; border-top:1px solid #eee;">
+                    <div class="unified-title" style="font-size:0.95rem;">Variables Utilizadas</div>
+                    <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6;">
+                        <li><strong>Pregnancies:</strong> Nº de embarazos.</li>
+                        <li><strong>Glucose:</strong> Glucosa en plasma a las 2h.</li>
+                        <li><strong>BloodPressure:</strong> Presión arterial diastólica (mm Hg).</li>
+                        <li><strong>Insulin:</strong> Insulina sérica a las 2h (µU/ml).</li>
+                        <li><strong>BMI:</strong> Índice de Masa Corporal.</li>
+                        <li><strong>DPF:</strong> Función de pedigrí de diabetes (genética).</li>
+                        <li><strong>Age:</strong> Edad (años).</li>
+                        <li><strong>*Variables Calculadas:</strong> Índice de resistencia a la insulina y BMI al cuadrado (no linealidad).</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)

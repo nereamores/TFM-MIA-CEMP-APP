@@ -76,6 +76,81 @@ def fig_to_bytes(fig):
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
+def create_html_report(patient_name, date_str, prob, risk_label, inputs_dict, recommendation):
+    """Genera un informe HTML completo para descargar."""
+    
+    c_dark = "#2C3E50"
+    c_pink = "#E97F87"
+    c_teal = "#4DB6AC"
+    c_bg_head = "#F8F9FA"
+    
+    risk_color = c_pink if "ALTO" in risk_label else c_teal
+    
+    # Construir tabla de datos clínicos
+    inputs_rows = ""
+    for k, v in inputs_dict.items():
+        inputs_rows += f"<tr><td style='padding:8px; border-bottom:1px solid #eee; color:#666;'>{k}</td><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold; color:{c_dark}; text-align:right;'>{v}</td></tr>"
+
+    html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Helvetica', sans-serif; color: #333; padding: 40px; max-width: 800px; margin: 0 auto; }}
+            .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid {c_pink}; padding-bottom: 20px; }}
+            .logo {{ font-size: 24px; font-weight: 800; color: {c_dark}; }}
+            .logo span {{ color: {c_pink}; }}
+            .meta {{ font-size: 11px; color: #999; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }}
+            .patient-info {{ background: {c_bg_head}; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; }}
+            .section {{ margin-bottom: 25px; }}
+            .section-title {{ color: {c_dark}; font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; border-left: 4px solid {c_pink}; padding-left: 10px; }}
+            .risk-box {{ padding: 20px; background: {risk_color}15; border-radius: 8px; border: 1px solid {risk_color}; text-align: center; margin-bottom: 30px; }}
+            .risk-val {{ font-size: 32px; font-weight: 800; color: {risk_color}; }}
+            .risk-txt {{ font-size: 14px; font-weight: 700; color: {c_dark}; text-transform: uppercase; }}
+            .rec-box {{ background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.5; }}
+            table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="logo">DIABETES<span>.NME</span></div>
+            <div class="meta">Clinical Decision Support System Report</div>
+        </div>
+        
+        <div class="patient-info">
+            <div><strong>PACIENTE:</strong> {patient_name}</div>
+            <div><strong>FECHA:</strong> {date_str}</div>
+        </div>
+
+        <div class="risk-box">
+            <div class="risk-val">{prob*100:.1f}%</div>
+            <div class="risk-txt">{risk_label}</div>
+            <div style="font-size:11px; color:#777; margin-top:5px;">Probabilidad estimada de Diabetes Tipo 2</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Protocolo de Acción Recomendado</div>
+            <div class="rec-box">
+                {recommendation}
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Datos Clínicos Registrados</div>
+            <table>
+                {inputs_rows}
+            </table>
+        </div>
+
+        <div style="font-size:10px; color:#aaa; text-align:center; margin-top:50px; border-top:1px solid #eee; padding-top:10px;">
+            Documento generado automáticamente por DIABETES.NME.<br>
+            Herramienta de soporte a la decisión clínica. No sustituye el criterio médico profesional.<br>
+            <strong>TFM Desarrollado por: Nerea Moreno Escamilla</strong>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
 # =========================================================
 # 3. NAVEGACIÓN
 # =========================================================
@@ -211,7 +286,6 @@ elif st.session_state.page == "simulacion":
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
         
-        /* Ocultar enlaces de ancla (símbolos de cadena) en los títulos */
         [data-testid="stMarkdownContainer"] h1 a, 
         [data-testid="stMarkdownContainer"] h2 a, 
         [data-testid="stMarkdownContainer"] h3 a, 
@@ -360,16 +434,14 @@ elif st.session_state.page == "simulacion":
             display: inline-block;
             white-space: nowrap;
         }}
-        
-        /* CORRECCIÓN: Badge óptimo sin sombreado y mismo grosor */
         .badge-optimal {{
-            background-color: rgba(77, 182, 172, 0.1); /* Fondo muy ligero */
+            background-color: rgba(77, 182, 172, 0.1); 
             color: {GOOD_TEAL};
-            border: 1px solid {GOOD_TEAL}; /* Borde fino */
+            border: 1px solid {GOOD_TEAL}; 
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: 700; /* Igual que el estándar */
+            font-weight: 700; 
             display: inline-block;
             white-space: nowrap;
         }}
@@ -408,9 +480,8 @@ elif st.session_state.page == "simulacion":
             border: 1px solid #eee;
             overflow: hidden;
             transition: all 0.3s ease;
-            opacity: 0.6; /* Por defecto atenuado */
+            opacity: 0.6;
         }}
-        /* Fila activa (resaltada) */
         .matrix-row-active {{
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             border: 1px solid #d0d0d0;
@@ -520,7 +591,6 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- AVISO EN SIDEBAR ---
         st.markdown("""
         <div style="background-color: #FFF3E0; border-left: 4px solid #FFB74D; padding: 10px; border-radius: 5px; font-size: 0.8rem; color: #E65100; margin-bottom: 20px;">
             ⚠️ <strong>Importante:</strong> Por favor, asegúrese de rellenar todos los campos clínicos con precisión.
@@ -794,9 +864,50 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
-                st.session_state.predict_clicked = True
-                st.rerun()
+            # --- LÓGICA DE BOTONES ---
+            if st.session_state.predict_clicked:
+                # Se prepara la recomendación para el informe
+                active_rec = "Reevaluar en 3-6 meses." # Default
+                if glucose >= 200:
+                    active_rec = "Protocolo de confirmación diagnóstica urgente. Descartar cetoacidosis."
+                elif is_high and distancia_al_corte > 0.05:
+                    active_rec = "Derivación a Endocrinología. Solicitar HbA1c y perfil lipídico. Valorar metformina."
+                elif not is_high and distancia_al_corte <= 0.05:
+                    active_rec = "Repetir TTOG en 3-6 meses. Monitorización estrecha."
+                else:
+                    active_rec = "Seguimiento rutinario anual. Mantener estilos de vida saludables."
+
+                # HTML del informe
+                report_html = create_html_report(
+                    patient_name, 
+                    date_str, 
+                    prob, 
+                    risk_label, 
+                    inputs_dict={
+                        "Glucosa 2h": f"{glucose} mg/dL",
+                        "Insulina 2h": f"{insulin} µU/ml",
+                        "HOMA-IR (Proxy)": f"{proxy_index}",
+                        "BMI": f"{bmi:.1f}",
+                        "Edad": f"{age} años",
+                        "Presión Arterial": f"{blood_pressure} mm Hg"
+                    }, 
+                    recommendation=active_rec
+                )
+                
+                # Botón de descarga
+                st.download_button(
+                    label="📄 DESCARGAR INFORME",
+                    data=report_html,
+                    file_name=f"Informe_Diabetes_{patient_name.replace(' ', '_')}.html",
+                    mime="text/html",
+                    type="primary",
+                    use_container_width=True
+                )
+            else:
+                # Botón de cálculo normal
+                if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
+                    st.session_state.predict_clicked = True
+                    st.rerun()
 
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
             # Este gráfico circular lo mantenemos transparente para que se integre en la tarjeta
@@ -986,7 +1097,6 @@ elif st.session_state.page == "simulacion":
             active_scenario = "incertidumbre"
 
         # --- DEFINICIÓN DE ESTILOS DE FILA ---
-        # (Se aplica la clase .matrix-row-active si coincide con el escenario)
         style_urgente = "matrix-row-active" if active_scenario == "urgente" else ""
         style_alto = "matrix-row-active" if active_scenario == "alto" else ""
         style_incertidumbre = "matrix-row-active" if active_scenario == "incertidumbre" else ""

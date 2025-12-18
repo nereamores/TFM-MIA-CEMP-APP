@@ -1042,7 +1042,7 @@ elif st.session_state.page == "simulacion":
         <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {CEMP_PINK}; margin-bottom:20px;">
             <h4 style="margin:0; color:#2C3E50;">🧠 Inteligencia Artificial Explicable (XAI)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
-                Módulo de transparencia algorítmica. A continuación, se detalla la interpretación de las variables utilizadas por el modelo predictivo.
+                Con el fin de ofrecer transparencia, a continuación, se detalla cómo son utilizadas las variables por el modelo predictivo.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -1161,9 +1161,9 @@ elif st.session_state.page == "simulacion":
         # --- CABECERA DEL FRAMEWORK ---
         st.markdown(f"""
         <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {GOOD_TEAL}; margin-bottom:20px;">
-            <h4 style="margin:0; color:#2C3E50;">📋 Matriz de Acción Clínica (Par Resultado-Acción)</h4>
+            <h4 style="margin:0; color:#2C3E50;">👩🏻‍⚕️ Acción Clínica Recomendada </h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
-                Marco de referencia para la toma de decisiones. El sistema destaca la intervención recomendada basándose en la predicción de la IA y los datos clínicos clave.
+                Como marco de referencia para la toma de decisiones, el sistema destaca la intervención recomendada basándose en la predicción de la IA y los datos clínicos clave.
             </p>
         </div>
         """, unsafe_allow_html=True)

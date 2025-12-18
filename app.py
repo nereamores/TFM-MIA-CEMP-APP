@@ -70,7 +70,7 @@ def fig_to_html(fig):
 def fig_to_bytes(fig):
     """Convierte figura a bytes para st.image (Permite zoom con fondo BLANCO)."""
     buf = io.BytesIO()
-    # CAMBIO CLAVE AQUÍ: transparent=False y facecolor='white'
+    # CAMBIO CLAVE: transparent=False y facecolor='white' para que al ampliar se vea bien
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=False, facecolor='white', dpi=300)
     buf.seek(0)
     return buf
@@ -287,18 +287,17 @@ elif st.session_state.page == "simulacion":
             border-right: 1px solid #eee;
             border-top: 1px solid #eee;
             text-align: center;
-            margin-bottom: -5px; /* Intento de reducir gap con la imagen */
+            margin-bottom: -5px; /* Reducción de gap con la imagen */
         }}
 
         /* TIPOGRAFÍA ACTUALIZADA PARA INTEGRACIÓN NATIVA */
         .card-title-text {{
             color: #2C3E50;
-            /* Pila de fuentes de sistema moderna */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-weight: 800;
             font-size: 1.1rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px; /* Un poco menos de espaciado para que se vea más compacto */
+            letter-spacing: 0.5px;
             margin: 0;
         }}
         
@@ -313,7 +312,7 @@ elif st.session_state.page == "simulacion":
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
             border-bottom: 1px solid #eee;
-            margin-top: -5px; /* Intento de reducir gap con la imagen */
+            margin-top: -5px; /* Reducción de gap con la imagen */
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -371,13 +370,12 @@ elif st.session_state.page == "simulacion":
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
         st.write("")
         
-        # --- AÑADIDO: INDICADOR DE CAMPOS ---
+        # --- AVISO EN SIDEBAR ---
         st.markdown("""
         <div style="background-color: #FFF3E0; border-left: 4px solid #FFB74D; padding: 10px; border-radius: 5px; font-size: 0.8rem; color: #E65100; margin-bottom: 20px;">
             ⚠️ <strong>Importante:</strong> Por favor, asegúrese de rellenar todos los campos clínicos con precisión.
         </div>
         """, unsafe_allow_html=True)
-        # ------------------------------------
 
         st.markdown("**Datos del paciente**")
         
@@ -497,7 +495,6 @@ elif st.session_state.page == "simulacion":
                              1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
                 
                 fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
-                # Fondo transparente para este gráfico pequeño que va sobre el fondo de la app
                 fig_calib.patch.set_facecolor('none')
                 ax_calib.set_facecolor('none')
                 ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
@@ -515,7 +512,6 @@ elif st.session_state.page == "simulacion":
                 ax_calib.set_xlabel("Probabilidad Predicha", fontsize=8, color="#888")
                 ax_calib.legend(loc='upper right', fontsize=6, frameon=False)
                 
-                # Aquí seguimos usando fig_to_bytes pero este plot ya está configurado como transparente
                 st.image(fig_to_bytes(fig_calib), use_container_width=True)
                 plt.close(fig_calib)
 
@@ -652,7 +648,6 @@ elif st.session_state.page == "simulacion":
                 st.rerun()
 
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
-            # Este gráfico circular lo mantenemos transparente para que se integre en la tarjeta
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
 
@@ -692,7 +687,7 @@ elif st.session_state.page == "simulacion":
     with tab2:
         st.write("")
         
-        # --- CAMBIO: Borde izquierdo en ROSA CEMP (#E97F87) ---
+        # --- CABECERA CEREBRITO CON BORDE ROSA ---
         st.markdown(f"""
         <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {CEMP_PINK}; margin-bottom:20px;">
             <h4 style="margin:0; color:#2C3E50;">🧠 Inteligencia Artificial Explicable (XAI)</h4>
@@ -704,11 +699,11 @@ elif st.session_state.page == "simulacion":
 
         c_exp1, c_exp2 = st.columns(2, gap="medium")
         
-        # --- COLUMNA IZQUIERDA: IMPORTANCIA GLOBAL ---
+        # --- COLUMNA IZQUIERDA: POBLACIÓN GENERAL ---
         with c_exp1:
             st.markdown(f"""
             <div class="card-header-box">
-                <div class="card-title-text">Visión Global del Modelo</div>
+                <div class="card-title-text">VISIÓN GLOBAL (POBLACIÓN GENERAL)</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -722,7 +717,6 @@ elif st.session_state.page == "simulacion":
                     df_imp = df_imp.sort_values(by='Importancia', ascending=True)
                     
                     fig_imp, ax_imp = plt.subplots(figsize=(6, 5))
-                    # FORZAMOS FONDO BLANCO
                     fig_imp.patch.set_facecolor('white') 
                     ax_imp.set_facecolor('white')
                     
@@ -739,7 +733,6 @@ elif st.session_state.page == "simulacion":
                         ax_imp.text(width + 0.005, bar.get_y() + bar.get_height()/2, 
                                     f'{width*100:.1f}%', ha='left', va='center', fontsize=8, color='#666')
                     
-                    # Usamos st.image nativo para permitir zoom y la nueva función fig_to_bytes que guarda en BLANCO
                     st.image(fig_to_bytes(fig_imp), use_container_width=True)
                     plt.close(fig_imp)
 
@@ -748,19 +741,18 @@ elif st.session_state.page == "simulacion":
             else:
                 st.warning("Modelo simulado: No hay datos reales de importancia global.")
 
-            # TEXTO EXPLICATIVO CON TÍTULO EN ROSA CORAL (CEMP_PINK) Y CONTENIDO ACTUALIZADO
             st.markdown(f"""
             <div class="card-footer-box">
-                <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación de Relevancia Global:</span><br>
+                <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación del Modelo (General):</span><br>
                 Este gráfico muestra qué <b>datos son más importantes</b> para la predicción del riesgo de padecer diabetes. Las <b>barras más largas</b> (como Glucosa o Índice RI) indican los <b>factores que más influyen</b> en el diagnóstico final para la población general.
             </div>
             """, unsafe_allow_html=True)
 
-        # --- COLUMNA DERECHA: SHAP WATERFALL (PACIENTE) ---
+        # --- COLUMNA DERECHA: PACIENTE ESPECÍFICO ---
         with c_exp2:
             st.markdown(f"""
             <div class="card-header-box">
-                <div class="card-title-text">Análisis Individual (SHAP)</div>
+                <div class="card-title-text">ANÁLISIS ESPECÍFICO: {patient_name.upper()}</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -797,14 +789,12 @@ elif st.session_state.page == "simulacion":
                     )
                     
                     fig_shap, ax_shap = plt.subplots(figsize=(6, 5))
-                    # FORZAMOS FONDO BLANCO TAMBIÉN AQUÍ
                     fig_shap.patch.set_facecolor('white')
                     ax_shap.set_facecolor('white')
 
                     shap.plots.waterfall(exp, show=False, max_display=10)
                     plt.tight_layout()
                     
-                    # Usamos st.image nativo y la nueva función fig_to_bytes que guarda en BLANCO
                     st.image(fig_to_bytes(fig_shap), use_container_width=True)
                     plt.close(fig_shap)
 
@@ -813,10 +803,9 @@ elif st.session_state.page == "simulacion":
             else:
                 st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
             
-            # TEXTO EXPLICATIVO CON TÍTULO EN ROSA FUERTE (CEMP_PINK) Y NEGRITAS
             st.markdown(f"""
             <div class="card-footer-box">
-                <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación del Resultado:</span><br>
+                <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación para {patient_name}:</span><br>
                 El análisis parte de una <b>'Línea Base' (aprox. 50%)</b>. A este valor se le <b>suman (barras rojas)</b> o <b>restan (barras azules)</b> las contribuciones específicas de los datos del paciente. El <b>resultado final ({prob*100:.1f}%)</b> es la suma de estos factores.
             </div>
             """, unsafe_allow_html=True)

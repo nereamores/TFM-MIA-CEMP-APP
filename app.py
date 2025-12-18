@@ -324,23 +324,23 @@ elif st.session_state.page == "simulacion":
             margin-top: -5px; /* Reducción de gap con la imagen */
         }}
         
-        /* ESTILOS PARA LA TABLA DE MÉTRICAS MEJORADA */
+        /* ESTILOS PARA LA TABLA DE MÉTRICAS MEJORADA Y COMPACTA */
         .metrics-table {{
             width: 100%;
-            border-collapse: separate; /* Necesario para border-radius en celdas */
+            border-collapse: separate;
             border-spacing: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.85rem; /* Fuente más pequeña */
             margin-top: 15px;
         }}
         .metrics-table th {{
             text-align: center;
-            padding: 12px 15px;
+            padding: 10px 8px; /* Padding reducido */
             font-weight: 700;
             border-bottom: 2px solid #eee;
         }}
         .metrics-table td {{
-            padding: 10px 15px;
+            padding: 8px 8px; /* Padding reducido */
             color: {CEMP_DARK};
             border-bottom: 1px solid #f0f0f0;
             text-align: center;
@@ -353,30 +353,34 @@ elif st.session_state.page == "simulacion":
         
         /* Badges para cabeceras */
         .badge-standard {{
-            background-color: #E0E0E0;
-            color: #666;
+            background-color: rgba(233, 127, 135, 0.1); /* Rosa transparente */
+            color: {CEMP_PINK};
+            border: 1px solid {CEMP_PINK};
             padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 700;
             display: inline-block;
+            white-space: nowrap;
         }}
         .badge-optimal {{
-            background-color: #E0F2F1; /* Verde muy claro */
+            background-color: rgba(77, 182, 172, 0.15); /* Teal transparente */
             color: {GOOD_TEAL};
             border: 2px solid {GOOD_TEAL};
             padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 800;
             display: inline-block;
             box-shadow: 0 2px 5px rgba(77, 182, 172, 0.2);
+            white-space: nowrap;
         }}
 
         /* Resaltado de celdas */
         .highlight-optimal {{
             color: {GOOD_TEAL};
             font-weight: 800;
-            font-size: 1.05rem;
+            font-size: 1rem;
         }}
         .highlight-row {{
             background-color: #FAFAFA;
@@ -444,6 +448,8 @@ elif st.session_state.page == "simulacion":
 
         st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
+        # --- AÑADIDO: AUTORÍA ---
+        st.markdown(f'<div style="font-size: 0.75rem; color: #888; margin-top: -10px; margin-bottom: 20px;">Por: Nerea Moreno Escamilla</div>', unsafe_allow_html=True)
         st.write("")
         
         # --- AVISO EN SIDEBAR ---
@@ -993,6 +999,7 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
+            # Corregido el bloque HTML para que se renderice correctamente
             st.markdown(f"""
             <div class="card" style="height:100%;">
                 <div class="tech-card-title">Origen de los Datos</div>
@@ -1003,7 +1010,7 @@ elif st.session_state.page == "simulacion":
                     <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
                 </p>
                 <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-                <div class="tech-card-title">Variables Utilizadas (10)</div>
+                <div class="tech-card-title" style="margin-bottom: 10px;">Variables Utilizadas (10)</div>
                 
                 <p style="font-size:0.85rem; font-weight:700; color:#555; margin-bottom:5px;">CLÍNICAS DIRECTAS:</p>
                 <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin-bottom:15px;">
@@ -1017,7 +1024,7 @@ elif st.session_state.page == "simulacion":
                 </ul>
                 
                 <p style="font-size:0.85rem; font-weight:700; color:{CEMP_PINK}; margin-bottom:5px;">CALCULADAS / DERIVADAS:</p>
-                <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6;">
+                <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0;">
                     <li><strong>Indice_resistencia:</strong> Producto Glucosa × Insulina.</li>
                     <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>
                     <li><strong>Is_prediabetes:</strong> Indicador binario si Glucosa ≥ 140.</li>

@@ -1265,7 +1265,7 @@ elif st.session_state.page == "simulacion":
             st.markdown(f"""
             <div class="card">
                 <div class="tech-card-title">Especificaciones del Modelo</div>
-                <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+                <p style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align: justify;">
                     El núcleo del sistema es un algoritmo de <strong>Random Forest Classifier</strong> optimizado para datos médicos desbalanceados.
                 </p>
                 <div style="background:#F8F9FA; padding:15px; border-radius:8px; border:1px solid #eee; font-family:monospace; font-size:0.85rem; color:#444;">
@@ -1280,7 +1280,7 @@ elif st.session_state.page == "simulacion":
             st.markdown(f"""
             <div class="card">
                 <div class="tech-card-title">Métricas de Rendimiento (Test)</div>
-                <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+                <p style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align: justify;">
                     Evaluación sobre conjunto de test independiente (10 repeticiones). Se prioriza la <strong>Sensibilidad (Recall)</strong> para minimizar falsos negativos.
                 </p>
                 <table class="metrics-table">
@@ -1325,14 +1325,14 @@ elif st.session_state.page == "simulacion":
         with c_tech_2:
             st.markdown(f"""<div class="card" style="height:100%;">
     <div class="tech-card-title">Origen de los Datos</div>
-    <p style="font-size:0.9rem; color:#666; margin-bottom: 10px;">
+    <p style="font-size:0.9rem; color:#666; margin-bottom: 10px; text-align: justify;">
         <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
     </p>
-    <p style="font-size:0.9rem; color:#666; margin-bottom: 15px;">
+    <p style="font-size:0.9rem; color:#666; margin-bottom: 15px; text-align: justify;">
         <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
     </p>
     <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
-        <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5;">
+        <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5; text-align: justify;">
             ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
         </p>
     </div>

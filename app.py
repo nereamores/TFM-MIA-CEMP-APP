@@ -168,7 +168,7 @@ if st.session_state.page == "landing":
 
     st.markdown("""
 <div class="badge-container">
-<span class="badge">TFM • MÁSTER EN INTELIGENCIA ARTIFICIAL APLICADA A LA SALUD</span>
+<span class="badge">TFM • MÁSTER EN APLICACIONES DE LA INTELIGENCIA ARTIFICIAL EN LA SANIDAD</span>
 </div>
 <div class="institution">CENTRO EUROPEO DE MÁSTERES Y POSGRADOS</div>
 <h1>D<span class="landing-pink">IA</span>BETES<span class="landing-gray">.</span><span class="landing-pink">NME</span></h1>
@@ -448,8 +448,6 @@ elif st.session_state.page == "simulacion":
 
         st.markdown(f'<div class="cemp-logo">D<span>IA</span>BETES<span style="color:{SLIDER_GRAY}">.</span><span>NME</span></div>', unsafe_allow_html=True)
         st.caption("CLINICAL DECISION SUPPORT SYSTEM")
-        # --- AÑADIDO: AUTORÍA ---
-        st.markdown(f'<div style="font-size: 0.75rem; color: #888; margin-top: -10px; margin-bottom: 20px;">Por: Nerea Moreno Escamilla</div>', unsafe_allow_html=True)
         st.write("")
         
         # --- AVISO EN SIDEBAR ---
@@ -999,7 +997,6 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
-            # Corregido el bloque HTML para que se renderice correctamente
             st.markdown(f"""
             <div class="card" style="height:100%;">
                 <div class="tech-card-title">Origen de los Datos</div>
@@ -1029,5 +1026,12 @@ elif st.session_state.page == "simulacion":
                     <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>
                     <li><strong>Is_prediabetes:</strong> Indicador binario si Glucosa ≥ 140.</li>
                 </ul>
+                
+                <hr style="margin:25px 0 15px 0; border:0; border-top:1px solid #eee;">
+                <div style="font-size:0.75rem; color:#999; text-align:right;">
+                    <strong>Desarrollado por:</strong> Nerea Moreno Escamilla<br>
+                    CEMP - Centro Europeo de Másteres y Posgrados<br>
+                    Máster en Aplicaciones de la IA en la Sanidad
+                </div>
             </div>
             """, unsafe_allow_html=True)

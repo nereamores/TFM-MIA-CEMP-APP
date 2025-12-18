@@ -54,6 +54,10 @@ if 'model' not in st.session_state:
 if 'predict_clicked' not in st.session_state:
     st.session_state.predict_clicked = False
 
+# Variable de estado para guardar los datos SHAP entre pestañas
+if 'shap_data' not in st.session_state:
+    st.session_state.shap_data = None
+
 # =========================================================
 # 2. FUNCIONES AUXILIARES
 # =========================================================
@@ -76,12 +80,13 @@ def fig_to_bytes(fig):
 def get_help_icon(description):
     return f"""<span style="display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:#E0E0E0; color:#777; font-size:0.7rem; font-weight:bold; cursor:help; margin-left:6px; position:relative; top:-1px;" title="{description}">?</span>"""
 
-def create_html_report(patient_name, date_str, prob, risk_label, inputs_dict, recommendation):
-    """Genera un informe HTML completo para descargar."""
+def create_html_report(patient_name, date_str, prob, risk_label, inputs_dict, shap_rows_html, recommendation):
+    """Genera un informe HTML completo con logo correcto y tabla SHAP."""
     
     c_dark = "#2C3E50"
     c_pink = "#E97F87"
     c_teal = "#4DB6AC"
+    c_gray = "#bdc3c7"
     c_bg_head = "#F8F9FA"
     
     risk_color = c_pink if "ALTO" in risk_label else c_teal
@@ -91,45 +96,73 @@ def create_html_report(patient_name, date_str, prob, risk_label, inputs_dict, re
     for k, v in inputs_dict.items():
         inputs_rows += f"<tr><td style='padding:8px; border-bottom:1px solid #eee; color:#666;'>{k}</td><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold; color:{c_dark}; text-align:right;'>{v}</td></tr>"
 
+    # Construir sección SHAP (Explicabilidad)
+    shap_section_html = ""
+    if shap_rows_html:
+        shap_section_html = f"""
+        <div class="section">
+            <div class="section-title">Análisis Individual: Factores Determinantes (SHAP)</div>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">Desglose de las variables que más han influido (positiva o negativamente) en el cálculo del riesgo para este paciente concreto.</p>
+            <table style="width:100%; font-size:12px;">
+                <thead>
+                    <tr style="background:#eee; color:#777;">
+                        <th style="padding:8px; text-align:left;">Variable Clínica</th>
+                        <th style="padding:8px; text-align:center;">Valor Paciente</th>
+                        <th style="padding:8px; text-align:right;">Contribución al Riesgo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {shap_rows_html}
+                </tbody>
+            </table>
+        </div>
+        """
+
     html = f"""
     <html>
     <head>
         <style>
             body {{ font-family: 'Helvetica', sans-serif; color: #333; padding: 40px; max-width: 800px; margin: 0 auto; }}
             .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid {c_pink}; padding-bottom: 20px; }}
-            .logo {{ font-size: 24px; font-weight: 800; color: {c_dark}; }}
-            .logo span {{ color: {c_pink}; }}
+            /* ESTILOS DEL LOGO EXACTOS */
+            .logo {{ font-size: 26px; font-weight: 800; color: {c_dark}; letter-spacing: -1px; }}
+            .logo span.pink {{ color: {c_pink}; }}
+            .logo span.gray {{ color: {c_gray}; }}
+            
             .meta {{ font-size: 11px; color: #999; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }}
             .patient-info {{ background: {c_bg_head}; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; }}
-            .section {{ margin-bottom: 25px; }}
-            .section-title {{ color: {c_dark}; font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; border-left: 4px solid {c_pink}; padding-left: 10px; }}
-            .risk-box {{ padding: 20px; background: {risk_color}15; border-radius: 8px; border: 1px solid {risk_color}; text-align: center; margin-bottom: 30px; }}
-            .risk-val {{ font-size: 32px; font-weight: 800; color: {risk_color}; }}
-            .risk-txt {{ font-size: 14px; font-weight: 700; color: {c_dark}; text-transform: uppercase; }}
-            .rec-box {{ background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.5; }}
+            .section {{ margin-bottom: 30px; }}
+            .section-title {{ color: {c_dark}; font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; border-left: 4px solid {c_pink}; padding-left: 10px; }}
+            .risk-box {{ padding: 25px; background: {risk_color}15; border-radius: 12px; border: 2px solid {risk_color}; text-align: center; margin-bottom: 30px; }}
+            .risk-val {{ font-size: 42px; font-weight: 900; color: {risk_color}; line-height: 1; }}
+            .risk-txt {{ font-size: 16px; font-weight: 800; color: {c_dark}; text-transform: uppercase; margin-top: 10px; }}
+            .rec-box {{ background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.5; border-left: 4px solid {risk_color}; }}
             table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
         </style>
     </head>
     <body>
         <div class="header">
-            <div class="logo">DIABETES<span>.NME</span></div>
+            <div class="logo">D<span class="pink">IA</span>BETES<span class="gray">.</span><span class="pink">NME</span></div>
             <div class="meta">Clinical Decision Support System Report</div>
         </div>
         
         <div class="patient-info">
-            <div><strong>PACIENTE:</strong> {patient_name}</div>
-            <div><strong>FECHA:</strong> {date_str}</div>
+            <div><span style="color:#999; font-size:11px;">PACIENTE:</span><br><strong>{patient_name}</strong></div>
+            <div style="text-align:right;"><span style="color:#999; font-size:11px;">FECHA:</span><br><strong>{date_str}</strong></div>
         </div>
 
         <div class="risk-box">
             <div class="risk-val">{prob*100:.1f}%</div>
             <div class="risk-txt">{risk_label}</div>
-            <div style="font-size:11px; color:#777; margin-top:5px;">Probabilidad estimada de Diabetes Tipo 2</div>
+            <div style="font-size:12px; color:#777; margin-top:8px; font-weight:500;">Probabilidad estimada de Diabetes Tipo 2</div>
         </div>
+
+        {shap_section_html}
 
         <div class="section">
             <div class="section-title">Protocolo de Acción Recomendado</div>
             <div class="rec-box">
+                <strong>Intervención Sugerida:</strong><br>
                 {recommendation}
             </div>
         </div>
@@ -141,10 +174,10 @@ def create_html_report(patient_name, date_str, prob, risk_label, inputs_dict, re
             </table>
         </div>
 
-        <div style="font-size:10px; color:#aaa; text-align:center; margin-top:50px; border-top:1px solid #eee; padding-top:10px;">
-            Documento generado automáticamente por DIABETES.NME.<br>
-            Herramienta de soporte a la decisión clínica. No sustituye el criterio médico profesional.<br>
-            <strong>TFM Desarrollado por: Nerea Moreno Escamilla</strong>
+        <div style="font-size:10px; color:#aaa; text-align:center; margin-top:50px; border-top:1px solid #eee; padding-top:15px; line-height:1.4;">
+            Documento generado automáticamente por el prototipo DIABETES.NME.<br>
+            Herramienta de soporte a la decisión clínica desarrollada con fines académicos. <strong>No sustituye el criterio médico profesional.</strong><br>
+            <strong style="color:{c_dark};">TFM Desarrollado por: Nerea Moreno Escamilla</strong> | CEMP 2025
         </div>
     </body>
     </html>
@@ -560,6 +593,7 @@ elif st.session_state.page == "simulacion":
             st.session_state[key] = st.session_state[f"{key}_slider"]
             st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
             st.session_state.predict_clicked = False 
+            st.session_state.shap_data = None # Reset SHAP
         
         def update_from_input():
             val = st.session_state[f"{key}_input"]
@@ -568,6 +602,7 @@ elif st.session_state.page == "simulacion":
             st.session_state[key] = val
             st.session_state[f"{key}_slider"] = val 
             st.session_state.predict_clicked = False 
+            st.session_state.shap_data = None # Reset SHAP
 
         with c1:
             st.slider(
@@ -601,6 +636,7 @@ elif st.session_state.page == "simulacion":
         
         def reset_on_change():
             st.session_state.predict_clicked = False
+            st.session_state.shap_data = None
 
         patient_name = st.text_input("ID Paciente", value="Paciente #8842-X", label_visibility="collapsed", on_change=reset_on_change)
         default_date = datetime.date.today()
@@ -864,20 +900,65 @@ elif st.session_state.page == "simulacion":
                 </div>
             </div>""", unsafe_allow_html=True)
             
-            # --- LÓGICA DE BOTONES ---
+            # --- LÓGICA DE BOTONES Y CÁLCULO SHAP PARA INFORME ---
             if st.session_state.predict_clicked:
-                # Se prepara la recomendación para el informe
-                active_rec = "Reevaluar en 3-6 meses." # Default
-                if glucose >= 200:
-                    active_rec = "Protocolo de confirmación diagnóstica urgente. Descartar cetoacidosis."
-                elif is_high and distancia_al_corte > 0.05:
-                    active_rec = "Derivación a Endocrinología. Solicitar HbA1c y perfil lipídico. Valorar metformina."
-                elif not is_high and distancia_al_corte <= 0.05:
-                    active_rec = "Repetir TTOG en 3-6 meses. Monitorización estrecha."
-                else:
-                    active_rec = "Seguimiento rutinario anual. Mantener estilos de vida saludables."
+                
+                # 1. Calcular SHAP para el informe (si está disponible)
+                shap_html_rows = ""
+                if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
+                    try:
+                        pipeline = st.session_state.model
+                        step1 = pipeline.named_steps['imputer'].transform(input_data)
+                        step2 = pipeline.named_steps['scaler'].transform(step1)
+                        model_step = pipeline.named_steps['model']
+                        explainer = shap.TreeExplainer(model_step)
+                        shap_values = explainer.shap_values(step2)
+                        
+                        # Obtener valores para la clase positiva (Diabetes)
+                        if isinstance(shap_values, list): shap_val_instance = shap_values[1][0]
+                        elif len(shap_values.shape) == 3: shap_val_instance = shap_values[0, :, 1]
+                        else: shap_val_instance = shap_values[0]
+                            
+                        # Crear DataFrame y ordenar por impacto absoluto
+                        df_shap = pd.DataFrame({
+                            'Feature': input_data.columns,
+                            'Impact': shap_val_instance,
+                            'Value': input_data.iloc[0].values
+                        })
+                        df_shap['AbsImpact'] = df_shap['Impact'].abs()
+                        # Top 5 factores más influyentes
+                        df_top_shap = df_shap.sort_values(by='AbsImpact', ascending=False).head(5)
+                        
+                        # Generar filas HTML
+                        for _, row in df_top_shap.iterrows():
+                            impact_val = row['Impact']
+                            # Color: Rojo si aumenta riesgo, Verde si disminuye
+                            color = "#C0392B" if impact_val > 0 else "#27AE60"
+                            sign = "+" if impact_val > 0 else ""
+                            # Limpiar nombre de la variable
+                            feat_name_clean = row['Feature'].replace('Indice_resistencia', 'Índice RI').replace('BMI_square', 'BMI² (No lineal)').replace('BloodPressure', 'Presión Arterial').replace('Pregnancies', 'Embarazos').replace('Age', 'Edad').replace('Glucose', 'Glucosa 2h').replace('Insulin', 'Insulina').replace('Is_prediabetes', 'Prediabetes Detectada')
 
-                # HTML del informe
+                            shap_html_rows += f"""
+                                <tr>
+                                    <td style='padding:6px; border-bottom:1px solid #eee; font-weight:500;'>{feat_name_clean}</td>
+                                    <td style='padding:6px; border-bottom:1px solid #eee; text-align:center; color:#666;'>{row['Value']:.2f}</td>
+                                    <td style='padding:6px; border-bottom:1px solid #eee; text-align:right; font-weight:bold; color:{color};'>
+                                        {sign}{impact_val:.3f} (log-odds)
+                                    </td>
+                                </tr>
+                            """
+                    except Exception as e:
+                         print(f"Error SHAP Report: {e}")
+                         shap_html_rows = "<tr><td colspan='3' style='text-align:center; color:#999; font-style:italic;'>Análisis detallado no disponible.</td></tr>"
+
+                # 2. Determinar la recomendación activa
+                active_rec = "Reevaluar en 3-6 meses."
+                if glucose >= 200: active_rec = "Protocolo de confirmación diagnóstica urgente. Descartar cetoacidosis."
+                elif is_high and distancia_al_corte > 0.05: active_rec = "Derivación a Endocrinología. Solicitar HbA1c y perfil lipídico. Valorar inicio de metformina."
+                elif not is_high and distancia_al_corte <= 0.05: active_rec = "Repetir TTOG en 3-6 meses. Monitorización estrecha de glucemia basal."
+                else: active_rec = "Seguimiento rutinario anual según guías locales. Mantener estilos de vida saludables."
+
+                # 3. Generar el HTML del informe
                 report_html = create_html_report(
                     patient_name, 
                     date_str, 
@@ -886,31 +967,33 @@ elif st.session_state.page == "simulacion":
                     inputs_dict={
                         "Glucosa 2h": f"{glucose} mg/dL",
                         "Insulina 2h": f"{insulin} µU/ml",
-                        "HOMA-IR (Proxy)": f"{proxy_index}",
-                        "BMI": f"{bmi:.1f}",
+                        "Índice RI (Glucosa x Insulina)": f"{proxy_index}", # Nombre corregido
+                        "BMI": f"{bmi:.1f} kg/m²",
                         "Edad": f"{age} años",
-                        "Presión Arterial": f"{blood_pressure} mm Hg"
-                    }, 
+                        "Presión Arterial": f"{blood_pressure} mm Hg",
+                        "Embarazos": f"{pregnancies}",
+                        "Carga Genética (DPF)": f"{dpf:.2f}"
+                    },
+                    shap_rows_html=shap_html_rows, # Pasamos las filas SHAP
                     recommendation=active_rec
                 )
                 
-                # Botón de descarga
+                # 4. Mostrar botón de descarga
                 st.download_button(
-                    label="📄 DESCARGAR INFORME",
+                    label="📄 DESCARGAR INFORME CLÍNICO",
                     data=report_html,
-                    file_name=f"Informe_Diabetes_{patient_name.replace(' ', '_')}.html",
+                    file_name=f"CDSS_Diabetes_{patient_name.replace(' ', '_')}_{date_str.replace(' ', '_')}.html",
                     mime="text/html",
                     type="primary",
                     use_container_width=True
                 )
             else:
-                # Botón de cálculo normal
+                # Botón de cálculo inicial
                 if st.button("CALCULAR RIESGO", use_container_width=True, type="primary"):
                     st.session_state.predict_clicked = True
                     st.rerun()
 
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
-            # Este gráfico circular lo mantenemos transparente para que se integre en la tarjeta
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
 
@@ -1019,30 +1102,22 @@ elif st.session_state.page == "simulacion":
             </div>
             """, unsafe_allow_html=True)
             
-            if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps'):
+            if SHAP_AVAILABLE and hasattr(st.session_state.model, 'named_steps') and st.session_state.predict_clicked:
                 try:
                     pipeline = st.session_state.model
                     step1 = pipeline.named_steps['imputer'].transform(input_data)
                     step2 = pipeline.named_steps['scaler'].transform(step1)
-                    input_transformed = pd.DataFrame(step2, columns=input_data.columns)
                     
                     model_step = pipeline.named_steps['model']
                     explainer = shap.TreeExplainer(model_step)
-                    shap_values = explainer.shap_values(input_transformed)
+                    shap_values = explainer.shap_values(step2)
                     
-                    if isinstance(shap_values, list):
-                        shap_val_instance = shap_values[1][0]
-                        base_value = explainer.expected_value[1]
-                    else:
-                        if len(shap_values.shape) == 3:
-                             shap_val_instance = shap_values[0, :, 1]
-                        else:
-                             shap_val_instance = shap_values[0]
-                        
-                        if isinstance(explainer.expected_value, np.ndarray):
-                             base_value = explainer.expected_value[1]
-                        else:
-                             base_value = explainer.expected_value
+                    if isinstance(shap_values, list): shap_val_instance = shap_values[1][0]
+                    elif len(shap_values.shape) == 3: shap_val_instance = shap_values[0, :, 1]
+                    else: shap_val_instance = shap_values[0]
+                    
+                    if isinstance(explainer.expected_value, np.ndarray): base_value = explainer.expected_value[1]
+                    else: base_value = explainer.expected_value
 
                     exp = shap.Explanation(
                         values=shap_val_instance,
@@ -1064,7 +1139,11 @@ elif st.session_state.page == "simulacion":
                 except Exception as e:
                     st.error(f"Error generando SHAP: {e}")
             else:
-                st.markdown("<br><br><em>Visualización no disponible en modo simulación.</em><br><br><br>", unsafe_allow_html=True)
+                 st.markdown("""
+                    <div style="display:flex; justify-content:center; align-items:center; height:300px; color:#aaa; font-style:italic;">
+                        <div>Calcula el riesgo primero para ver el análisis individual.</div>
+                    </div>
+                    """, unsafe_allow_html=True)
             
             st.markdown(f"""
             <div class="card-footer-box">
@@ -1087,14 +1166,15 @@ elif st.session_state.page == "simulacion":
 
         # --- LÓGICA PARA DETERMINAR EL ESCENARIO ACTIVO ---
         active_scenario = "bajo" # Default
-        if glucose >= 200:
-            active_scenario = "urgente"
-        elif is_high and distancia_al_corte > 0.05:
-            active_scenario = "alto"
-        elif not is_high and distancia_al_corte > 0.05:
-            active_scenario = "bajo"
-        else:
-            active_scenario = "incertidumbre"
+        if st.session_state.predict_clicked:
+            if glucose >= 200:
+                active_scenario = "urgente"
+            elif is_high and distancia_al_corte > 0.05:
+                active_scenario = "alto"
+            elif not is_high and distancia_al_corte > 0.05:
+                active_scenario = "bajo"
+            else:
+                active_scenario = "incertidumbre"
 
         # --- DEFINICIÓN DE ESTILOS DE FILA ---
         style_urgente = "matrix-row-active" if active_scenario == "urgente" else ""

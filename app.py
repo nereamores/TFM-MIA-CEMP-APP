@@ -70,7 +70,7 @@ def fig_to_html(fig):
 def fig_to_bytes(fig):
     """Convierte figura a bytes para st.image (Permite zoom con fondo BLANCO)."""
     buf = io.BytesIO()
-    # CAMBIO CLAVE: transparent=False y facecolor='white' para que al ampliar se vea bien
+    # CAMBIO CLAVE: transparent=False y facecolor='white'
     fig.savefig(buf, format='png', bbox_inches='tight', transparent=False, facecolor='white', dpi=300)
     buf.seek(0)
     return buf
@@ -210,6 +210,15 @@ elif st.session_state.page == "simulacion":
         .block-container {{
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
+        
+        /* Ocultar enlaces de ancla (símbolos de cadena) en los títulos */
+        [data-testid="stMarkdownContainer"] h1 a, 
+        [data-testid="stMarkdownContainer"] h2 a, 
+        [data-testid="stMarkdownContainer"] h3 a, 
+        [data-testid="stMarkdownContainer"] h4 a {{
+            display: none !important;
+        }}
+        
         .cemp-logo {{ 
             font-family: 'Helvetica', sans-serif; font-weight: 800; font-size: 1.8rem; color: {CEMP_DARK}; margin: 0; 
         }}
@@ -495,6 +504,7 @@ elif st.session_state.page == "simulacion":
                              1.4 * np.exp(-((x - 0.68)**2) / (2 * 0.16**2))
                 
                 fig_calib, ax_calib = plt.subplots(figsize=(6, 2.5))
+                # Fondo transparente para este gráfico pequeño que va sobre el fondo de la app
                 fig_calib.patch.set_facecolor('none')
                 ax_calib.set_facecolor('none')
                 ax_calib.fill_between(x, y_sanos, color="#BDC3C7", alpha=0.3, label="Clase 0: No Diabetes")
@@ -648,6 +658,7 @@ elif st.session_state.page == "simulacion":
                 st.rerun()
 
             fig, ax = plt.subplots(figsize=(3.2, 3.2))
+            # Este gráfico circular lo mantenemos transparente para que se integre en la tarjeta
             fig.patch.set_facecolor('none')
             ax.set_facecolor('none')
 
@@ -703,7 +714,7 @@ elif st.session_state.page == "simulacion":
         with c_exp1:
             st.markdown(f"""
             <div class="card-header-box">
-                <div class="card-title-text">VISIÓN GLOBAL (POBLACIÓN GENERAL)</div>
+                <div class="card-title-text">VISIÓN GLOBAL DEL MODELO</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -822,12 +833,12 @@ elif st.session_state.page == "simulacion":
             
             c_p1, c_p2 = st.columns(2)
             with c_p1:
-                st.markdown("#### 1. Acción Inmediata")
+                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">1. Acción Inmediata</h4>', unsafe_allow_html=True)
                 st.warning("⚠️ **Derivación a Endocrinología** (Prioridad: ALTA)")
                 st.checkbox("Solicitar HbA1c confirmatoria")
                 st.checkbox("Perfil lipídico completo")
             with c_p2:
-                st.markdown("#### 2. Intervención Terapéutica")
+                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">2. Intervención Terapéutica</h4>', unsafe_allow_html=True)
                 st.info("💊 Valorar inicio de Metformina")
                 st.write("- **Dieta:** Restricción calórica moderada.")
         
@@ -841,9 +852,9 @@ elif st.session_state.page == "simulacion":
             
             c_p1, c_p2 = st.columns(2)
             with c_p1:
-                st.markdown("#### 1. Seguimiento")
+                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">1. Seguimiento</h4>', unsafe_allow_html=True)
                 st.success("✅ **Control Rutinario**")
                 st.checkbox("Repetir test en 12 meses")
             with c_p2:
-                st.markdown("#### 2. Educación Sanitaria")
+                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">2. Educación Sanitaria</h4>', unsafe_allow_html=True)
                 st.write("- Mantener BMI < 25.")

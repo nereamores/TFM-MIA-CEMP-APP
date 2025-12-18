@@ -740,38 +740,127 @@ elif st.session_state.page == "simulacion":
                 st.caption("Selecciona manualmente el umbral de decisión.")
                 threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
                 
-                # --- NUEVA FUNCIÓN: MODAL (POP-UP) ---
+                # --- NUEVA FUNCIÓN: MODAL (POP-UP) CON EL MISMO ESTILO QUE TAB 4 ---
                 @st.dialog("Ficha Técnica Resumida")
                 def ver_metricas_modal():
+                    # Aquí re-inyectamos los estilos para asegurar que se vean IGUAL dentro del modal
+                    # y usamos la misma estructura HTML que en Tab 4.
                     st.markdown(f"""
                     <style>
-                        .metrics-table {{ width: 100%; font-size: 0.85rem; border-collapse: separate; border-spacing: 0; }}
-                        .metrics-table th {{ text-align: center; padding: 8px; border-bottom: 2px solid #eee; background: white; }}
-                        .metrics-table td {{ padding: 8px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #2C3E50; }}
-                        .badge-optimal {{ background: rgba(77, 182, 172, 0.1); color: #4DB6AC; border: 1px solid #4DB6AC; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.7rem; }}
-                        .highlight-optimal {{ color: #4DB6AC; font-weight: 800; }}
+                        /* ESTILOS PARA LA TABLA DE MÉTRICAS (Replicados para el Modal) */
+                        .metrics-table {{
+                            width: 100%;
+                            border-collapse: separate;
+                            border-spacing: 0;
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                            font-size: 0.85rem; 
+                            margin-top: 15px;
+                        }}
+                        .metrics-table th {{
+                            text-align: center;
+                            padding: 10px 8px; 
+                            font-weight: 700;
+                            border-bottom: 2px solid #eee;
+                            background-color: white;
+                        }}
+                        .metrics-table td {{
+                            padding: 8px 8px; 
+                            color: {CEMP_DARK};
+                            border-bottom: 1px solid #f0f0f0;
+                            text-align: center;
+                        }}
+                        .metric-name-col {{
+                            text-align: left !important;
+                            font-weight: 600;
+                            color: #555;
+                        }}
+                        
+                        /* Badges */
+                        .badge-standard {{
+                            background-color: rgba(233, 127, 135, 0.1); 
+                            color: {CEMP_PINK};
+                            border: 1px solid rgba(233, 127, 135, 0.2);
+                            padding: 4px 10px;
+                            border-radius: 20px;
+                            font-size: 0.75rem;
+                            font-weight: 700;
+                            display: inline-block;
+                            white-space: nowrap;
+                        }}
+                        .badge-optimal {{
+                            background-color: rgba(77, 182, 172, 0.1); 
+                            color: {GOOD_TEAL};
+                            border: 1px solid {GOOD_TEAL}; 
+                            padding: 4px 10px;
+                            border-radius: 20px;
+                            font-size: 0.75rem;
+                            font-weight: 700; 
+                            display: inline-block;
+                            white-space: nowrap;
+                        }}
+                        
+                        /* Resaltado */
+                        .highlight-optimal {{
+                            color: {GOOD_TEAL};
+                            font-weight: 800;
+                            font-size: 0.95rem;
+                        }}
+                        .highlight-row {{
+                            background-color: #FAFAFA;
+                        }}
+                        
+                        .tech-card-title {{
+                            color: {CEMP_PINK};
+                            font-weight: 800;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            margin-bottom: 15px;
+                            font-size: 1rem;
+                            text-align: justify;
+                        }}
                     </style>
-                    <p style="font-size:0.9rem; color:#666; margin-bottom:15px; line-height:1.5;">
-                        El umbral de <strong>0.27</strong> fue seleccionado para maximizar la detección de casos positivos (Sensibilidad).
-                    </p>
-                    <table class="metrics-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align:left;">Métrica</th>
-                                <th>Estándar (0.5)</th>
-                                <th>Óptimo (0.27)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td style="text-align:left;">Accuracy</td><td>0.738</td><td>0.719</td></tr>
-                            <tr><td style="text-align:left;">Precision</td><td>0.604</td><td>0.560</td></tr>
-                            <tr style="background:#fcfcfc;"><td style="text-align:left; font-weight:bold; color:#2C3E50;">Recall (Sensibilidad)</td><td>0.733</td><td class="highlight-optimal">0.924</td></tr>
-                            <tr style="background:#fcfcfc;"><td style="text-align:left; font-weight:bold; color:#2C3E50;">F2-Score</td><td>0.703</td><td class="highlight-optimal">0.818</td></tr>
-                            <tr><td style="text-align:left;">AUC-ROC</td><td>0.815</td><td>0.815</td></tr>
-                        </tbody>
-                    </table>
-                    <div style="margin-top:20px; font-size:0.8rem; color:#999; text-align:center; font-style:italic;">
-                        Para la documentación completa, navega a la pestaña "Ficha Técnica".
+                    
+                    <div>
+                        <div class="tech-card-title">Métricas de Rendimiento (Test)</div>
+                        <p style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align: justify;">
+                            Evaluación sobre conjunto de test independiente (10 repeticiones). Se prioriza la <strong>Sensibilidad (Recall)</strong> para minimizar falsos negativos.
+                        </p>
+                        <table class="metrics-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th><span class="badge-standard">Umbral Estándar (0.5)</span></th>
+                                    <th><span class="badge-optimal">Umbral Óptimo (0.27)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="metric-name-col">Accuracy</td>
+                                    <td>0.738</td>
+                                    <td>0.719</td>
+                                </tr>
+                                <tr>
+                                    <td class="metric-name-col">Precision</td>
+                                    <td>0.604</td>
+                                    <td>0.560</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td class="metric-name-col" style="color:{CEMP_DARK}; font-weight:800;">Recall (Sensibilidad)</td>
+                                    <td>0.733</td>
+                                    <td class="highlight-optimal">0.924</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td class="metric-name-col" style="color:{CEMP_DARK}; font-weight:800;">F2-Score</td>
+                                    <td>0.703</td>
+                                    <td class="highlight-optimal">0.818</td>
+                                </tr>
+                                <tr>
+                                    <td class="metric-name-col">AUC-ROC</td>
+                                    <td>0.815</td>
+                                    <td>0.815</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     """, unsafe_allow_html=True)
 

@@ -105,8 +105,8 @@ if st.session_state.page == "landing":
         h1 {
             text-align: center; font-family: 'Helvetica', sans-serif !important;
             font-weight: 800 !important; font-size: 3.5rem !important;
-            /* CAMBIO: Color gris elegante en lugar de azul oscuro */
-            color: #bdc3c7; 
+            /* CORRECCIÓN: Color gris elegante */
+            color: #bdc3c7 !important; 
             margin-bottom: 0 !important;
             line-height: 1.2 !important; letter-spacing: -1px; cursor: default;
         }
@@ -211,7 +211,6 @@ elif st.session_state.page == "simulacion":
             max-width: 1250px; padding-top: 2rem; padding-bottom: 2rem; margin: 0 auto;
         }}
         
-        /* Ocultar enlaces de ancla (símbolos de cadena) en los títulos */
         [data-testid="stMarkdownContainer"] h1 a, 
         [data-testid="stMarkdownContainer"] h2 a, 
         [data-testid="stMarkdownContainer"] h3 a, 
@@ -286,7 +285,7 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === ESTILOS PARA TARJETAS CON ZOOM (SEPARADAS PERO ESTILIZADAS) === */
+        /* === ESTILOS PARA TARJETAS CON ZOOM === */
         .card-header-box {{
             background-color: white;
             border-top-left-radius: 15px;
@@ -296,10 +295,8 @@ elif st.session_state.page == "simulacion":
             border-right: 1px solid #eee;
             border-top: 1px solid #eee;
             text-align: center;
-            margin-bottom: -5px; /* Reducción de gap con la imagen */
+            margin-bottom: -5px; 
         }}
-
-        /* TIPOGRAFÍA ACTUALIZADA PARA INTEGRACIÓN NATIVA */
         .card-title-text {{
             color: #2C3E50;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -309,7 +306,6 @@ elif st.session_state.page == "simulacion":
             letter-spacing: 0.5px;
             margin: 0;
         }}
-        
         .card-footer-box {{
             background-color: rgba(233, 127, 135, 0.15); 
             padding: 20px 25px;
@@ -321,10 +317,10 @@ elif st.session_state.page == "simulacion":
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
             border-bottom: 1px solid #eee;
-            margin-top: -5px; /* Reducción de gap con la imagen */
+            margin-top: -5px; 
         }}
         
-        /* ESTILOS PARA LA TABLA DE MÉTRICAS MEJORADA Y COMPACTA */
+        /* ESTILOS PARA LA TABLA DE MÉTRICAS */
         .metrics-table {{
             width: 100%;
             border-collapse: separate;
@@ -363,16 +359,16 @@ elif st.session_state.page == "simulacion":
             display: inline-block;
             white-space: nowrap;
         }}
+        /* CORRECCIÓN: Badge óptimo sin sombreado, estilo ligero */
         .badge-optimal {{
-            background-color: rgba(77, 182, 172, 0.15); 
+            background-color: rgba(77, 182, 172, 0.1); /* Fondo muy ligero */
             color: {GOOD_TEAL};
-            border: 2px solid {GOOD_TEAL};
+            border: 1px solid {GOOD_TEAL}; /* Borde fino */
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 800;
             display: inline-block;
-            box-shadow: 0 2px 5px rgba(77, 182, 172, 0.2);
             white-space: nowrap;
         }}
 
@@ -997,7 +993,7 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
-            # HTML Corregido y simplificado para las listas
+            # HTML con colores hardcoded para evitar errores de f-string
             st.markdown(f"""
             <div class="card" style="height:100%;">
                 <div class="tech-card-title">Origen de los Datos</div>
@@ -1008,7 +1004,7 @@ elif st.session_state.page == "simulacion":
                     <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
                 </p>
                 
-                <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid #E97F87; padding: 15px; margin: 15px 0; border-radius: 8px;">
                     <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5;">
                         ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
                     </p>
@@ -1028,7 +1024,7 @@ elif st.session_state.page == "simulacion":
                     <li><strong>Age:</strong> Edad (años).</li>
                 </ul>
                 
-                <p style="font-size:0.85rem; font-weight:700; color:{CEMP_PINK}; margin-bottom:5px;">CALCULADAS / DERIVADAS:</p>
+                <p style="font-size:0.85rem; font-weight:700; color:#E97F87; margin-bottom:5px;">CALCULADAS / DERIVADAS:</p>
                 <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0; list-style-type: disc;">
                     <li><strong>Indice_resistencia:</strong> Producto Glucosa × Insulina.</li>
                     <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>

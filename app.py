@@ -892,7 +892,7 @@ elif st.session_state.page == "simulacion":
                 
                 # BOTÓN QUE ABRE EL MODAL
                 st.write("") 
-                if st.button("📊 Ver Tabla de Métricas", type="secondary", use_container_width=True):
+                if st.button("Ver Tabla Comparativa", type="secondary", use_container_width=True):
                     ver_metricas_modal()
 
             with c_calib_2:

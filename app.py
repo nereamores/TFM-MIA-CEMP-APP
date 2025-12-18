@@ -997,38 +997,37 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
-            # HTML SIN INDENTACIÓN EN LA PRIMERA LÍNEA PARA EVITAR EL ERROR
             st.markdown(f"""<div class="card" style="height:100%;">
-    <div class="tech-card-title">Origen de los Datos</div>
-    <p style="font-size:0.9rem; color:#666; margin-bottom: 10px;">
-        <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
+<div class="tech-card-title">Origen de los Datos</div>
+<p style="font-size:0.9rem; color:#666; margin-bottom: 10px;">
+    <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
+</p>
+<p style="font-size:0.9rem; color:#666; margin-bottom: 15px;">
+    <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
+</p>
+<div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
+    <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5;">
+        ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
     </p>
-    <p style="font-size:0.9rem; color:#666; margin-bottom: 15px;">
-        <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
-    </p>
-    <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
-        <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5;">
-            ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
-        </p>
-    </div>
-    <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-    <div class="tech-card-title" style="margin-bottom: 10px;">Variables Utilizadas (10)</div>
-    <p style="font-size:0.85rem; font-weight:700; color:#555; margin-bottom:5px;">CLÍNICAS DIRECTAS:</p>
-    <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin-bottom:15px; list-style-type: disc;">
-        <li><strong>Pregnancies:</strong> Nº de embarazos.</li>
-        <li><strong>Glucose:</strong> Glucosa plasmática a las 2h.</li>
-        <li><strong>BloodPressure:</strong> Presión arterial diastólica.</li>
-        <li><strong>Insulin:</strong> Insulina sérica a las 2h.</li>
-        <li><strong>BMI:</strong> Índice de Masa Corporal.</li>
-        <li><strong>DPF:</strong> Predisposición genética (función pedigrí).</li>
-        <li><strong>Age:</strong> Edad (años).</li>
-    </ul>
-    <p style="font-size:0.85rem; font-weight:700; color:{CEMP_PINK}; margin-bottom:5px;">CALCULADAS:</p>
-    <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0; list-style-type: disc;">
-        <li><strong>Indice_resistencia:</strong> Producto Glucosa × Insulina.</li>
-        <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>
-        <li><strong>Is_prediabetes:</strong> Indicador binario si Glucosa ≥ 140.</li>
-    </ul>
+</div>
+<hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+<div class="tech-card-title" style="margin-bottom: 10px;">Variables Utilizadas (10)</div>
+<p style="font-size:0.85rem; font-weight:700; color:#555; margin-bottom:5px;">CLÍNICAS DIRECTAS:</p>
+<ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin-bottom:15px; list-style-type: disc;">
+    <li><strong>Pregnancies:</strong> Nº de embarazos.</li>
+    <li><strong>Glucose:</strong> Glucosa plasmática a las 2h.</li>
+    <li><strong>BloodPressure:</strong> Presión arterial diastólica.</li>
+    <li><strong>Insulin:</strong> Insulina sérica a las 2h.</li>
+    <li><strong>BMI:</strong> Índice de Masa Corporal.</li>
+    <li><strong>DPF:</strong> Predisposición genética (función pedigrí).</li>
+    <li><strong>Age:</strong> Edad (años).</li>
+</ul>
+<p style="font-size:0.85rem; font-weight:700; color:{CEMP_PINK}; margin-bottom:5px;">CALCULADAS:</p>
+<ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0; list-style-type: disc;">
+    <li><strong>Indice_resistencia:</strong> Producto Glucosa × Insulina.</li>
+    <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>
+    <li><strong>Is_prediabetes:</strong> Indicador binario si Glucosa ≥ 140.</li>
+</ul>
 </div>""", unsafe_allow_html=True)
 
     # FOOTER FUERA DE LAS COLUMNAS (AL FINAL DE LA PESTAÑA 4)
@@ -1036,7 +1035,7 @@ elif st.session_state.page == "simulacion":
     <div style="background-color: rgba(233, 127, 135, 0.1); border-radius: 10px; padding: 20px; margin-top: 30px; text-align: center; border: 1px solid rgba(233, 127, 135, 0.2);">
         <p style="font-size: 0.8rem; color: #555; margin: 0; line-height: 1.6;">
             © 2025 <strong>Nerea Moreno Escamilla</strong><br>
-            <span style="color:{CEMP_PINK}; font-weight:bold;">TFM</span> • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad<br>
+            <span style="color:{CEMP_PINK}; font-weight:bold;">TFM • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad</span><br>
             CEMP - Centro Europeo de Másteres y Posgrados
         </p>
     </div>

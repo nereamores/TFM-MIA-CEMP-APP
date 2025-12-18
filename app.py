@@ -360,14 +360,16 @@ elif st.session_state.page == "simulacion":
             display: inline-block;
             white-space: nowrap;
         }}
+        
+        /* CORRECCIÓN: Badge óptimo sin sombreado y mismo grosor */
         .badge-optimal {{
-            background-color: rgba(77, 182, 172, 0.1); 
+            background-color: rgba(77, 182, 172, 0.1); /* Fondo muy ligero */
             color: {GOOD_TEAL};
-            border: 1px solid {GOOD_TEAL}; 
+            border: 1px solid {GOOD_TEAL}; /* Borde fino */
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: 700; 
+            font-weight: 700; /* Igual que el estándar */
             display: inline-block;
             white-space: nowrap;
         }}
@@ -391,14 +393,14 @@ elif st.session_state.page == "simulacion":
             font-size: 1rem;
         }}
 
-        /* === ESTILOS PARA LA MATRIZ DE ACCIÓN (NUEVO) === */
-        .matrix-container {
+        /* === ESTILOS PARA LA MATRIZ DE ACCIÓN === */
+        .matrix-container {{
             display: flex;
             flex-direction: column;
             gap: 15px;
             margin-top: 20px;
-        }
-        .matrix-row {
+        }}
+        .matrix-row {{
             display: flex;
             background: white;
             border-radius: 12px;
@@ -406,48 +408,51 @@ elif st.session_state.page == "simulacion":
             border: 1px solid #eee;
             overflow: hidden;
             transition: all 0.3s ease;
-        }
+            opacity: 0.6; /* Por defecto atenuado */
+        }}
         /* Fila activa (resaltada) */
-        .matrix-row-active {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        .matrix-row-active {{
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             border: 1px solid #d0d0d0;
-            transform: scale(1.01);
-        }
-        .matrix-result {
+            transform: scale(1.02);
+            opacity: 1 !important;
+            z-index: 10;
+        }}
+        .matrix-result {{
             flex: 1.2;
             padding: 20px;
             border-right: 1px solid #f0f0f0;
             display: flex;
             flex-direction: column;
             justify-content: center;
-        }
-        .matrix-result h4 {
+        }}
+        .matrix-result h4 {{
             margin: 0 0 8px 0;
             font-size: 1rem;
             font-weight: 800;
             color: {CEMP_DARK};
-        }
-        .matrix-result p {
+        }}
+        .matrix-result p {{
             margin: 0;
             font-size: 0.85rem;
             color: #777;
             line-height: 1.4;
-        }
-        .matrix-action {
+        }}
+        .matrix-action {{
             flex: 2;
             padding: 20px 25px;
             display: flex;
             align-items: center;
             background-color: #fafafa;
-        }
-        .matrix-action ul {
+        }}
+        .matrix-action ul {{
             margin: 0;
             padding-left: 20px;
             font-size: 0.9rem;
             color: #555;
             line-height: 1.6;
-        }
-        .matrix-priority {
+        }}
+        .matrix-priority {{
             flex: 0.6;
             padding: 20px;
             display: flex;
@@ -458,7 +463,7 @@ elif st.session_state.page == "simulacion":
             font-size: 0.9rem;
             text-align: center;
             letter-spacing: 0.5px;
-        }
+        }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -1124,7 +1129,6 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
-            # HTML SIN INDENTACIÓN EN LA PRIMERA LÍNEA PARA EVITAR EL ERROR
             st.markdown(f"""<div class="card" style="height:100%;">
     <div class="tech-card-title">Origen de los Datos</div>
     <p style="font-size:0.9rem; color:#666; margin-bottom: 10px;">
@@ -1158,9 +1162,9 @@ elif st.session_state.page == "simulacion":
     </ul>
 </div>""", unsafe_allow_html=True)
 
-    # FOOTER FUERA DE LAS COLUMNAS (AL FINAL DE LA PESTAÑA 4)
+    # FOOTER AL FINAL, GRIS Y NEUTRO
     st.markdown(f"""
-    <div style="background-color: #f4f4f4; border-radius: 10px; padding: 20px; margin-top: 30px; text-align: center; border: 1px solid #e0e0e0; color: #666;">
+    <div style="background-color: #f8f9fa; border-radius: 10px; padding: 20px; margin-top: 30px; text-align: center; border: 1px solid #e0e0e0; color: #666;">
         <p style="font-size: 0.8rem; margin: 0; line-height: 1.6;">
             © 2025 <strong>Nerea Moreno Escamilla</strong><br>
             TFM • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad<br>

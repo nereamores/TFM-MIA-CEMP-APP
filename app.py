@@ -743,7 +743,7 @@ elif st.session_state.page == "simulacion":
                 <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px; text-align: justify;">
                     <span style="font-size:1.1rem;">💡</span> 
                     <div>
-                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos.
+                        <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos. <a href='#metrics-anchor' style='color:#4DB6AC; text-decoration:underline;'>Ver métricas</a>.
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1279,7 +1279,7 @@ elif st.session_state.page == "simulacion":
 
             st.markdown(f"""
             <div class="card">
-                <div class="tech-card-title">Métricas de Rendimiento (Test)</div>
+                <div id="metrics-anchor" class="tech-card-title">Métricas de Rendimiento (Test)</div>
                 <p style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align: justify;">
                     Evaluación sobre conjunto de test independiente (10 repeticiones). Se prioriza la <strong>Sensibilidad (Recall)</strong> para minimizar falsos negativos.
                 </p>

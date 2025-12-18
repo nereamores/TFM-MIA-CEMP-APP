@@ -105,7 +105,6 @@ if st.session_state.page == "landing":
         h1 {
             text-align: center; font-family: 'Helvetica', sans-serif !important;
             font-weight: 800 !important; font-size: 3.5rem !important;
-            /* COLOR AZUL OSCURO ORIGINAL */
             color: #2c3e50 !important; 
             margin-bottom: 0 !important;
             line-height: 1.2 !important; letter-spacing: -1px; cursor: default;
@@ -198,6 +197,7 @@ elif st.session_state.page == "simulacion":
     OPTIMAL_GREEN = "#8BC34A"
     NOTE_GRAY_BG = "#F8F9FA"  
     NOTE_GRAY_TEXT = "#6C757D" 
+    URGENT_RED = "#C0392B"
       
     BMI_GRADIENT = "linear-gradient(90deg, #81D4FA 0%, #4DB6AC 25%, #FFF176 40%, #FFB74D 55%, #E97F87 70%, #880E4F 100%)"
     GLUCOSE_GRADIENT = "linear-gradient(90deg, #4DB6AC 0%, #4DB6AC 28%, #FFF176 32%, #FFB74D 48%, #E97F87 52%, #880E4F 100%)"
@@ -286,7 +286,7 @@ elif st.session_state.page == "simulacion":
             color: #888; font-weight: 600; text-align: center; white-space: nowrap;
         }}
         
-        /* === ESTILOS PARA TARJETAS CON ZOOM (SEPARADAS PERO ESTILIZADAS) === */
+        /* === ESTILOS PARA TARJETAS CON ZOOM === */
         .card-header-box {{
             background-color: white;
             border-top-left-radius: 15px;
@@ -296,10 +296,8 @@ elif st.session_state.page == "simulacion":
             border-right: 1px solid #eee;
             border-top: 1px solid #eee;
             text-align: center;
-            margin-bottom: -5px; /* Reducción de gap con la imagen */
+            margin-bottom: -5px; 
         }}
-
-        /* TIPOGRAFÍA ACTUALIZADA PARA INTEGRACIÓN NATIVA */
         .card-title-text {{
             color: #2C3E50;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -309,7 +307,6 @@ elif st.session_state.page == "simulacion":
             letter-spacing: 0.5px;
             margin: 0;
         }}
-        
         .card-footer-box {{
             background-color: rgba(233, 127, 135, 0.15); 
             padding: 20px 25px;
@@ -321,10 +318,10 @@ elif st.session_state.page == "simulacion":
             border-left: 1px solid #eee;
             border-right: 1px solid #eee;
             border-bottom: 1px solid #eee;
-            margin-top: -5px; /* Reducción de gap con la imagen */
+            margin-top: -5px; 
         }}
         
-        /* ESTILOS PARA LA TABLA DE MÉTRICAS MEJORADA Y COMPACTA */
+        /* ESTILOS PARA LA TABLA DE MÉTRICAS */
         .metrics-table {{
             width: 100%;
             border-collapse: separate;
@@ -335,12 +332,12 @@ elif st.session_state.page == "simulacion":
         }}
         .metrics-table th {{
             text-align: center;
-            padding: 10px 8px; /* Padding reducido */
+            padding: 10px 8px; 
             font-weight: 700;
             border-bottom: 2px solid #eee;
         }}
         .metrics-table td {{
-            padding: 8px 8px; /* Padding reducido */
+            padding: 8px 8px; 
             color: {CEMP_DARK};
             border-bottom: 1px solid #f0f0f0;
             text-align: center;
@@ -363,15 +360,14 @@ elif st.session_state.page == "simulacion":
             display: inline-block;
             white-space: nowrap;
         }}
-        /* CORRECCIÓN: Badge óptimo sin sombreado y sin negrita extra */
         .badge-optimal {{
-            background-color: rgba(77, 182, 172, 0.1); /* Fondo muy ligero */
+            background-color: rgba(77, 182, 172, 0.1); 
             color: {GOOD_TEAL};
-            border: 1px solid {GOOD_TEAL}; /* Borde fino */
+            border: 1px solid {GOOD_TEAL}; 
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: 700; /* Igual que el estándar */
+            font-weight: 700; 
             display: inline-block;
             white-space: nowrap;
         }}
@@ -394,6 +390,75 @@ elif st.session_state.page == "simulacion":
             margin-bottom: 15px;
             font-size: 1rem;
         }}
+
+        /* === ESTILOS PARA LA MATRIZ DE ACCIÓN (NUEVO) === */
+        .matrix-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .matrix-row {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border: 1px solid #eee;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        /* Fila activa (resaltada) */
+        .matrix-row-active {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #d0d0d0;
+            transform: scale(1.01);
+        }
+        .matrix-result {
+            flex: 1.2;
+            padding: 20px;
+            border-right: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .matrix-result h4 {
+            margin: 0 0 8px 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: {CEMP_DARK};
+        }
+        .matrix-result p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #777;
+            line-height: 1.4;
+        }
+        .matrix-action {
+            flex: 2;
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            background-color: #fafafa;
+        }
+        .matrix-action ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+        }
+        .matrix-priority {
+            flex: 0.6;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -549,7 +614,7 @@ elif st.session_state.page == "simulacion":
 
     st.markdown(f"<h1 style='color:{CEMP_DARK}; margin-bottom: 10px; font-size: 2.2rem;'>Evaluación de Riesgo Diabético</h1>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Panel General", "Explicabilidad", "Protocolo", "Ficha Técnica"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Panel General", "Explicabilidad", "Framework de Acción", "Ficha Técnica"])
 
     with tab1:
         st.write("")
@@ -894,41 +959,103 @@ elif st.session_state.page == "simulacion":
 
     with tab3:
         st.write("")
-        if is_high:
-            st.markdown(f"""
-            <div style="padding: 20px; background-color: #FFF5F5; border-left: 5px solid {CEMP_PINK}; border-radius: 5px; margin-bottom: 20px;">
-                <h3 style="color: {CEMP_PINK}; margin:0;">🚨 PROTOCOLO DE ALTO RIESGO DETECTADO</h3>
-                <p style="margin-top:10px; color: #555;">El paciente presenta una probabilidad elevada ({prob*100:.1f}%) de diabetes tipo 2.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            c_p1, c_p2 = st.columns(2)
-            with c_p1:
-                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">1. Acción Inmediata</h4>', unsafe_allow_html=True)
-                st.warning("⚠️ **Derivación a Endocrinología** (Prioridad: ALTA)")
-                st.checkbox("Solicitar HbA1c confirmatoria")
-                st.checkbox("Perfil lipídico completo")
-            with c_p2:
-                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">2. Intervención Terapéutica</h4>', unsafe_allow_html=True)
-                st.info("💊 Valorar inicio de Metformina")
-                st.write("- **Dieta:** Restricción calórica moderada.")
-        
+        # --- CABECERA DEL FRAMEWORK ---
+        st.markdown(f"""
+        <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {GOOD_TEAL}; margin-bottom:20px;">
+            <h4 style="margin:0; color:#2C3E50;">📋 Matriz de Acción Clínica (Par Resultado-Acción)</h4>
+            <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
+                Marco de referencia para la toma de decisiones. El sistema destaca la intervención recomendada basándose en la predicción de la IA y los datos clínicos clave.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # --- LÓGICA PARA DETERMINAR EL ESCENARIO ACTIVO ---
+        active_scenario = "bajo" # Default
+        if glucose >= 200:
+            active_scenario = "urgente"
+        elif is_high and distancia_al_corte > 0.05:
+            active_scenario = "alto"
+        elif not is_high and distancia_al_corte > 0.05:
+            active_scenario = "bajo"
         else:
-            st.markdown(f"""
-            <div style="padding: 20px; background-color: #F0FDF4; border-left: 5px solid {GOOD_TEAL}; border-radius: 5px; margin-bottom: 20px;">
-                <h3 style="color: {GOOD_TEAL}; margin:0;">🛡️ PROTOCOLO PREVENTIVO (BAJO RIESGO)</h3>
-                <p style="margin-top:10px; color: #555;">El perfil actual ({prob*100:.1f}%) no sugiere riesgo inminente.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            c_p1, c_p2 = st.columns(2)
-            with c_p1:
-                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">1. Seguimiento</h4>', unsafe_allow_html=True)
-                st.success("✅ **Control Rutinario**")
-                st.checkbox("Repetir test en 12 meses")
-            with c_p2:
-                st.markdown('<h4 style="color: #2C3E50; margin-top: 0;">2. Educación Sanitaria</h4>', unsafe_allow_html=True)
-                st.write("- Mantener BMI < 25.")
+            active_scenario = "incertidumbre"
+
+        # --- DEFINICIÓN DE ESTILOS DE FILA ---
+        # (Se aplica la clase .matrix-row-active si coincide con el escenario)
+        style_urgente = "matrix-row-active" if active_scenario == "urgente" else ""
+        style_alto = "matrix-row-active" if active_scenario == "alto" else ""
+        style_incertidumbre = "matrix-row-active" if active_scenario == "incertidumbre" else ""
+        style_bajo = "matrix-row-active" if active_scenario == "bajo" else ""
+        
+        # --- MATRIZ VISUAL (HTML SIN INDENTACIÓN) ---
+        st.markdown(f"""
+<div class="matrix-container">
+<div class="matrix-row {style_urgente}" style="border-left: 5px solid {URGENT_RED};">
+    <div class="matrix-result">
+        <h4>Hiperglucemia Severa</h4>
+        <p>Hallazgo crítico: Glucosa ≥ 200 mg/dL (Independiente del score IA).</p>
+    </div>
+    <div class="matrix-action">
+        <ul>
+            <li><strong>Acción Inmediata:</strong> Protocolo de confirmación diagnóstica urgente.</li>
+            <li>Descartar síntomas de cetoacidosis.</li>
+            <li>No esperar a pruebas adicionales para iniciar valoración.</li>
+        </ul>
+    </div>
+    <div class="matrix-priority" style="color: {URGENT_RED}; background-color: #FFF5F5;">
+        URGENTE 🚨
+    </div>
+</div>
+<div class="matrix-row {style_alto}" style="border-left: 5px solid {CEMP_PINK};">
+    <div class="matrix-result">
+        <h4>Riesgo Alto Confirmado</h4>
+        <p>Probabilidad IA superior al umbral (> {threshold}) y alejada de la zona de corte.</p>
+    </div>
+    <div class="matrix-action">
+        <ul>
+            <li>Derivación a Endocrinología.</li>
+            <li>Solicitar HbA1c confirmatoria y perfil lipídico completo.</li>
+            <li>Valorar inicio de intervención farmacológica (ej. Metformina) y nutricional intensiva.</li>
+        </ul>
+    </div>
+    <div class="matrix-priority" style="color: {CEMP_PINK}; background-color: #FFF0F2;">
+        ALTA 🔴
+    </div>
+</div>
+<div class="matrix-row {style_incertidumbre}" style="border-left: 5px solid #F39C12;">
+    <div class="matrix-result">
+        <h4>Zona de Incertidumbre Clínica</h4>
+        <p>Probabilidad cercana al umbral de decisión. Fiabilidad de la predicción reducida.</p>
+    </div>
+    <div class="matrix-action">
+        <ul>
+            <li>Repetir Test de Tolerancia Oral a la Glucosa (TTOG) en 3-6 meses.</li>
+            <li>Monitorización más estrecha de glucemia basal y HbA1c.</li>
+            <li>Refuerzo de educación diabetológica (dieta y ejercicio).</li>
+        </ul>
+    </div>
+    <div class="matrix-priority" style="color: #F39C12; background-color: #FFF9E5;">
+        MEDIA 🟠
+    </div>
+</div>
+<div class="matrix-row {style_bajo}" style="border-left: 5px solid {GOOD_TEAL};">
+    <div class="matrix-result">
+        <h4>Riesgo Bajo</h4>
+        <p>Probabilidad IA inferior al umbral (< {threshold}). Perfil actual no sugiere riesgo inminente.</p>
+    </div>
+    <div class="matrix-action">
+        <ul>
+            <li>Mantenimiento de seguimiento rutinario (según guías locales, ej. anual).</li>
+            <li>Consejo breve sobre estilos de vida saludables.</li>
+            <li>Mantener IMC < 25.</li>
+        </ul>
+    </div>
+    <div class="matrix-priority" style="color: {GOOD_TEAL}; background-color: #F0FDF4;">
+        BAJA 🟢
+    </div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
     with tab4:
         st.write("")
@@ -1036,7 +1163,7 @@ elif st.session_state.page == "simulacion":
     <div style="background-color: #f4f4f4; border-radius: 10px; padding: 20px; margin-top: 30px; text-align: center; border: 1px solid #e0e0e0; color: #666;">
         <p style="font-size: 0.8rem; margin: 0; line-height: 1.6;">
             © 2025 <strong>Nerea Moreno Escamilla</strong><br>
-            <span style="color:{CEMP_PINK}; font-weight:bold;">TFM • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad</span><br>
+            TFM • Máster en Aplicaciones de la Inteligencia Artificial en la Sanidad<br>
             CEMP - Centro Europeo de Másteres y Posgrados
         </p>
     </div>

@@ -236,7 +236,7 @@ if st.session_state.page == "landing":
             color: #34495e; margin-top: 5px; margin-bottom: 25px;
         }
         .description {
-            text-align: center; color: #666; line-height: 1.6;
+            text-align: justify; color: #666; line-height: 1.6;
             font-size: 0.95rem; margin-bottom: 30px; padding: 0 20px;
         }
         .warning-box {

@@ -879,7 +879,6 @@ elif st.session_state.page == "simulacion":
                 section[data-testid="stMain"] button[kind="secondary"] {{
                     background-color: rgba(233, 127, 135, 0.15) !important;
                     color: {CEMP_PINK} !important;
-                    border: 1px solid {CEMP_PINK} !important;
                     transition: all 0.3s ease;
                 }}
                 section[data-testid="stMain"] button[kind="secondary"]:hover {{

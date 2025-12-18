@@ -1480,7 +1480,7 @@ elif st.session_state.page == "simulacion":
     </p>
     <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
         <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5; text-align: justify;">
-            ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
+            ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians Diabetes Database - Kaggle). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
         </p>
     </div>
     <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">

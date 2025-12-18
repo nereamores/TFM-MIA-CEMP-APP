@@ -497,6 +497,7 @@ elif st.session_state.page == "simulacion":
             letter-spacing: 0.5px;
             margin-bottom: 15px;
             font-size: 1rem;
+            text-align: justify;
         }}
 
         /* === ESTILOS PARA LA MATRIZ DE ACCIÓN === */
@@ -739,7 +740,7 @@ elif st.session_state.page == "simulacion":
                 st.caption("Selecciona manualmente el umbral de decisión.")
                 threshold = st.slider("Umbral", 0.0, 1.0, 0.27, 0.01, label_visibility="collapsed")
                 st.markdown(f"""
-                <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px;">
+                <div style="background-color:{NOTE_GRAY_BG}; margin-right: 15px; padding:15px; border-radius:8px; border:1px solid #E9ECEF; color:{NOTE_GRAY_TEXT}; font-size:0.85rem; display:flex; align-items:start; gap:10px; text-align: justify;">
                     <span style="font-size:1.1rem;">💡</span> 
                     <div>
                         <strong>Criterio Técnico:</strong> Se ha seleccionado <strong>0.27</strong> como umbral óptimo para minimizar los falsos negativos.

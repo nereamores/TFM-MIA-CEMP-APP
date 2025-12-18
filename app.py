@@ -105,11 +105,13 @@ if st.session_state.page == "landing":
         h1 {
             text-align: center; font-family: 'Helvetica', sans-serif !important;
             font-weight: 800 !important; font-size: 3.5rem !important;
-            color: #2c3e50; margin-bottom: 0 !important;
+            /* CAMBIO: Color gris elegante en lugar de azul oscuro */
+            color: #bdc3c7; 
+            margin-bottom: 0 !important;
             line-height: 1.2 !important; letter-spacing: -1px; cursor: default;
         }
         h1 a { display: none !important; pointer-events: none !important; }
-        h1:hover { color: #2c3e50 !important; text-decoration: none !important; }
+        h1:hover { color: #bdc3c7 !important; text-decoration: none !important; }
         .landing-pink { color: #ef7d86; }
         .landing-gray { color: #bdc3c7; }
         .badge-container { text-align: center; margin-bottom: 10px; }
@@ -995,22 +997,28 @@ elif st.session_state.page == "simulacion":
             """, unsafe_allow_html=True)
 
         with c_tech_2:
+            # HTML Corregido y simplificado para las listas
             st.markdown(f"""
             <div class="card" style="height:100%;">
                 <div class="tech-card-title">Origen de los Datos</div>
-                <p style="font-size:0.9rem; color:#666;">
+                <p style="font-size:0.9rem; color:#666; margin-bottom: 10px;">
                     <strong>Fuente:</strong> Instituto Nacional de Diabetes y Enfermedades Digestivas y Renales (NIDDK).
                 </p>
-                <div style="background-color: #FFF8E1; border-left: 4px solid #FFC107; padding: 10px; margin: 15px 0; border-radius: 4px;">
-                    <p style="font-size:0.8rem; color: #856404; margin: 0;">
-                        ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía (mujeres >21 años de ascendencia indígena) y no deben generalizarse a la población global sin recalibración.
+                <p style="font-size:0.9rem; color:#666; margin-bottom: 15px;">
+                    <strong>Población:</strong> Mujeres de al menos 21 años de ascendencia indígena Pima.
+                </p>
+                
+                <div style="background-color: rgba(233, 127, 135, 0.1); border-left: 4px solid {CEMP_PINK}; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                    <p style="font-size:0.85rem; color: #C0392B; margin: 0; line-height:1.5;">
+                        ⚠️ <strong>Limitaciones del Modelo:</strong> Este prototipo se basa en un conjunto de datos histórico y reducido (Pima Indians). Los resultados reflejan patrones específicos de esta demografía y no deben generalizarse a la población global sin recalibración.
                     </p>
                 </div>
+
                 <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
                 <div class="tech-card-title" style="margin-bottom: 10px;">Variables Utilizadas (10)</div>
                 
                 <p style="font-size:0.85rem; font-weight:700; color:#555; margin-bottom:5px;">CLÍNICAS DIRECTAS:</p>
-                <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin-bottom:15px;">
+                <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin-bottom:15px; list-style-type: disc;">
                     <li><strong>Pregnancies:</strong> Nº de embarazos.</li>
                     <li><strong>Glucose:</strong> Glucosa plasmática a las 2h.</li>
                     <li><strong>BloodPressure:</strong> Presión arterial diastólica.</li>
@@ -1021,7 +1029,7 @@ elif st.session_state.page == "simulacion":
                 </ul>
                 
                 <p style="font-size:0.85rem; font-weight:700; color:{CEMP_PINK}; margin-bottom:5px;">CALCULADAS / DERIVADAS:</p>
-                <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0;">
+                <ul style="font-size:0.85rem; color:#555; padding-left:20px; line-height:1.6; margin: 0; list-style-type: disc;">
                     <li><strong>Indice_resistencia:</strong> Producto Glucosa × Insulina.</li>
                     <li><strong>BMI_square:</strong> BMI al cuadrado (no linealidad).</li>
                     <li><strong>Is_prediabetes:</strong> Indicador binario si Glucosa ≥ 140.</li>

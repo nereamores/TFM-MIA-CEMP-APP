@@ -1038,7 +1038,7 @@ elif st.session_state.page == "simulacion":
         <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {CEMP_PINK}; margin-bottom:20px;">
             <h4 style="margin:0; color:#2C3E50;">🧠 Inteligencia Artificial Explicable (XAI)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
-                Módulo de transparencia algorítmica. A continuación, se detalla la interpretación de las variables utilizadas por el modelo predictivo.
+                Con el fin de ofrecer transparencia, a continuación, se detalla cómo son utilizadas las variables por el modelo predictivo.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -1090,7 +1090,7 @@ elif st.session_state.page == "simulacion":
             st.markdown(f"""
             <div class="card-footer-box">
                 <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación del Modelo (General):</span><br>
-                Este gráfico muestra qué <b>datos son más importantes</b> para la predicción del riesgo de padecer diabetes. Las <b>barras más largas</b> (como Glucosa o Índice RI) indican los <b>factores que más influyen</b> en el diagnóstico final para la población general.
+                Este gráfico muestra qué <b>datos son más importantes</b> para la predicción del riesgo de padecer diabetes. Las <b>barras más largas</b> (como Glucosa o Índice RI) indican los <b>factores que más influyen</b> en el diagnóstico final de la población general.
             </div>
             """, unsafe_allow_html=True)
 
@@ -1148,7 +1148,7 @@ elif st.session_state.page == "simulacion":
             st.markdown(f"""
             <div class="card-footer-box">
                 <span style="color: {CEMP_PINK}; font-weight: 800;">Interpretación para {patient_name}:</span><br>
-                El análisis parte de una <b>'Línea Base' (aprox. 50%)</b>. A este valor se le <b>suman (barras rojas)</b> o <b>restan (barras azules)</b> las contribuciones específicas de los datos del paciente. El <b>resultado final ({prob*100:.1f}%)</b> es la suma de estos factores.
+                El análisis parte de una <b>Línea Base (aprox. 50%)</b>. A este valor se le <b>suman (barras rojas)</b> o <b>restan (barras azules)</b> las contribuciones específicas de los datos del paciente. El <b>resultado final ({prob*100:.1f}%)</b> es la suma de estos factores.
             </div>
             """, unsafe_allow_html=True)
 
@@ -1157,9 +1157,9 @@ elif st.session_state.page == "simulacion":
         # --- CABECERA DEL FRAMEWORK ---
         st.markdown(f"""
         <div style="background-color:#F8F9FA; padding:15px; border-radius:10px; border-left:5px solid {GOOD_TEAL}; margin-bottom:20px;">
-            <h4 style="margin:0; color:#2C3E50;">📋 Matriz de Acción Clínica (Par Resultado-Acción)</h4>
+            <h4 style="margin:0; color:#2C3E50;"> 👩🏻‍⚕️ Acción Clínica (Par Resultado-Acción)</h4>
             <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">
-                Marco de referencia para la toma de decisiones. El sistema destaca la intervención recomendada basándose en la predicción de la IA y los datos clínicos clave.
+                Como marco de referencia para la toma de decisiones, el sistema destaca la intervención recomendada basándose en la predicción de la IA y los datos clínicos clave.
             </p>
         </div>
         """, unsafe_allow_html=True)

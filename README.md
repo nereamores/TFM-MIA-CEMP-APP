@@ -16,6 +16,7 @@ Esta herramienta actúa como un **Sistema de Soporte a la Decisión Clínica (CD
 El desarrollo técnico de los algoritmos, el preprocesamiento de datos y el entrenamiento de los modelos se encuentran en el repositorio de análisis:
 
 👉 **[Ver Código de Análisis y Modelos (Notebooks)](https://github.com/nereamores/TFM-1124-MIA-NME-CEMP-2025)**
+
 📲 **[Acceso directo a app](https://github.com/nereamores/TFM-1124-MIA-NME-CEMP-2025](https://tfm-mia-diabetes-nme-app.streamlit.app/)**
 
 ### 🛠️ Tecnologías

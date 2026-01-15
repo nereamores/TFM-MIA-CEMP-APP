@@ -8,6 +8,8 @@
 ### 🏥 Descripción de la Herramienta
 Este repositorio contiene el código fuente de la **aplicación web** diseñada como interfaz gráfica para el modelo predictivo desarrollado en el TFM.
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tfm-mia-diabetes-nme-app.streamlit.app/)
+
 Esta herramienta actúa como un **Sistema de Soporte a la Decisión Clínica (CDSS)**, permitiendo al personal sanitario:
 1.  **Introducir variables clínicas** del paciente de forma sencilla (Glucosa, IMC, Edad, etc.).
 2.  **Obtener una predicción** de riesgo de diabetes en tiempo real.
@@ -17,8 +19,6 @@ Esta herramienta actúa como un **Sistema de Soporte a la Decisión Clínica (CD
 El desarrollo técnico de los algoritmos, el preprocesamiento de datos y el entrenamiento de los modelos se encuentran en el repositorio de análisis:
 
 👉 **[Ver Código de Análisis y Modelos (Notebooks)](https://github.com/nereamores/TFM-1124-MIA-NME-CEMP-2025)**
-
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tfm-mia-diabetes-nme-app.streamlit.app/)
 
 ### 🛠️ Tecnologías
 * **Framework:** Streamlit

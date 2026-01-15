@@ -1,5 +1,6 @@
 # Herramienta de Soporte a la Decisión Clínica: Predicción de Diabetes
 **Interfaz de Usuario (Streamlit)** | Trabajo Fin de Máster - Máster en IA en la Sanidad (CEMP)
+
 **Alumna:** Nerea Moreno Escamilla | **Fecha:** Enero 2026
 
 ---

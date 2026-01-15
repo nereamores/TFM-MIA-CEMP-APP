@@ -18,7 +18,7 @@ El desarrollo técnico de los algoritmos, el preprocesamiento de datos y el entr
 
 👉 **[Ver Código de Análisis y Modelos (Notebooks)](https://github.com/nereamores/TFM-1124-MIA-NME-CEMP-2025)**
 
-📲 **[Acceso directo a app](https://github.com/nereamores/TFM-1124-MIA-NME-CEMP-2025](https://tfm-mia-diabetes-nme-app.streamlit.app/)**
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tfm-mia-diabetes-nme-app.streamlit.app/)
 
 ### 🛠️ Tecnologías
 * **Framework:** Streamlit

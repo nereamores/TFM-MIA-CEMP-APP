@@ -8,7 +8,7 @@
 ---
 
 ### 🏥 Descripción de la Herramienta
-Este repositorio contiene el código fuente de la **aplicación web** diseñada como interfaz gráfica para el modelo predictivo desarrollado en el TFM.
+Este repositorio contiene el código fuente de la **aplicación web** diseñada como interfaz gráfica para el modelo predictivo desarrollado en el TFM:
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tfm-mia-diabetes-nme-app.streamlit.app/)
 

@@ -3,6 +3,8 @@
 
 **Alumna:** Nerea Moreno Escamilla | **Fecha:** Enero 2026
 
+⚠️ Esta herramienta es una **prueba de concepto experimental** y no ha sido validada clínicamente. No debe usarse para decisiones médicas reales
+
 ---
 
 ### 🏥 Descripción de la Herramienta
